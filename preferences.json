@@ -1,0 +1,236 @@
+[
+  {
+    "type": "text",
+    "label": "**Zen Washi & Sumi (和纸与松烟墨)**",
+    "size": "17px",
+    "margin": "10px 0 2px 0"
+  },
+  {
+    "type": "text",
+    "label": "Tranquil East Asian ink & washi paper aesthetics for Zen Browser.\n白昼如手工和纸般温润护眼，入夜如松烟老墨般深邃沉静。去刺眼高光、去荧光躁动，专为沉浸阅读与心流专注而生。",
+    "size": "11px",
+    "margin": "0 0 10px 0"
+  },
+  {
+    "type": "separator",
+    "label": "Color Themes 全局色彩方案",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.palette",
+    "label": "Theme scheme 全局基底色彩方案",
+    "defaultValue": "washi",
+    "options": [
+      {
+        "value": "washi",
+        "label": "Washi 和纸与松烟墨 (Default)"
+      },
+      {
+        "value": "rose-pine",
+        "label": "Rosé Pine 晨曦与薄暮 (Dawn/Main)"
+      },
+      {
+        "value": "catppuccin",
+        "label": "Catppuccin 拿铁与莫卡 (Latte/Mocha)"
+      },
+      {
+        "value": "nord",
+        "label": "Nord 极地幽蓝 (Snow/Polar)"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.accent",
+    "label": "Mineral accent 矿物强调色",
+    "defaultValue": "bamboo",
+    "options": [
+      {
+        "value": "bamboo",
+        "label": "竹青 (Bamboo Green)"
+      },
+      {
+        "value": "umber",
+        "label": "焦茶 (Warm Umber)"
+      },
+      {
+        "value": "cinnabar",
+        "label": "朱砂 (Cinnabar Red)"
+      },
+      {
+        "value": "indigo",
+        "label": "琉璃 (Deep Indigo)"
+      },
+      {
+        "value": "yamabuki",
+        "label": "山吹 (Yamabuki Gold)"
+      },
+      {
+        "value": "asagi",
+        "label": "浅葱 (Asagi Teal)"
+      },
+      {
+        "value": "ayame",
+        "label": "菖蒲 (Ayame Violet)"
+      },
+      {
+        "value": "sumi-mono",
+        "label": "银鼠 (Silver Ink)"
+      },
+      {
+        "value": "rose-pine-dawn",
+        "label": "Rosé Pine (Rose)"
+      },
+      {
+        "value": "catppuccin-latte",
+        "label": "Catppuccin (Pink)"
+      }
+    ]
+  },
+  {
+    "type": "separator",
+    "label": "Floating Island 悬浮画卷视口",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "string",
+    "property": "zenwashi.content.radius",
+    "label": "Content viewport radius 网页视口圆角",
+    "defaultValue": "18px",
+    "placeholder": "18px"
+  },
+  {
+    "type": "string",
+    "property": "zenwashi.content.margin",
+    "label": "Content viewport margin 外部悬浮留白 (四周对称)",
+    "defaultValue": "10px",
+    "placeholder": "10px"
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.content.shadow",
+    "label": "Paper shadow depth 纸面悬浮阴影档位",
+    "defaultValue": "medium",
+    "options": [
+      {
+        "value": "soft",
+        "label": "Soft 柔和低调"
+      },
+      {
+        "value": "medium",
+        "label": "Medium 经典立体 (推荐)"
+      },
+      {
+        "value": "strong",
+        "label": "Strong 强烈深邃"
+      },
+      {
+        "value": "deep",
+        "label": "Deep 超沉浸大投影"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.content.border",
+    "label": "Content border width 视口边框粗细",
+    "defaultValue": "medium",
+    "options": [
+      {
+        "value": "none",
+        "label": "None 无边框 (0px)"
+      },
+      {
+        "value": "subtle",
+        "label": "Subtle 发丝细线 (1px)"
+      },
+      {
+        "value": "medium",
+        "label": "Medium 经典雅致 (1.5px, 推荐)"
+      },
+      {
+        "value": "bold",
+        "label": "Bold 清晰实线 (2.5px)"
+      },
+      {
+        "value": "heavy",
+        "label": "Heavy 醒目宽框 (4px)"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.content.border.color",
+    "label": "Content border tone 边框色调风格",
+    "defaultValue": "distinct",
+    "options": [
+      {
+        "value": "distinct",
+        "label": "Distinct 自然墨线 (默认和纸墨描边)"
+      },
+      {
+        "value": "subtle",
+        "label": "Subtle 浅雅发丝 (极淡微线)"
+      },
+      {
+        "value": "accent",
+        "label": "Mineral accent 矿物强调色 (与当前色彩联动)"
+      },
+      {
+        "value": "accent-tint",
+        "label": "Accent tint 柔和微光 (半透明强调色)"
+      }
+    ]
+  },
+  {
+    "type": "separator",
+    "label": "Tabs & Deck 标签与质感微调",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "string",
+    "property": "zenwashi.tab.radius",
+    "label": "Tab corner radius 标签页圆角",
+    "defaultValue": "8px",
+    "placeholder": "8px"
+  },
+  {
+    "type": "string",
+    "property": "zenwashi.essentials.radius",
+    "label": "Essentials corner radius Essentials 圆角",
+    "defaultValue": "8px",
+    "placeholder": "8px"
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.tab.sleep-fade",
+    "label": "Fade sleeping tabs 墨迹微褪 (休眠标签淡化)",
+    "defaultValue": true
+  },
+  {
+    "type": "separator",
+    "label": "Page Scrollbar 网页滚动条",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.scrollbar",
+    "label": "Page scrollbar style 网页滚动条样式",
+    "defaultValue": "thin",
+    "options": [
+      {
+        "value": "off",
+        "label": "Off 保持原生"
+      },
+      {
+        "value": "thin",
+        "label": "Thin 墨色极细滚动条"
+      },
+      {
+        "value": "hide",
+        "label": "Hide 隐藏主页面滚动条"
+      }
+    ]
+  }
+]

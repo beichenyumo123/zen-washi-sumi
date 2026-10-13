@@ -1,0 +1,28 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Page-level Stylesheet
+   -----------------------------------------------------------------------------
+   Scrollbar styling matching traditional ink & paper aesthetics.
+   ============================================================================= */
+
+/* --- Hide page main scrollbar --------------------------------------------- */
+@media (-moz-pref("zenwashi.scrollbar", "hide")) {
+  :root,
+  :root body {
+    scrollbar-width: none !important;
+  }
+
+  :root *:not(body) {
+    scrollbar-width: auto;
+  }
+}
+
+/* --- Thin ink scrollbar with gentle tactile colors ------------------------- */
+@media (-moz-pref("zenwashi.scrollbar", "thin")) {
+  :root, * {
+    scrollbar-width: thin !important;
+    scrollbar-color: light-dark(
+      rgba(60, 52, 42, 0.22) transparent,
+      rgba(245, 242, 235, 0.20) transparent
+    ) !important;
+  }
+}

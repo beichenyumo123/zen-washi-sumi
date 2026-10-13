@@ -1,0 +1,592 @@
+@import "colors.css";
+
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Minimalist Zen Browser Theme
+   -----------------------------------------------------------------------------
+   Aesthetics Philosophy:
+     1. Unified Theme Engine (仿照 Zen 原生"编辑主题"架构):
+        - 注入 Zen 核心色彩 Token，让侧边栏、顶栏、底板完全统一和纸色。
+     2. Borderless Clean Sidebar (纯净去油侧栏):
+        - 清除侧栏各层级冗余的 border-inline，消除所有杂乱线条。
+     3. High-Depth Floating Island (高立体感悬浮画卷视口):
+        - 外层卡片 (.browserSidebarContainer) 保持 overflow: visible，施加深邃漫射阴影；
+        - 内层 (.browserContainer) 负责精准圆角裁剪。
+     4. Natural Folders (极简线框和纸底色文件夹):
+        - 文件夹图标使用和纸底色填充遮挡，轮廓全面联动强调色，整行透明，悬停强调色高亮。
+     5. Clear Active Tab (高辨识度纯净浅色选中卡片):
+        - 当前选中的标签页采用独立的浅色和纸微卡片底色（无生硬左侧指示条），一目了然。
+     6. Native-Compliant Essentials (透气自适应 Essentials):
+        - 保持原生布局与尺寸，去除突兀白块，避免贴边与溢出。
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   1. Zen Theme Engine Tokens (与原生编辑主题完全对齐)
+   ----------------------------------------------------------------------------- */
+:root {
+  /* 基础几何参数 */
+  --zenwashi-tab-radius: 8px;
+  --zenwashi-essentials-radius: 8px;
+  --zenwashi-content-radius: 18px;
+  --zenwashi-content-margin: 10px;
+
+  /* 和纸与松烟墨色彩基调 (Light: 鳥の子色 #F7F6F2 / Dark: 松烟墨 #141517) */
+  --zenwashi-bg-base: light-dark(#F7F6F2, #141517);
+  --zenwashi-bg-surface: light-dark(#FFFFFF, #1F2126);
+  --zenwashi-bg-urlbar: light-dark(#FFFFFF, #1F2126);
+
+  /* 当前选中标签页卡片底色 (温润清晰的浅色和纸微卡片) */
+  --zenwashi-tab-selected-bg: light-dark(#FFFFFF, rgba(255, 255, 255, 0.16));
+  --zenwashi-tab-selected-border: light-dark(rgba(60, 52, 42, 0.12), rgba(245, 242, 235, 0.14));
+  --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(60, 52, 42, 0.08), 0 2px 6px rgba(0, 0, 0, 0.35));
+
+  /* Essentials 微卡片背景 (自然透出侧边栏底色) */
+  --zenwashi-essentials-bg: transparent;
+  --zenwashi-essentials-hover-bg: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.08));
+  --zenwashi-essentials-active-bg: light-dark(rgba(0, 0, 0, 0.09), rgba(255, 255, 255, 0.14));
+
+  /* 墨字字阶 */
+  --zenwashi-fg-primary: light-dark(#262421, #E8E5DC);
+  --zenwashi-fg-secondary: light-dark(#6E685F, #928D84);
+  --zenwashi-fg-muted: light-dark(#A6A096, #66635C);
+
+  /* 标签页悬停微色阶 */
+  --zenwashi-tab-hover-bg: light-dark(rgba(60, 52, 42, 0.05), rgba(245, 242, 235, 0.06));
+
+  /* 发丝微边框 */
+  --zenwashi-border-subtle: light-dark(rgba(60, 52, 42, 0.10), rgba(245, 242, 235, 0.09));
+  --zenwashi-border-distinct: light-dark(rgba(60, 52, 42, 0.18), rgba(245, 242, 235, 0.15));
+
+  /* 默认矿物强调色：竹青 (Bamboo Green) */
+  --zenwashi-accent: light-dark(#376850, #4E8B6E);
+  --zenwashi-accent-tint: light-dark(rgba(55, 104, 80, 0.15), rgba(78, 139, 110, 0.22));
+
+  /* 动效 */
+  --zenwashi-duration: 130ms;
+  --zenwashi-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---------------------------------------------------------------------------
+     核心：深度注入 Zen 原生“编辑主题”引擎变量
+     --------------------------------------------------------------------------- */
+  --zen-primary-color: var(--zenwashi-accent) !important;
+  --zen-main-browser-background: var(--zenwashi-bg-base) !important;
+  --zen-colors-primary: var(--zenwashi-bg-base) !important;
+  --zen-colors-secondary: var(--zenwashi-bg-base) !important;
+  --zen-colors-tertiary: var(--zenwashi-bg-surface) !important;
+  --zen-themed-toolbar-bg: var(--zenwashi-bg-base) !important;
+  --zen-themed-toolbar-bg-transparent: var(--zenwashi-bg-base) !important;
+}
+
+/* -----------------------------------------------------------------------------
+   2. Modular Color Palette System (模块化调色板)
+   ----------------------------------------------------------------------------- */
+
+/* -----------------------------------------------------------------------------
+   3. Natural Folders & Continuous Hierarchy Rail (参考 Arc 容器级圆角导轨)
+   ----------------------------------------------------------------------------- */
+/* 文件夹图标极简线框与实心和纸遮挡 */
+zen-folder .tab-group-folder-icon rect,
+zen-folder .tab-group-folder-icon path,
+.tab-group-folder-icon rect,
+.tab-group-folder-icon path {
+  fill: var(--zenwashi-bg-base) !important;
+  stroke: var(--zenwashi-accent) !important;
+  stroke-width: 1.5px !important;
+  transition: stroke var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+.tab-group-folder-icon,
+.tab-group-folder-icon svg,
+zen-folder .tab-group-folder-icon svg {
+  color: var(--zenwashi-accent) !important;
+  background: transparent !important;
+}
+
+/* 文件夹整行标题纯净透明，彻底杜绝文件夹标题自身前方的任何竖线 */
+zen-folder,
+zen-folder .tab-group-label-container {
+  background: transparent !important;
+  color: var(--zenwashi-fg-primary) !important;
+  position: relative !important;
+}
+
+zen-folder .tab-group-label-container::before,
+zen-folder .tab-group-label-container::after {
+  display: none !important;
+  content: none !important;
+}
+
+zen-folder:hover .tab-group-label-container {
+  color: var(--zenwashi-accent) !important;
+}
+
+/* 
+ * 核心机制（参考 zen-arc-theme 的容器级贯穿线）：
+ * 不对单个 tab 添加伪元素，而是给容纳同层子项的整体容器附加一条连续贯穿的微圆角竖线。
+ * 绝不污染外部普通标签页！
+ */
+.tab-group-container,
+zen-folder .tab-group-tabs,
+zen-folder-tabs {
+  position: relative !important;
+  margin-left: 6px !important;
+  padding-left: 12px !important;
+  box-sizing: border-box !important;
+}
+
+/* 连续微圆角竖线：从第一个子项贯穿到最后一个子项 */
+.tab-group-container::after,
+zen-folder .tab-group-tabs::after,
+zen-folder-tabs::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 4px !important;
+  bottom: 4px !important;
+  left: 4px !important;
+  width: 3.5px !important;              /* 加宽圆角竖线 */
+  border-radius: 3px !important;         /* 柔和圆角 */
+  background: var(--zenwashi-accent-tint) !important;
+  opacity: 0.85 !important;
+  pointer-events: none !important;
+  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
+              opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 当鼠标悬停在子项组上时，导轨微光温润加深 */
+.tab-group-container:hover::after,
+zen-folder .tab-group-tabs:hover::after,
+zen-folder-tabs:hover::after {
+  background: var(--zenwashi-accent) !important;
+  opacity: 0.95 !important;
+}
+
+/* 嵌套子文件夹：在父级导轨内保持规整向内缩进 */
+zen-folder zen-folder {
+  margin-left: 4px !important;
+}
+
+/* -----------------------------------------------------------------------------
+   4. Unified Clean Canvas & Borderless Sidebar (消除多余垂直线)
+   ----------------------------------------------------------------------------- */
+:root,
+#main-window,
+#browser,
+#zen-browser-background,
+.zen-browser-generic-background,
+#zen-appcontent-navbar-container {
+  background-color: var(--zenwashi-bg-base) !important;
+  background-image: none !important;
+  color: var(--zenwashi-fg-primary) !important;
+}
+
+/* 彻底清空侧边栏容器各层级的嵌套 border，杜绝贴墙线与双重线 */
+#navigator-toolbox,
+#sidebar-box,
+#TabsToolbar,
+#TabsToolbar-customization-target,
+#vertical-pinned-tabs-container,
+#pinned-tabs-container,
+#tabbrowser-tabs {
+  background-color: var(--zenwashi-bg-base) !important;
+  background-image: none !important;
+  border: none !important;
+  border-inline: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+#sidebar-splitter,
+#zen-sidebar-splitter,
+#ai-window-splitter,
+#vertical-pinned-tabs-splitter {
+  border: none !important;
+  background: transparent !important;
+  opacity: 0 !important;
+}
+
+#zen-sidebar-bottom-buttons,
+#zen-sidebar-icons-wrapper,
+#zen-workspaces-button,
+#zen-workspaces-button-wrapper,
+.zen-workspaces-button {
+  background-color: var(--zenwashi-bg-base) !important;
+  background-image: none !important;
+  border: none !important;
+}
+
+/* 顶栏与地址栏 */
+#nav-bar {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+#urlbar-background {
+  background-color: var(--zenwashi-bg-urlbar) !important;
+  border: 1px solid var(--zenwashi-border-subtle) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+#urlbar[focused="true"] #urlbar-background {
+  border-color: var(--zenwashi-accent) !important;
+  outline: 2px solid var(--zenwashi-accent-tint) !important;
+}
+
+/* -----------------------------------------------------------------------------
+   5. High-Depth Floating Island (解耦架构：解决阴影截断与档位生效问题)
+   ----------------------------------------------------------------------------- */
+#zen-tabbox-wrapper,
+#tabbrowser-tabbox,
+#tabbrowser-tabpanels {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+/* 核心浮岛卡片 (.browserSidebarContainer) */
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
+  margin: var(--zenwashi-content-margin, 10px) !important;
+  border-radius: var(--zenwashi-content-radius, 18px) !important;
+  overflow: visible !important;
+  background-color: var(--zenwashi-bg-surface, #ffffff) !important;
+  border: var(--zenwashi-content-border-width, 1.5px) solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+  box-sizing: border-box !important;
+  /* 默认 Medium 经典立体阴影 */
+  box-shadow: light-dark(
+    0 12px 36px rgba(0, 0, 0, 0.16), 0 3px 10px rgba(0, 0, 0, 0.08),
+    0 16px 44px rgba(0, 0, 0, 0.75), 0 4px 12px rgba(0, 0, 0, 0.45)
+  ) !important;
+  transition: margin 0.18s ease, border-radius 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+/* 阴影各档位直接绑定 */
+@media (-moz-pref("zenwashi.content.shadow", "soft")) {
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
+    box-shadow: light-dark(
+      0 6px 20px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.05),
+      0 8px 24px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3)
+    ) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "medium")) {
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
+    box-shadow: light-dark(
+      0 12px 36px rgba(0, 0, 0, 0.16), 0 3px 10px rgba(0, 0, 0, 0.08),
+      0 16px 44px rgba(0, 0, 0, 0.75), 0 4px 12px rgba(0, 0, 0, 0.45)
+    ) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "strong")) {
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
+    box-shadow: light-dark(
+      0 18px 52px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.10),
+      0 22px 60px rgba(0, 0, 0, 0.85), 0 6px 16px rgba(0, 0, 0, 0.55)
+    ) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "deep")) {
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
+    box-shadow: light-dark(
+      0 26px 72px rgba(0, 0, 0, 0.28), 0 6px 20px rgba(0, 0, 0, 0.12),
+      0 30px 80px rgba(0, 0, 0, 0.95), 0 8px 24px rgba(0, 0, 0, 0.65)
+    ) !important;
+  }
+}
+
+/* 内部视口容器负责按圆角裁剪内容 (同步边框厚度内缩圆角) */
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack {
+  overflow: clip !important;
+  corner-shape: round !important;
+  border-radius: calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 全屏状态还原平铺 */
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer {
+  border-radius: 0 !important;
+}
+
+
+/* 视口边框粗细档位 (zenwashi.content.border) */
+@media (-moz-pref("zenwashi.content.border", "none")) {
+  :root {
+    --zenwashi-content-border-width: 0px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "subtle")) {
+  :root {
+    --zenwashi-content-border-width: 1px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "medium")) {
+  :root {
+    --zenwashi-content-border-width: 1.5px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "bold")) {
+  :root {
+    --zenwashi-content-border-width: 2.5px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "heavy")) {
+  :root {
+    --zenwashi-content-border-width: 4px !important;
+  }
+}
+
+
+/* 视口边框色彩模式 (zenwashi.content.border.color) */
+@media (-moz-pref("zenwashi.content.border.color", "accent")) {
+  :root {
+    --zenwashi-content-border-color: var(--zenwashi-accent) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border.color", "accent-tint")) {
+  :root {
+    --zenwashi-content-border-color: var(--zenwashi-accent-tint) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border.color", "subtle")) {
+  :root {
+    --zenwashi-content-border-color: var(--zenwashi-border-subtle) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border.color", "distinct")) {
+  :root {
+    --zenwashi-content-border-color: var(--zenwashi-border-distinct) !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   6. Tab Deck: Clear Active Tab (清晰辨识选中标签，不影响文件夹)
+   ----------------------------------------------------------------------------- */
+.tab-line,
+.tab-indicator,
+.tab-context-line,
+.tab-group-line,
+.tabbrowser-tab::before,
+.tabbrowser-tab::after,
+#tabbrowser-tabs .tab-line,
+.tab-background::before,
+.tab-background::after {
+  display: none !important;
+  opacity: 0 !important;
+  background: none !important;
+}
+
+/* 普通标签页微调边距与圆角 */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) {
+  border-radius: var(--zenwashi-tab-radius, 8px) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  margin-inline: 4px !important;
+  margin-block: 1px !important;
+  color: var(--zenwashi-fg-secondary) !important;
+  transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) .tab-background {
+  border-radius: var(--zenwashi-tab-radius, 8px) !important;
+  border: 1px solid transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
+              border-color var(--zenwashi-duration) var(--zenwashi-ease),
+              box-shadow var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 普通标签悬停态 */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):hover:not([selected]):not([visuallyselected]) .tab-background {
+  background-color: var(--zenwashi-tab-hover-bg) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):hover .tab-label {
+  color: var(--zenwashi-fg-primary) !important;
+}
+
+/* 当前选中/激活的普通标签页：浅色纯和纸微卡片底色（无左侧指示线） */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected="true"] .tab-background,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected] .tab-background,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[visuallyselected] .tab-background {
+  background-color: var(--zenwashi-tab-selected-bg) !important;
+  border-color: var(--zenwashi-tab-selected-border) !important;
+  box-shadow: var(--zenwashi-tab-selected-shadow) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected="true"] .tab-label,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected] .tab-label,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[visuallyselected] .tab-label {
+  color: var(--zenwashi-fg-primary) !important;
+  font-weight: 600 !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected="true"] .tab-icon-image,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected] .tab-icon-image,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[visuallyselected] .tab-icon-image {
+  opacity: 1 !important;
+}
+
+/* -----------------------------------------------------------------------------
+   7. Essentials: 纯净微卡片与高辨识度选中态（零破坏原生网格尺寸）
+   ----------------------------------------------------------------------------- */
+#zen-essentials-container,
+#zen-essentials {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 移除 essentials 下方的原生粗分割线 */
+#zen-essentials-container + toolbarseparator,
+#zen-essentials + toolbarseparator {
+  display: none !important;
+}
+
+/* 
+ * 绝不对 #zen-essentials、.zen-essentials-container、tabbrowser-tab 加任何 width/margin/padding！
+ * 仅统一圆角，完全保留 Zen 原生的列宽分配与右侧安全边距。
+ */
+#zen-essentials-container .tabbrowser-tab,
+#zen-essentials .tabbrowser-tab,
+.zen-essentials-container .tabbrowser-tab,
+.tabbrowser-tab[zen-essential="true"] {
+  border-radius: var(--zenwashi-essentials-radius, 8px) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* 常态微卡片：只在 .tab-background 内部渲染轻量底色与边框，尺寸不外扩、不裁切 */
+#zen-essentials-container .tabbrowser-tab .tab-background,
+#zen-essentials .tabbrowser-tab .tab-background,
+.zen-essentials-container .tabbrowser-tab .tab-background,
+.tabbrowser-tab[zen-essential="true"] .tab-background {
+  border-radius: var(--zenwashi-essentials-radius, 8px) !important;
+  border: 1px solid light-dark(rgba(60, 52, 42, 0.08), rgba(245, 242, 235, 0.08)) !important;
+  background-image: none !important;
+  background-color: light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.06)) !important;
+  box-shadow: none !important;
+  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
+              border-color var(--zenwashi-duration) var(--zenwashi-ease),
+              box-shadow var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+#zen-essentials-container .tabbrowser-tab .tab-icon-image,
+#zen-essentials .tabbrowser-tab .tab-icon-image,
+.zen-essentials-container .tabbrowser-tab .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"] .tab-icon-image {
+  opacity: 0.88 !important;
+  transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 悬停态：微浮雕反馈 */
+#zen-essentials-container .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
+#zen-essentials .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
+.zen-essentials-container .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
+.tabbrowser-tab[zen-essential="true"]:hover:not([selected]):not([visuallyselected]) .tab-background {
+  background-color: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.12)) !important;
+  border-color: light-dark(rgba(60, 52, 42, 0.16), rgba(245, 242, 235, 0.14)) !important;
+  box-shadow: light-dark(0 1px 3px rgba(60, 52, 42, 0.06), 0 2px 5px rgba(0, 0, 0, 0.25)) !important;
+}
+
+#zen-essentials-container .tabbrowser-tab:hover .tab-icon-image,
+#zen-essentials .tabbrowser-tab:hover .tab-icon-image,
+.zen-essentials-container .tabbrowser-tab:hover .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"]:hover .tab-icon-image {
+  opacity: 1 !important;
+}
+
+/* 选中态：高辨识度实体微卡片 + 矿物强调色边框与呼吸浮雕 */
+#zen-essentials-container .tabbrowser-tab[selected="true"] .tab-background,
+#zen-essentials-container .tabbrowser-tab[selected] .tab-background,
+#zen-essentials-container .tabbrowser-tab[visuallyselected] .tab-background,
+#zen-essentials .tabbrowser-tab[selected="true"] .tab-background,
+#zen-essentials .tabbrowser-tab[selected] .tab-background,
+#zen-essentials .tabbrowser-tab[visuallyselected] .tab-background,
+.zen-essentials-container .tabbrowser-tab[selected="true"] .tab-background,
+.zen-essentials-container .tabbrowser-tab[selected] .tab-background,
+.zen-essentials-container .tabbrowser-tab[visuallyselected] .tab-background,
+.tabbrowser-tab[zen-essential="true"][selected="true"] .tab-background,
+.tabbrowser-tab[zen-essential="true"][selected] .tab-background,
+.tabbrowser-tab[zen-essential="true"][visuallyselected] .tab-background {
+  background-color: light-dark(#FFFFFF, rgba(255, 255, 255, 0.20)) !important;
+  border-color: var(--zenwashi-accent) !important;
+  outline: 1.5px solid var(--zenwashi-accent-tint) !important;
+  outline-offset: -1px !important;
+  box-shadow: light-dark(0 2px 6px rgba(60, 52, 42, 0.10), 0 2px 8px rgba(0, 0, 0, 0.35)) !important;
+}
+
+#zen-essentials-container .tabbrowser-tab[selected="true"] .tab-icon-image,
+#zen-essentials-container .tabbrowser-tab[selected] .tab-icon-image,
+#zen-essentials-container .tabbrowser-tab[visuallyselected] .tab-icon-image,
+#zen-essentials .tabbrowser-tab[selected="true"] .tab-icon-image,
+#zen-essentials .tabbrowser-tab[selected] .tab-icon-image,
+#zen-essentials .tabbrowser-tab[visuallyselected] .tab-icon-image,
+.zen-essentials-container .tabbrowser-tab[selected="true"] .tab-icon-image,
+.zen-essentials-container .tabbrowser-tab[selected] .tab-icon-image,
+.zen-essentials-container .tabbrowser-tab[visuallyselected] .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"][selected="true"] .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"][selected] .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"][visuallyselected] .tab-icon-image {
+  opacity: 1 !important;
+}
+
+/* 侧边栏按钮 */
+#tabs-newtab-button,
+#zen-sidebar-top-buttons toolbarbutton,
+#vertical-tabs-newtab-button,
+#zen-sidebar-bottom-buttons toolbarbutton {
+  border-radius: var(--zenwashi-tab-radius, 8px) !important;
+  color: var(--zenwashi-fg-secondary) !important;
+  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
+              color var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+#tabs-newtab-button:hover,
+#zen-sidebar-top-buttons toolbarbutton:hover,
+#vertical-tabs-newtab-button:hover,
+#zen-sidebar-bottom-buttons toolbarbutton:hover {
+  background-color: var(--zenwashi-tab-hover-bg) !important;
+  color: var(--zenwashi-fg-primary) !important;
+}
+
+/* -----------------------------------------------------------------------------
+   8. Sleeping Tabs (墨迹微褪)
+   ----------------------------------------------------------------------------- */
+@media not (-moz-pref("zenwashi.tab.sleep-fade", false)) {
+  .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[discarded="true"],
+  .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[pending] {
+    opacity: 0.6 !important;
+    transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+  }
+
+  .tabbrowser-tab:not([discarded="true"]):not([pending]) {
+    opacity: 1 !important;
+  }
+}

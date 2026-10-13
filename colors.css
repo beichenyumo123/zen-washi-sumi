@@ -1,0 +1,159 @@
+/* =============================================================================
+   Zen Washi & Sumi — 调色板与配色方案库 (Palette & Color Schemes)
+   -----------------------------------------------------------------------------
+   双轨色彩架构：
+     1. 全局基底方案 (zenwashi.palette)：
+        - 联动切换全界面的底板背景 (--zenwashi-bg-base)、视口表面 (--zenwashi-bg-surface)、
+          墨字字阶 (--zenwashi-fg-*)、选中卡片底色等。
+     2. 矿物强调色方案 (zenwashi.accent)：
+        - 联动切换聚焦环、选中边框、文件夹线框、按钮高亮等。
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   1. 基础默认强调色：竹青 (Bamboo Green)
+   ----------------------------------------------------------------------------- */
+:root {
+  --zenwashi-accent: light-dark(#376850, #4E8B6E);
+  --zenwashi-accent-tint: light-dark(rgba(55, 104, 80, 0.15), rgba(78, 139, 110, 0.22));
+}
+
+/* -----------------------------------------------------------------------------
+   2. 全局色彩基底方案 (zenwashi.palette)
+   ----------------------------------------------------------------------------- */
+
+/* [方案 A] 和纸与松烟墨 (Zen Washi & Sumi) · 默认原声禅意方案 */
+@media (-moz-pref("zenwashi.palette", "washi")) {
+  :root {
+    --zenwashi-bg-base: light-dark(#F7F6F2, #141517) !important;
+    --zenwashi-bg-surface: light-dark(#FFFFFF, #1F2126) !important;
+    --zenwashi-bg-urlbar: light-dark(#FFFFFF, #1F2126) !important;
+    --zenwashi-tab-selected-bg: light-dark(#FFFFFF, rgba(255, 255, 255, 0.16)) !important;
+    --zenwashi-fg-primary: light-dark(#262421, #E8E5DC) !important;
+    --zenwashi-fg-secondary: light-dark(#6E685F, #928D84) !important;
+    --zenwashi-fg-muted: light-dark(#A6A096, #66635C) !important;
+  }
+}
+
+/* [方案 B] Rosé Pine (晨曦与薄暮) · 诗意轻盈北欧木屋温润色 */
+@media (-moz-pref("zenwashi.palette", "rose-pine")) {
+  :root {
+    /* Light: Dawn (底色 #FAF4ED / 卡片 #FFFDFB) | Dark: Main (底色 #191724 / 卡片 #1F1D2E) */
+    --zenwashi-bg-base: light-dark(#FAF4ED, #191724) !important;
+    --zenwashi-bg-surface: light-dark(#FFFDFB, #1F1D2E) !important;
+    --zenwashi-bg-urlbar: light-dark(#FFFDFB, #1F1D2E) !important;
+    --zenwashi-tab-selected-bg: light-dark(#FFFDFB, #26233A) !important;
+    --zenwashi-fg-primary: light-dark(#575279, #E0DEF4) !important;
+    --zenwashi-fg-secondary: light-dark(#797593, #908CAA) !important;
+    --zenwashi-fg-muted: light-dark(#9893A5, #6E6A86) !important;
+    --zenwashi-accent: light-dark(#B4637A, #EB6F92) !important;
+    --zenwashi-accent-tint: light-dark(rgba(180, 99, 122, 0.16), rgba(235, 111, 146, 0.22)) !important;
+  }
+}
+
+/* [方案 C] Catppuccin (拿铁与莫卡) · 舒缓柔和粉彩低对比度配色 */
+@media (-moz-pref("zenwashi.palette", "catppuccin")) {
+  :root {
+    /* Light: Latte (底色 #EFF1F5 / 卡片 #E6E9EF) | Dark: Mocha (底色 #181825 / 卡片 #1E1E2E) */
+    --zenwashi-bg-base: light-dark(#EFF1F5, #181825) !important;
+    --zenwashi-bg-surface: light-dark(#FFFFFF, #1E1E2E) !important;
+    --zenwashi-bg-urlbar: light-dark(#FFFFFF, #1E1E2E) !important;
+    --zenwashi-tab-selected-bg: light-dark(#FFFFFF, #313244) !important;
+    --zenwashi-fg-primary: light-dark(#4C4F69, #CDD6F4) !important;
+    --zenwashi-fg-secondary: light-dark(#6C6F85, #A6ADC8) !important;
+    --zenwashi-fg-muted: light-dark(#9CA0B0, #6C7086) !important;
+    --zenwashi-accent: light-dark(#EA76CB, #F5C2E7) !important;
+    --zenwashi-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 194, 231, 0.22)) !important;
+  }
+}
+
+/* [方案 D] Nord (极地清辉) · 极地幽蓝与冰雪霜冻冻原感 */
+@media (-moz-pref("zenwashi.palette", "nord")) {
+  :root {
+    /* Light: Snow Storm (#ECEFF4 / #E5E9F0) | Dark: Polar Night (#242933 / #2E3440) */
+    --zenwashi-bg-base: light-dark(#ECEFF4, #242933) !important;
+    --zenwashi-bg-surface: light-dark(#FFFFFF, #2E3440) !important;
+    --zenwashi-bg-urlbar: light-dark(#FFFFFF, #2E3440) !important;
+    --zenwashi-tab-selected-bg: light-dark(#FFFFFF, #3B4252) !important;
+    --zenwashi-fg-primary: light-dark(#2E3440, #ECEFF4) !important;
+    --zenwashi-fg-secondary: light-dark(#4C566A, #D8DEE9) !important;
+    --zenwashi-fg-muted: light-dark(#9099A8, #7B88A1) !important;
+    --zenwashi-accent: light-dark(#5E81AC, #88C0D0) !important;
+    --zenwashi-accent-tint: light-dark(rgba(94, 129, 172, 0.16), rgba(136, 192, 208, 0.22)) !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   3. 独立矿物强调色覆盖方案 (zenwashi.accent)
+   ----------------------------------------------------------------------------- */
+
+/* 焦茶 (Warm Umber) · 枯木暖褐 */
+@media (-moz-pref("zenwashi.accent", "umber")) {
+  :root {
+    --zenwashi-accent: light-dark(#78563D, #D49852) !important;
+    --zenwashi-accent-tint: light-dark(rgba(120, 86, 61, 0.15), rgba(212, 152, 82, 0.22)) !important;
+  }
+}
+
+/* 朱砂 (Cinnabar Red) · 古朴印泥 */
+@media (-moz-pref("zenwashi.accent", "cinnabar")) {
+  :root {
+    --zenwashi-accent: light-dark(#B53D30, #C95B4E) !important;
+    --zenwashi-accent-tint: light-dark(rgba(181, 61, 48, 0.15), rgba(201, 91, 78, 0.22)) !important;
+  }
+}
+
+/* 琉璃 (Deep Indigo) · 静谧青靛 */
+@media (-moz-pref("zenwashi.accent", "indigo")) {
+  :root {
+    --zenwashi-accent: light-dark(#2B5079, #4F7EA8) !important;
+    --zenwashi-accent-tint: light-dark(rgba(43, 80, 121, 0.15), rgba(79, 126, 168, 0.22)) !important;
+  }
+}
+
+/* 山吹 (Yamabuki Gold) · 暮色秋金 */
+@media (-moz-pref("zenwashi.accent", "yamabuki")) {
+  :root {
+    --zenwashi-accent: light-dark(#B87C24, #E2A73B) !important;
+    --zenwashi-accent-tint: light-dark(rgba(184, 124, 36, 0.15), rgba(226, 167, 59, 0.22)) !important;
+  }
+}
+
+/* 浅葱 (Asagi Teal) · 浮世新水 */
+@media (-moz-pref("zenwashi.accent", "asagi")) {
+  :root {
+    --zenwashi-accent: light-dark(#2C7A7B, #4FD1C5) !important;
+    --zenwashi-accent-tint: light-dark(rgba(44, 122, 123, 0.15), rgba(79, 209, 197, 0.22)) !important;
+  }
+}
+
+/* 菖蒲 (Ayame Violet) · 幽微紫鸢 */
+@media (-moz-pref("zenwashi.accent", "ayame")) {
+  :root {
+    --zenwashi-accent: light-dark(#6B46C1, #9F7AEA) !important;
+    --zenwashi-accent-tint: light-dark(rgba(107, 70, 193, 0.15), rgba(159, 122, 234, 0.22)) !important;
+  }
+}
+
+/* 银鼠 (Silver Ink) · 极简纯墨调 */
+@media (-moz-pref("zenwashi.accent", "sumi-mono")) {
+  :root {
+    --zenwashi-accent: light-dark(#4A4641, #A8A29E) !important;
+    --zenwashi-accent-tint: light-dark(rgba(74, 70, 65, 0.15), rgba(168, 162, 158, 0.22)) !important;
+  }
+}
+
+/* Rosé Pine Dawn (薄暮玫瑰单色强调) */
+@media (-moz-pref("zenwashi.accent", "rose-pine-dawn")) {
+  :root {
+    --zenwashi-accent: light-dark(#B4637A, #EB6F92) !important;
+    --zenwashi-accent-tint: light-dark(rgba(180, 99, 122, 0.16), rgba(235, 111, 146, 0.22)) !important;
+  }
+}
+
+/* Catppuccin Latte (拿铁粉黛单色强调) */
+@media (-moz-pref("zenwashi.accent", "catppuccin-latte")) {
+  :root {
+    --zenwashi-accent: light-dark(#EA76CB, #F5C2E7) !important;
+    --zenwashi-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 194, 231, 0.22)) !important;
+  }
+}
