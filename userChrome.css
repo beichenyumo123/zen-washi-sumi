@@ -235,7 +235,7 @@ zen-folder zen-folder {
 }
 
 /* -----------------------------------------------------------------------------
-   5. High-Depth Floating Island (解耦架构：解决阴影截断与档位生效问题)
+   5. High-Depth Floating Island (坚固弹性盒架构：杜绝视口塌陷与白边缝隙)
    ----------------------------------------------------------------------------- */
 #zen-tabbox-wrapper,
 #tabbrowser-tabbox,
@@ -248,20 +248,29 @@ zen-folder zen-folder {
   overflow: visible !important;
 }
 
-/* 核心浮岛卡片 (.browserSidebarContainer) */
+/* 彻底清除视口层级全部中间容器的白色默认背景 */
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* 核心浮岛卡片 (.browserSidebarContainer)：绝对保持 Gecko XUL flex 盒模型属性，严禁 position: relative/::after */
 #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
   margin: var(--zenwashi-content-margin, 10px) !important;
   border-radius: var(--zenwashi-content-radius, 18px) !important;
-  overflow: visible !important;
-  background-color: var(--zenwashi-bg-surface, #ffffff) !important;
-  border: var(--zenwashi-content-border-width, 1.5px) solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
-  box-sizing: border-box !important;
-  /* 默认 Medium 经典立体阴影 */
+  overflow: clip !important;
+  corner-shape: round !important;
+  background-color: transparent !important;
+  outline: var(--zenwashi-content-border-width, 1.5px) solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+  outline-offset: -1px !important;
+  /* 默认 Medium 经典立体漫射阴影 */
   box-shadow: light-dark(
     0 12px 36px rgba(0, 0, 0, 0.16), 0 3px 10px rgba(0, 0, 0, 0.08),
     0 16px 44px rgba(0, 0, 0, 0.75), 0 4px 12px rgba(0, 0, 0, 0.45)
   ) !important;
-  transition: margin 0.18s ease, border-radius 0.18s ease, box-shadow 0.18s ease !important;
+  transition: margin 0.18s ease, border-radius 0.18s ease, box-shadow 0.18s ease, outline 0.18s ease !important;
 }
 
 /* 阴影各档位直接绑定 */
@@ -301,12 +310,17 @@ zen-folder zen-folder {
   }
 }
 
-/* 内部视口容器负责按圆角裁剪内容 (同步边框厚度内缩圆角) */
+/* 
+ * 内部视口容器：完全交由父级按 round clip，保持无缝填充
+ */
 #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
-#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack {
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack,
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer browser {
   overflow: clip !important;
   corner-shape: round !important;
-  border-radius: calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)) !important;
+  border-radius: var(--zenwashi-content-radius, 18px) !important;
+  background-color: transparent !important;
+  background: transparent !important;
   margin: 0 !important;
   padding: 0 !important;
 }
