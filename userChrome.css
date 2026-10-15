@@ -60,9 +60,9 @@
   --zenwashi-accent: light-dark(#376850, #4E8B6E);
   --zenwashi-accent-tint: light-dark(rgba(55, 104, 80, 0.15), rgba(78, 139, 110, 0.22));
 
-  /* 动效 */
-  --zenwashi-duration: 130ms;
-  --zenwashi-ease: cubic-bezier(0.2, 0, 0, 1);
+  /* 动效（从容温润的纸墨缓动节奏） */
+  --zenwashi-duration: 240ms;
+  --zenwashi-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* ---------------------------------------------------------------------------
      核心：深度注入 Zen 原生“编辑主题”引擎变量
@@ -151,10 +151,11 @@ zen-folder-tabs::after {
               opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
 }
 
-/* 当鼠标悬停在子项组上时，导轨微光温润加深 */
-.tab-group-container:hover::after,
-zen-folder .tab-group-tabs:hover::after,
-zen-folder-tabs:hover::after {
+/* 当鼠标悬停在子项组上，或当前文件夹内包含激活选中的标签页时，导轨温润加深为实体强调色 */
+.tab-group-container:is(:hover, :has(.tabbrowser-tab:is([selected], [selected="true"], [visuallyselected], [visuallyselected="true"], [multiselected="true"])))::after,
+zen-folder:is(:hover, [folder-active="true"], :has(.tabbrowser-tab:is([selected], [selected="true"], [visuallyselected], [visuallyselected="true"], [multiselected="true"]))) > :is(.tab-group-tabs, .tab-group-container, zen-folder-tabs)::after,
+zen-folder .tab-group-tabs:is(:hover, :has(.tabbrowser-tab:is([selected], [selected="true"], [visuallyselected], [visuallyselected="true"], [multiselected="true"])))::after,
+zen-folder-tabs:is(:hover, :has(.tabbrowser-tab:is([selected], [selected="true"], [visuallyselected], [visuallyselected="true"], [multiselected="true"])))::after {
   background: var(--zenwashi-accent) !important;
   opacity: 0.95 !important;
 }
@@ -162,6 +163,76 @@ zen-folder-tabs:hover::after {
 /* 嵌套子文件夹：在父级导轨内保持规整向内缩进 */
 zen-folder zen-folder {
   margin-left: 4px !important;
+}
+
+/* 
+ * 文件夹与固定标签页 [zen-pinned-changed="true"] 图标防错位保护：
+ * 当文件夹内的标签页发生站内跳转（如 B 站视频页自动追加参数）时，Zen 会注入 zen-pinned-changed="true"
+ * 与 --zen-original-tab-icon，并通过高优先级选择器将 .tab-icon-stack / .tab-icon-image 缩小偏移至右下角作为角标，
+ * 同时插入 .tab-reset-pin-button 与 .zen-tab-sublabel（“返回标签页”）。
+ * 此处采用 #main-window #browser #navigator-toolbox 三重 ID 最高优先级全面锁定 16x16 居中盒模型。
+ */
+#main-window #browser #navigator-toolbox .tabbrowser-tab .tab-reset-pin-button,
+#main-window #browser #navigator-toolbox .tabbrowser-tab .zen-tab-sublabel,
+#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab .tab-icon-stack::before,
+#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab .tab-icon-stack::after {
+  display: none !important;
+  content: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  margin: 0px !important;
+  padding: 0px !important;
+}
+
+#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab:is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  flex-shrink: 0 !important;
+  margin-block: 0px !important;
+  margin-inline-start: 0px !important;
+  margin-inline-end: 8px !important;
+  padding: 0px !important;
+  transform: none !important;
+  translate: none !important;
+  scale: 1 !important;
+}
+
+#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab:is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack > :is(.tab-icon-image, .tab-icon-pending) {
+  position: absolute !important;
+  inset: 0px !important;
+  top: 0px !important;
+  left: 0px !important;
+  right: 0px !important;
+  bottom: 0px !important;
+  width: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  margin: auto !important;
+  padding: 0px !important;
+  transform: none !important;
+  translate: none !important;
+  scale: 1 !important;
+}
+
+#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab:is([pinned], [zen-pinned-changed], :not([pinned])) .tab-label-container {
+  margin-inline-start: 0px !important;
+  padding-inline-start: 0px !important;
+  min-width: 0 !important;
+  transform: none !important;
+  translate: none !important;
 }
 
 /* -----------------------------------------------------------------------------
@@ -235,50 +306,66 @@ zen-folder zen-folder {
 }
 
 /* -----------------------------------------------------------------------------
-   5. High-Depth Floating Island (坚固弹性盒架构：杜绝视口塌陷与白边缝隙)
+   5. High-Depth Floating Island (零 position:relative / 零 ::after，防止 XUL Flex 坍缩，同时释放漫射大阴影)
    ----------------------------------------------------------------------------- */
+#appcontent,
+#zen-appcontent-wrapper,
 #zen-tabbox-wrapper,
-#tabbrowser-tabbox,
-#tabbrowser-tabpanels {
+#tabbrowser-tabbox {
   margin: 0 !important;
   padding: 0 !important;
+  border: none !important;
+  outline: none !important;
   background: transparent !important;
   background-color: transparent !important;
   box-shadow: none !important;
   overflow: visible !important;
 }
 
-/* 彻底清除视口层级全部中间容器的白色默认背景 */
-#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
-#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
-#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack {
-  background-color: transparent !important;
-  background: transparent !important;
-}
-
-/* 核心浮岛卡片 (.browserSidebarContainer)：绝对保持 Gecko XUL flex 盒模型属性，严禁 position: relative/::after */
-#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
+/* 
+ * 1. #tabbrowser-tabpanels 负责外边距 margin 与 overflow: visible（绝不加 position:relative 或 ::after）
+ */
+#tabbrowser-tabpanels {
   margin: var(--zenwashi-content-margin, 10px) !important;
+  padding: 0 !important;
+  border: none !important;
+  outline: none !important;
   border-radius: var(--zenwashi-content-radius, 18px) !important;
-  overflow: clip !important;
-  corner-shape: round !important;
+  background: transparent !important;
   background-color: transparent !important;
-  outline: var(--zenwashi-content-border-width, 1.5px) solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
-  outline-offset: -1px !important;
-  /* 默认 Medium 经典立体漫射阴影 */
-  box-shadow: light-dark(
-    0 12px 36px rgba(0, 0, 0, 0.16), 0 3px 10px rgba(0, 0, 0, 0.08),
-    0 16px 44px rgba(0, 0, 0, 0.75), 0 4px 12px rgba(0, 0, 0, 0.45)
-  ) !important;
-  transition: margin 0.18s ease, border-radius 0.18s ease, box-shadow 0.18s ease, outline 0.18s ease !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  transition: margin 0.24s ease, border-radius 0.24s ease !important;
 }
 
-/* 阴影各档位直接绑定 */
+/* 
+ * 2. 外层卡片 (.browserSidebarContainer) 保持原生 XUL 盒模型（零 position:relative、零 ::after 伪元素，防止宽度坍缩），
+ *    保持 overflow: visible !important，承载实体 border、同色防白边底色以及 4 档外部漫射大阴影！
+ */
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: var(--zenwashi-content-radius, 18px) !important;
+  background-color: var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+  background-clip: padding-box !important;
+  border: var(--zenwashi-content-border-width, 1.5px) solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+  outline: none !important;
+  overflow: visible !important;
+  corner-shape: round !important;
+  box-sizing: border-box !important;
+  /* 默认 Medium 经典立体漫射阴影（不在此处写 transition !important，以免覆盖第 11 节标签切换动效） */
+  box-shadow: light-dark(
+    0 10px 28px rgba(38, 36, 33, 0.18), 0 3px 10px rgba(38, 36, 33, 0.10),
+    0 14px 40px rgba(0, 0, 0, 0.78), 0 4px 14px rgba(0, 0, 0, 0.50)
+  ) !important;
+}
+
+/* 阴影各档位直接绑定到 .browserSidebarContainer */
 @media (-moz-pref("zenwashi.content.shadow", "soft")) {
   #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
     box-shadow: light-dark(
-      0 6px 20px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.05),
-      0 8px 24px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3)
+      0 5px 16px rgba(38, 36, 33, 0.12), 0 2px 6px rgba(38, 36, 33, 0.06),
+      0 8px 24px rgba(0, 0, 0, 0.58), 0 2px 8px rgba(0, 0, 0, 0.35)
     ) !important;
   }
 }
@@ -286,8 +373,8 @@ zen-folder zen-folder {
 @media (-moz-pref("zenwashi.content.shadow", "medium")) {
   #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
     box-shadow: light-dark(
-      0 12px 36px rgba(0, 0, 0, 0.16), 0 3px 10px rgba(0, 0, 0, 0.08),
-      0 16px 44px rgba(0, 0, 0, 0.75), 0 4px 12px rgba(0, 0, 0, 0.45)
+      0 10px 28px rgba(38, 36, 33, 0.18), 0 3px 10px rgba(38, 36, 33, 0.10),
+      0 14px 40px rgba(0, 0, 0, 0.78), 0 4px 14px rgba(0, 0, 0, 0.50)
     ) !important;
   }
 }
@@ -295,8 +382,8 @@ zen-folder zen-folder {
 @media (-moz-pref("zenwashi.content.shadow", "strong")) {
   #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
     box-shadow: light-dark(
-      0 18px 52px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.10),
-      0 22px 60px rgba(0, 0, 0, 0.85), 0 6px 16px rgba(0, 0, 0, 0.55)
+      0 14px 38px rgba(38, 36, 33, 0.26), 0 5px 14px rgba(38, 36, 33, 0.15),
+      0 20px 54px rgba(0, 0, 0, 0.88), 0 6px 18px rgba(0, 0, 0, 0.62)
     ) !important;
   }
 }
@@ -304,21 +391,40 @@ zen-folder zen-folder {
 @media (-moz-pref("zenwashi.content.shadow", "deep")) {
   #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
     box-shadow: light-dark(
-      0 26px 72px rgba(0, 0, 0, 0.28), 0 6px 20px rgba(0, 0, 0, 0.12),
-      0 30px 80px rgba(0, 0, 0, 0.95), 0 8px 24px rgba(0, 0, 0, 0.65)
+      0 18px 48px rgba(38, 36, 33, 0.36), 0 6px 18px rgba(38, 36, 33, 0.22), 0 0 12px rgba(38, 36, 33, 0.12),
+      0 26px 68px rgba(0, 0, 0, 0.96), 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 16px rgba(0, 0, 0, 0.50)
     ) !important;
   }
 }
 
 /* 
- * 内部视口容器：完全交由父级按 round clip，保持无缝填充
+ * 3. 内层视口容器 (.browserContainer) 专门负责 overflow: clip 圆角裁切，
+ *    并通过 outline-offset: -0.5px 内压边消除 45° 拐角抗锯齿白缝（无需 ::after 伪元素，彻底杜绝 XUL 布局坍缩）！
  */
-#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
-#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack,
-#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer browser {
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
   overflow: clip !important;
   corner-shape: round !important;
-  border-radius: var(--zenwashi-content-radius, 18px) !important;
+  border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) - 1px)) !important;
+  outline: 1px solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+  outline-offset: -0.5px !important;
+  background-color: var(--zenwashi-bg-surface) !important;
+}
+
+@media (-moz-pref("zenwashi.content.border", "none")) {
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer {
+    outline: none !important;
+  }
+}
+
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) .browserStack,
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) browser {
+  overflow: clip !important;
+  corner-shape: round !important;
+  border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) - 1px)) !important;
   background-color: transparent !important;
   background: transparent !important;
   margin: 0 !important;
@@ -326,19 +432,29 @@ zen-folder zen-folder {
 }
 
 /* 全屏状态还原平铺 */
-:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
-:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer {
+:root[inFullscreen] #tabbrowser-tabpanels,
+:root[inDOMFullscreen] #tabbrowser-tabpanels {
   margin: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   outline: none !important;
+  border: none !important;
 }
 
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
 :root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
-:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer {
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack,
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer browser,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer browser {
+  margin: 0 !important;
   border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
 }
-
 
 /* 视口边框粗细档位 (zenwashi.content.border) */
 @media (-moz-pref("zenwashi.content.border", "none")) {
@@ -414,15 +530,18 @@ zen-folder zen-folder {
   background: none !important;
 }
 
-/* 普通标签页微调边距与圆角 */
+/* 普通标签页微调边距与圆角（排除 [closing] 状态以免覆盖折卷收拢关键帧动效） */
 .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) {
   border-radius: var(--zenwashi-tab-radius, 8px) !important;
   box-shadow: none !important;
-  transform: none !important;
   margin-inline: 4px !important;
-  margin-block: 1px !important;
   color: var(--zenwashi-fg-secondary) !important;
   transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):not([closing]) {
+  transform: none !important;
+  margin-block: 1px !important;
 }
 
 .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) .tab-background {
@@ -468,7 +587,7 @@ zen-folder zen-folder {
 }
 
 /* -----------------------------------------------------------------------------
-   7. Essentials: 纯净微卡片与高辨识度选中态（零破坏原生网格尺寸）
+   7. Essentials: 已加载/未加载分层纸阶 + 温润低亮和纸底 + 落款印记（零破坏原生网格尺寸）
    ----------------------------------------------------------------------------- */
 #zen-essentials-container,
 #zen-essentials {
@@ -485,90 +604,187 @@ zen-folder zen-folder {
 
 /* 
  * 绝不对 #zen-essentials、.zen-essentials-container、tabbrowser-tab 加任何 width/margin/padding！
- * 仅统一圆角，完全保留 Zen 原生的列宽分配与右侧安全边距。
+ * 仅统一圆角，将已加载与未加载的视觉层次全部交由内部 .tab-background 与 .tab-icon-image 呈现。
  */
-#zen-essentials-container .tabbrowser-tab,
-#zen-essentials .tabbrowser-tab,
-.zen-essentials-container .tabbrowser-tab,
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab,
 .tabbrowser-tab[zen-essential="true"] {
   border-radius: var(--zenwashi-essentials-radius, 8px) !important;
   box-shadow: none !important;
   transform: none !important;
-}
-
-/* 常态微卡片：只在 .tab-background 内部渲染轻量底色与边框，尺寸不外扩、不裁切 */
-#zen-essentials-container .tabbrowser-tab .tab-background,
-#zen-essentials .tabbrowser-tab .tab-background,
-.zen-essentials-container .tabbrowser-tab .tab-background,
-.tabbrowser-tab[zen-essential="true"] .tab-background {
-  border-radius: var(--zenwashi-essentials-radius, 8px) !important;
-  border: 1px solid light-dark(rgba(60, 52, 42, 0.08), rgba(245, 242, 235, 0.08)) !important;
-  background-image: none !important;
-  background-color: light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.06)) !important;
-  box-shadow: none !important;
-  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
-              border-color var(--zenwashi-duration) var(--zenwashi-ease),
-              box-shadow var(--zenwashi-duration) var(--zenwashi-ease) !important;
-}
-
-#zen-essentials-container .tabbrowser-tab .tab-icon-image,
-#zen-essentials .tabbrowser-tab .tab-icon-image,
-.zen-essentials-container .tabbrowser-tab .tab-icon-image,
-.tabbrowser-tab[zen-essential="true"] .tab-icon-image {
-  opacity: 0.88 !important;
-  transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
-}
-
-/* 悬停态：微浮雕反馈 */
-#zen-essentials-container .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
-#zen-essentials .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
-.zen-essentials-container .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
-.tabbrowser-tab[zen-essential="true"]:hover:not([selected]):not([visuallyselected]) .tab-background {
-  background-color: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.12)) !important;
-  border-color: light-dark(rgba(60, 52, 42, 0.16), rgba(245, 242, 235, 0.14)) !important;
-  box-shadow: light-dark(0 1px 3px rgba(60, 52, 42, 0.06), 0 2px 5px rgba(0, 0, 0, 0.25)) !important;
-}
-
-#zen-essentials-container .tabbrowser-tab:hover .tab-icon-image,
-#zen-essentials .tabbrowser-tab:hover .tab-icon-image,
-.zen-essentials-container .tabbrowser-tab:hover .tab-icon-image,
-.tabbrowser-tab[zen-essential="true"]:hover .tab-icon-image {
   opacity: 1 !important;
 }
 
-/* 选中态：高辨识度实体微卡片 + 矿物强调色边框与呼吸浮雕 */
-#zen-essentials-container .tabbrowser-tab[selected="true"] .tab-background,
-#zen-essentials-container .tabbrowser-tab[selected] .tab-background,
-#zen-essentials-container .tabbrowser-tab[visuallyselected] .tab-background,
-#zen-essentials .tabbrowser-tab[selected="true"] .tab-background,
-#zen-essentials .tabbrowser-tab[selected] .tab-background,
-#zen-essentials .tabbrowser-tab[visuallyselected] .tab-background,
-.zen-essentials-container .tabbrowser-tab[selected="true"] .tab-background,
-.zen-essentials-container .tabbrowser-tab[selected] .tab-background,
-.zen-essentials-container .tabbrowser-tab[visuallyselected] .tab-background,
-.tabbrowser-tab[zen-essential="true"][selected="true"] .tab-background,
-.tabbrowser-tab[zen-essential="true"][selected] .tab-background,
-.tabbrowser-tab[zen-essential="true"][visuallyselected] .tab-background {
-  background-color: light-dark(#FFFFFF, rgba(255, 255, 255, 0.20)) !important;
+/* 
+ * 7.1 已加载常态（Loaded Idle State）：
+ * 告别刺眼纯白 (#FFFFFF)，采用柔和护眼的暖和纸微暗色阶，
+ * 搭配清晰的细墨边与 1.5px 纸厚微立体底边，温润不晃眼。
+ */
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab .tab-background,
+.tabbrowser-tab[zen-essential="true"] .tab-background {
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: var(--zenwashi-essentials-radius, 8px) !important;
+  border: 1px solid light-dark(rgba(60, 52, 42, 0.15), rgba(245, 242, 235, 0.14)) !important;
+  background-color: light-dark(rgba(60, 52, 42, 0.045), rgba(255, 255, 255, 0.06)) !important;
+  background-image: linear-gradient(
+    180deg,
+    light-dark(rgba(255, 253, 248, 0.45), rgba(255, 255, 255, 0.03)) 0%,
+    transparent 100%
+  ) !important;
+  box-shadow: light-dark(
+    0 1.5px 0 rgba(60, 52, 42, 0.10), 0 1px 3px rgba(60, 52, 42, 0.04),
+    0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
+  ) !important;
+  transition: background-color 0.28s var(--zenwashi-ease),
+              border-color 0.28s var(--zenwashi-ease),
+              box-shadow 0.28s var(--zenwashi-ease),
+              opacity 0.28s var(--zenwashi-ease) !important;
+}
+
+/* 
+ * 底部状态印记（.tab-background::after）：
+ * 已加载的卡片底部常驻一枚 5px 宽的温润小印点（即便像 GitHub/抖音这种黑白图标也能一眼认出已加载）；
+ * 未加载时完全隐藏；激活选中时舒展为 14px 矿物色落款横印。
+ */
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab .tab-background::after,
+.tabbrowser-tab[zen-essential="true"] .tab-background::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  bottom: 3px !important;
+  left: 50% !important;
+  width: 5px !important;
+  height: 2px !important;
+  border-radius: 999px !important;
+  background-color: var(--zenwashi-accent) !important;
+  opacity: 0.50 !important;
+  transform: translateX(-50%) scaleX(1) !important;
+  pointer-events: none !important;
+  transition: opacity 0.28s var(--zenwashi-ease),
+              width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              height 0.28s var(--zenwashi-ease),
+              transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.28s var(--zenwashi-ease) !important;
+}
+
+/* 已加载的网站图标：100% 保持鲜明原彩（如 DeepSeek 保持清晰蓝色），绝不置灰 */
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"] .tab-icon-image {
+  opacity: 0.96 !important;
+  filter: none !important;
+  transform: scale(1) translateY(0) !important;
+  transform-origin: center center !important;
+  transition: filter 0.34s var(--zenwashi-ease),
+              opacity 0.34s var(--zenwashi-ease),
+              transform 0.34s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* 
+ * 7.2 未加载 / 休眠态（Unloaded / Pending & Discarded State）：
+ * 卡片贴合纸面（无凸起底边、弱化浅边），图标收敛为淡墨水墨调 (grayscale + 低不透明度)，
+ * 底部小印点隐藏，与“已加载”形成一眼可辨的层级区分。
+ */
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background,
+.tabbrowser-tab[zen-essential="true"]:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background {
+  background-color: light-dark(rgba(60, 52, 42, 0.02), rgba(255, 255, 255, 0.02)) !important;
+  background-image: none !important;
+  border-color: light-dark(rgba(60, 52, 42, 0.08), rgba(245, 242, 235, 0.06)) !important;
+  box-shadow: none !important;
+}
+
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background::after,
+.tabbrowser-tab[zen-essential="true"]:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background::after {
+  opacity: 0 !important;
+  width: 0px !important;
+}
+
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"]:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-icon-image {
+  opacity: 0.42 !important;
+  filter: grayscale(92%) contrast(1.05) !important;
+  transform: scale(0.94) !important;
+}
+
+@media (-moz-pref("zenwashi.essentials.ink-icons", false)) {
+  :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-icon-image,
+  .tabbrowser-tab[zen-essential="true"]:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-icon-image {
+    filter: none !important;
+    opacity: 0.48 !important;
+  }
+}
+
+/* ---------------- 7.3 悬停态：温润浮起 + 唤醒原彩 ---------------- */
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
+.tabbrowser-tab[zen-essential="true"]:hover:not([selected]):not([visuallyselected]) .tab-background {
+  background-color: light-dark(#FAF8F3, #24272E) !important;
+  border-color: color-mix(in srgb, var(--zenwashi-accent) 55%, transparent) !important;
+  box-shadow: light-dark(
+    0 2.5px 0 var(--zenwashi-accent-tint), 0 4px 10px rgba(60, 52, 42, 0.08),
+    0 2.5px 0 rgba(0, 0, 0, 0.65), 0 5px 12px rgba(0, 0, 0, 0.45)
+  ) !important;
+}
+
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background::after,
+.tabbrowser-tab[zen-essential="true"]:hover:not([selected]):not([visuallyselected]) .tab-background::after {
+  opacity: 0.70 !important;
+  width: 9px !important;
+  transform: translateX(-50%) scaleX(1) !important;
+}
+
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"]:hover .tab-icon-image {
+  opacity: 1 !important;
+  filter: grayscale(0%) contrast(1.04) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.10)) !important;
+  transform: scale(1.14) translateY(-1px) !important;
+}
+
+/* ---------------- 7.4 按下态：真实活字印石按压下沉反馈 ---------------- */
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:active .tab-background,
+.tabbrowser-tab[zen-essential="true"]:active .tab-background {
+  box-shadow: light-dark(
+    0 0px 0 rgba(60, 52, 42, 0.10), inset 0 1px 3px rgba(60, 52, 42, 0.12),
+    0 0px 0 rgba(0, 0, 0, 0.40), inset 0 1px 4px rgba(0, 0, 0, 0.45)
+  ) !important;
+  transition-duration: 0.10s !important;
+}
+
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:active .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"]:active .tab-icon-image {
+  transform: scale(0.95) translateY(1px) !important;
+  transition-duration: 0.10s !important;
+}
+
+/* ---------------- 7.5 选中态：暖熟宣卡片 + 矿物色印框 + 14px 落款横印 ---------------- */
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected="true"], [selected], [visuallyselected]) .tab-background,
+.tabbrowser-tab[zen-essential="true"]:is([selected="true"], [selected], [visuallyselected]) .tab-background {
+  background-color: light-dark(#FCFBF7, #272A32) !important;
+  background-image: linear-gradient(
+    145deg,
+    light-dark(rgba(255, 253, 248, 0.85), rgba(255, 255, 255, 0.06)) 20%,
+    var(--zenwashi-accent-tint) 120%
+  ) !important;
   border-color: var(--zenwashi-accent) !important;
   outline: 1.5px solid var(--zenwashi-accent-tint) !important;
   outline-offset: -1px !important;
-  box-shadow: light-dark(0 2px 6px rgba(60, 52, 42, 0.10), 0 2px 8px rgba(0, 0, 0, 0.35)) !important;
+  box-shadow: light-dark(
+    0 2px 0 var(--zenwashi-accent), 0 4px 10px rgba(60, 52, 42, 0.10),
+    0 2px 0 var(--zenwashi-accent), 0 4px 12px rgba(0, 0, 0, 0.48)
+  ) !important;
 }
 
-#zen-essentials-container .tabbrowser-tab[selected="true"] .tab-icon-image,
-#zen-essentials-container .tabbrowser-tab[selected] .tab-icon-image,
-#zen-essentials-container .tabbrowser-tab[visuallyselected] .tab-icon-image,
-#zen-essentials .tabbrowser-tab[selected="true"] .tab-icon-image,
-#zen-essentials .tabbrowser-tab[selected] .tab-icon-image,
-#zen-essentials .tabbrowser-tab[visuallyselected] .tab-icon-image,
-.zen-essentials-container .tabbrowser-tab[selected="true"] .tab-icon-image,
-.zen-essentials-container .tabbrowser-tab[selected] .tab-icon-image,
-.zen-essentials-container .tabbrowser-tab[visuallyselected] .tab-icon-image,
-.tabbrowser-tab[zen-essential="true"][selected="true"] .tab-icon-image,
-.tabbrowser-tab[zen-essential="true"][selected] .tab-icon-image,
-.tabbrowser-tab[zen-essential="true"][visuallyselected] .tab-icon-image {
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected="true"], [selected], [visuallyselected]) .tab-background::after,
+.tabbrowser-tab[zen-essential="true"]:is([selected="true"], [selected], [visuallyselected]) .tab-background::after {
+  opacity: 0.95 !important;
+  width: 14px !important;
+  height: 2.5px !important;
+  transform: translateX(-50%) scaleX(1) !important;
+}
+
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected="true"], [selected], [visuallyselected]) .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"]:is([selected="true"], [selected], [visuallyselected]) .tab-icon-image {
   opacity: 1 !important;
+  filter: grayscale(0%) contrast(1.05) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12)) !important;
+  transform: scale(1.08) translateY(-1px) !important;
 }
 
 /* 侧边栏按钮 */
@@ -591,16 +807,545 @@ zen-folder zen-folder {
 }
 
 /* -----------------------------------------------------------------------------
-   8. Sleeping Tabs (墨迹微褪)
+   8. Sleeping Tabs (墨迹微褪 · 严格排除所有 Essentials 容器)
    ----------------------------------------------------------------------------- */
 @media not (-moz-pref("zenwashi.tab.sleep-fade", false)) {
-  .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[discarded="true"],
-  .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[pending] {
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([closing]) {
     opacity: 0.6 !important;
     transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
   }
 
-  .tabbrowser-tab:not([discarded="true"]):not([pending]) {
+  .tabbrowser-tab:not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]):not([closing]) {
+    opacity: 1 !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   9. Capsule Pill Separators & Indicators (圆角胶囊横条分隔线与指示器)
+   ----------------------------------------------------------------------------- */
+
+/* ---------------- 9.1 固定标签页与常规标签页之间的分隔栏 ---------------- */
+.pinned-tabs-container-separator {
+  margin-inline: 8px !important;
+  margin-block: 6px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  position: relative !important;
+  isolation: isolate !important;
+}
+
+/* 胶囊横条主体：圆角微光胶囊药丸横线 */
+.pinned-tabs-container-separator toolbarseparator,
+.pinned-tabs-container-separator > toolbarseparator {
+  appearance: none !important;
+  border: none !important;
+  height: 3px !important;
+  min-height: 3px !important;
+  max-height: 3px !important;
+  border-radius: 9999px !important;
+  background-color: var(--zenwashi-border-distinct) !important;
+  opacity: 0.65 !important;
+  margin: 0 !important;
+  flex: 1 1 auto !important;
+  position: relative !important;
+  z-index: 1 !important;
+  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
+              opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 悬停整行时横线微微高亮 */
+.pinned-tabs-container-separator:hover toolbarseparator {
+  background-color: var(--zenwashi-accent-tint) !important;
+  opacity: 0.9 !important;
+}
+
+/* 
+ * 右侧“清除”按钮：
+ * 1. 强制常驻显示（覆盖原生仅在侧边栏 hover 时显现的逻辑）；
+ * 2. 背景设置实色/高不透明度表面色 (--zenwashi-bg-surface / 混合色)，
+ *    杜绝底层任何贯穿横线透过按钮半透明材质映出来；
+ * 3. 显式提升 z-index，完全压制下层任何原生线条。
+ */
+.pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
+#titlebar .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
+#TabsToolbar .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button {
+  appearance: none !important;
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 2 !important;
+  flex-shrink: 0 !important;
+  border-radius: 9999px !important;
+  padding: 2px 9px !important;
+  margin-left: 6px !important;
+  font-size: 11px !important;
+  /* 采用实色和纸卡片表面色叠加轻微微光，确保遮蔽底层透射 */
+  background: var(--zenwashi-bg-surface) !important;
+  background-color: var(--zenwashi-bg-surface) !important;
+  box-shadow: 0 1px 3px light-dark(rgba(0,0,0,0.06), rgba(0,0,0,0.25)),
+              0 0 0 1px light-dark(rgba(60, 52, 42, 0.08), rgba(245, 242, 235, 0.12)) !important;
+  color: var(--zenwashi-fg-secondary) !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
+              color var(--zenwashi-duration) var(--zenwashi-ease),
+              box-shadow var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 内部图标与“清除”文字标签强制保持常驻可见 */
+.pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button .toolbarbutton-icon,
+.pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button .toolbarbutton-text {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+
+.pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button:hover {
+  background-color: var(--zenwashi-accent-tint) !important;
+  color: var(--zenwashi-accent) !important;
+  box-shadow: 0 1px 4px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.3)),
+              0 0 0 1px var(--zenwashi-accent) !important;
+}
+
+/* ---------------- 9.2 侧边栏底部溢出/滚动条胶囊指示条 ---------------- */
+
+/* 隐藏原生生硬切割在底部的粗暴横线与背景渐变 */
+.workspace-arrowscrollbox[overflowing],
+#tabbrowser-arrowscrollbox[overflowing] {
+  --zen-scrollbar-overflow-background: transparent !important;
+  background: transparent !important;
+}
+
+/* 去除原生破坏视觉的生硬伪元素横线 */
+.workspace-arrowscrollbox[overflowing]::before,
+.workspace-arrowscrollbox[overflowing]::after,
+#tabbrowser-arrowscrollbox[overflowing]::before,
+#tabbrowser-arrowscrollbox[overflowing]::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* 隐藏原生在滚动盒底部的箭头按钮背景，重塑为极简圆润药丸胶囊 */
+.workspace-arrowscrollbox autorepeatbutton,
+#tabbrowser-arrowscrollbox autorepeatbutton {
+  border: none !important;
+  background: transparent !important;
+  color: var(--zenwashi-fg-muted) !important;
+  opacity: 0.6 !important;
+  transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+.workspace-arrowscrollbox autorepeatbutton:hover,
+#tabbrowser-arrowscrollbox autorepeatbutton:hover {
+  opacity: 1 !important;
+  color: var(--zenwashi-accent) !important;
+}
+
+/* 底部标签页间距垫块：避免内容直接撞上底部工具栏 */
+.workspace-arrowscrollbox .closing-tabs-spacer,
+#tabbrowser-arrowscrollbox .closing-tabs-spacer {
+  height: 8px !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+
+/* -----------------------------------------------------------------------------
+   10. Refined Tab Close Button & Closing Animation (朱砂点印关闭微交互与折卷收拢动效)
+   ----------------------------------------------------------------------------- */
+
+:root {
+  /* 朱砂点印 (Cinnabar Seal) 专属色彩 Token */
+  --zenwashi-seal-red: light-dark(#B53D30, #D96557);
+  --zenwashi-seal-bg: light-dark(rgba(181, 61, 48, 0.13), rgba(217, 101, 87, 0.20));
+  --zenwashi-seal-border: light-dark(rgba(181, 61, 48, 0.28), rgba(217, 101, 87, 0.35));
+  --zenwashi-seal-active-bg: light-dark(rgba(181, 61, 48, 0.24), rgba(217, 101, 87, 0.32));
+}
+
+/* ---------------- 10.1 朱砂点印关闭按钮与重置按钮 (Cinnabar Seal) ---------------- */
+
+/* 隐藏左侧重叠在网站图标上的 .tab-reset-pin-button，避免破坏文件夹与固定标签页的图文排版 */
+.tabbrowser-tab .tab-reset-pin-button {
+  display: none !important;
+}
+
+/* 常态下完全隐藏右侧关闭与重置按钮（含选中标签页），保持和纸侧栏纯净留白 */
+.tabbrowser-tab .tab-close-button,
+.tabbrowser-tab .tab-reset-button {
+  appearance: none !important;
+  border-radius: 4px !important; /* 微圆角方印造型 */
+  opacity: 0 !important;
+  pointer-events: none !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  padding: 3px !important;
+  margin-inline-end: 2px !important;
+  width: 18px !important;
+  height: 18px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 5 !important;
+  color: var(--zenwashi-fg-secondary) !important;
+  fill: currentColor !important;
+  transform: scale(0.90) !important;
+  transform-origin: center center !important;
+  transition: opacity 0.26s var(--zenwashi-ease),
+              transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.26s var(--zenwashi-ease),
+              box-shadow 0.26s var(--zenwashi-ease),
+              color 0.26s var(--zenwashi-ease) !important;
+}
+
+/* 仅在鼠标悬停于标签页上时，按钮温润浮现 */
+.tabbrowser-tab:hover .tab-close-button,
+.tabbrowser-tab:hover .tab-reset-button {
+  opacity: 0.58 !important;
+  pointer-events: auto !important;
+  transform: scale(1) !important;
+}
+
+/* 鼠标移入按钮自身：化作一枚朱砂方印（淡朱砂印泥底 + 细印框 + 朱砂红叉号） */
+.tabbrowser-tab .tab-close-button:hover,
+.tabbrowser-tab .tab-reset-button:hover,
+.tabbrowser-tab .tab-close-button:hover > .toolbarbutton-icon,
+.tabbrowser-tab .tab-reset-button:hover > .toolbarbutton-icon {
+  opacity: 1 !important;
+  -moz-context-properties: fill, fill-opacity !important;
+  fill: var(--zenwashi-seal-red) !important;
+  fill-opacity: 1 !important;
+  color: var(--zenwashi-seal-red) !important;
+}
+
+.tabbrowser-tab .tab-close-button:hover,
+.tabbrowser-tab .tab-reset-button:hover {
+  transform: scale(1.08) !important;
+  background-color: var(--zenwashi-seal-bg) !important;
+  box-shadow: inset 0 0 0 1px var(--zenwashi-seal-border) !important;
+}
+
+/* 点击落印反馈：微沉下压，印泥加深 */
+.tabbrowser-tab .tab-close-button:active,
+.tabbrowser-tab .tab-reset-button:active {
+  transform: scale(0.90) !important;
+  background-color: var(--zenwashi-seal-active-bg) !important;
+  box-shadow: inset 0 0 0 1px var(--zenwashi-seal-red) !important;
+  transition-duration: 0.12s !important;
+}
+
+/* 侧边栏折叠窄模式（Collapsed）下的布局修正 */
+:root:not([zen-single-toolbar="true"]):not([zen-sidebar-expanded="true"]) .tabbrowser-tab .tab-close-button {
+  margin-inline-end: 0 !important;
+}
+
+/* ---------------- 10.2 预备关闭态：墨迹微褪与朱砂微晕 ---------------- */
+
+/* 悬停关闭按钮时，标签文字与图标墨色从容微褪并轻微内敛，给予清晰预判 */
+.tabbrowser-tab .tab-label-container,
+.tabbrowser-tab .tab-icon-image {
+  transition: opacity 0.28s var(--zenwashi-ease),
+              transform 0.28s var(--zenwashi-ease) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):has(.tab-close-button:hover, .tab-reset-button:hover) .tab-label-container,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):has(.tab-close-button:hover, .tab-reset-button:hover) .tab-icon-image {
+  opacity: 0.42 !important;
+  transform: translateX(-3px) !important;
+}
+
+/* 卡片右侧泛起极淡的朱砂印泥渐变晕染 */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):has(.tab-close-button:hover, .tab-reset-button:hover) .tab-background {
+  background-image: linear-gradient(
+    to left,
+    var(--zenwashi-seal-bg) 0%,
+    transparent 48%
+  ) !important;
+  border-color: var(--zenwashi-seal-border) !important;
+}
+
+/* ---------------- 10.3 标签页关闭离场：折卷收拢 (Washi Fold) ---------------- */
+
+/* 沿顶部水平轴从容折卷收拢 (0.38s)，让三维纸张折痕与纵向收拢清晰可感 */
+.tabbrowser-tab[closing] {
+  animation: zenwashiTabFold 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  transform-origin: center top !important;
+  pointer-events: none !important;
+  overflow: clip !important;
+  will-change: transform, opacity, max-height, margin-block !important;
+}
+
+.tabbrowser-tab[closing] .tab-stack,
+.tabbrowser-tab[closing] .tab-background,
+.tabbrowser-tab[closing] .tab-content {
+  transform-origin: center top !important;
+}
+
+@keyframes zenwashiTabFold {
+  0% {
+    opacity: 1;
+    transform: perspective(420px) rotateX(0deg) scaleY(1) scaleX(1);
+    max-height: 36px;
+    margin-block: 1px;
+  }
+  45% {
+    opacity: 0.42;
+    transform: perspective(420px) rotateX(-20deg) scaleY(0.68) scaleX(0.96);
+  }
+  100% {
+    opacity: 0;
+    transform: perspective(420px) rotateX(-40deg) scaleY(0.08) scaleX(0.92);
+    max-height: 0px;
+    min-height: 0px;
+    padding-block: 0px;
+    margin-block: 0px;
+    border-width: 0px;
+  }
+}
+
+
+/* -----------------------------------------------------------------------------
+   11. Viewport Tab Switch Animations (多模式标签页切换动效体系)
+   ----------------------------------------------------------------------------- */
+
+/* 
+ * 默认基础动效 (Default):
+ * 从 0.2s 延长至 0.42s 温润阻尼缓动，并显式包含 filter 与 transform 过渡，
+ * 以便与第 12 节的加载「宣纸微敛」和地址栏「画卷退景」无缝共用同一合成层。
+ */
+#tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  transform-origin: center center !important;
+  transition: all 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  scale: 0.972 !important;
+  opacity: 1;
+}
+
+#tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  scale: 1 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* ================= 模式 2: Bounce Smooth (弹簧果冻轻柔回弹) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 2)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: all 0.58s cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 0.42s ease-out !important;
+    scale: 0.95 !important;
+    opacity: 1;
+    filter: blur(0) !important;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    scale: 1 !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* ================= 模式 3: Bounce Up (上浮滑入) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 3)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: all 0.42s cubic-bezier(0.3, 0.6, 0.3, 1.2),
+                filter 0.42s ease !important;
+    scale: 0.978 !important;
+    transform: translateY(12px);
+    opacity: 1;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    scale: 1 !important;
+    transform: none;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* ================= 模式 4: Crossfade (交叉溶解淡入淡出) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 4)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: all 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.42s ease !important;
+    opacity: 0 !important;
+    scale: 0.972 !important;
+    position: absolute !important;
+    inset: 0;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 1;
+  }
+}
+
+/* ================= 模式 5: Zoom Out (景深模糊对焦) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 5)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: scale(1.05);
+    filter: blur(15px);
+    opacity: 1;
+    transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.38s ease !important;
+    will-change: transform, filter, opacity;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: scale(1);
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* ================= 模式 0: No Animation (静态无动效) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 0)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: filter 0.42s ease, transform 0.42s ease, opacity 0.42s ease !important;
+    scale: 1 !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    scale: 1 !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* ================= 分屏保护 ================= */
+#tabbrowser-tabpanels[zen-split-view="true"] > hbox {
+  transition: none !important;
+  transform: none !important;
+  scale: 1 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+
+/* -----------------------------------------------------------------------------
+   12. URL Bar Scroll Receding & Page Loading Veil (地址栏「画卷退景」与页面加载「宣纸微敛」)
+   ----------------------------------------------------------------------------- */
+
+/* ---------------- 12.1 地址栏面板本体与候选列表阶梯入场 ---------------- */
+
+#urlbar[open] #urlbar-background {
+  border-radius: 12px !important;
+  background-color: var(--zenwashi-bg-urlbar) !important;
+  border: 1.5px solid var(--zenwashi-accent) !important;
+  outline: none !important;
+  box-shadow: light-dark(
+    0 18px 44px rgba(38, 36, 33, 0.16), 0 4px 14px rgba(38, 36, 33, 0.08),
+    0 22px 54px rgba(0, 0, 0, 0.72), 0 6px 18px rgba(0, 0, 0, 0.48)
+  ), 0 0 0 3px var(--zenwashi-accent-tint) !important;
+  transition: box-shadow 0.36s var(--zenwashi-ease),
+              border-color 0.36s var(--zenwashi-ease) !important;
+}
+
+.urlbarView-row {
+  border-radius: 8px !important;
+  transition: background-color 0.22s var(--zenwashi-ease) !important;
+}
+
+.urlbarView-row[selected] {
+  background-color: var(--zenwashi-accent-tint) !important;
+  color: var(--zenwashi-fg-primary) !important;
+}
+
+@keyframes zenwashiUrlbarRowIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#urlbar-results .urlbarView-row {
+  opacity: 0;
+  animation: zenwashiUrlbarRowIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
+#urlbar-results .urlbarView-row:nth-child(1) { animation-delay: 0.00s !important; }
+#urlbar-results .urlbarView-row:nth-child(2) { animation-delay: 0.04s !important; }
+#urlbar-results .urlbarView-row:nth-child(3) { animation-delay: 0.08s !important; }
+#urlbar-results .urlbarView-row:nth-child(4) { animation-delay: 0.12s !important; }
+#urlbar-results .urlbarView-row:nth-child(5) { animation-delay: 0.16s !important; }
+#urlbar-results .urlbarView-row:nth-child(n+6) { animation-delay: 0.20s !important; }
+
+/* ---------------- 12.2 网页合成层硬件加速基底 ---------------- */
+
+browser {
+  transform: translateZ(0);
+}
+
+/* ---------------- 12.3 页面加载效果：宣纸微敛 (zenwashi.content.loading) ---------------- */
+
+/* 
+ * 直接作用于 #tabbrowser-tabpanels > hbox.deck-selected (即 .browserSidebarContainer.deck-selected)，
+ * 与 Zen-Nebula 及第 11 节保持完全相同的渲染层级，确保 WebRender 的 filter: blur 与 transform 100% 生效！
+ * 默认档位 (subtle)：宣纸微敛
+ */
+:root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  transform: scale(0.976) !important;
+  filter: blur(7px) brightness(0.90) saturate(0.85) !important;
+  opacity: 0.84 !important;
+  transition-delay: 0.12s !important;
+}
+
+/* 档位 deep：宣纸深敛 (强景深柔焦) */
+@media (-moz-pref("zenwashi.content.loading", "deep")), (-moz-pref("zenwashi.tab.loading-animation", 2)) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: scale(0.958) !important;
+    filter: blur(15px) brightness(0.80) saturate(0.75) !important;
+    opacity: 0.72 !important;
+    transition-delay: 0.10s !important;
+  }
+}
+
+/* 档位 ink：水墨未干 (去色水墨还色) */
+@media (-moz-pref("zenwashi.content.loading", "ink")), (-moz-pref("zenwashi.tab.loading-animation", 3)) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: scale(0.976) !important;
+    filter: grayscale(92%) blur(4px) brightness(0.88) !important;
+    opacity: 0.80 !important;
+    transition-delay: 0.10s !important;
+  }
+}
+
+/* 档位 off：关闭加载动效 */
+@media (-moz-pref("zenwashi.content.loading", "off")), (-moz-pref("zenwashi.tab.loading-animation", 0)) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* ---------------- 12.4 地址栏展开时的底层「画卷退景」(zenwashi.urlbar.recede) ---------------- */
+
+:root:not([inFullscreen]):not([inDOMFullscreen]) #browser:has(#urlbar[open]) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  transform: scale(0.976) !important;
+  filter: blur(8px) brightness(0.88) saturate(0.85) !important;
+  opacity: 0.88 !important;
+  transition-delay: 0s !important;
+}
+
+@media (-moz-pref("zenwashi.urlbar.recede", "off")), (-moz-pref("zenwashi.urlbar.animation", 0)) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]) #browser:has(#urlbar[open]) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: none !important;
+    filter: none !important;
     opacity: 1 !important;
   }
 }

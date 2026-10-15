@@ -204,9 +204,88 @@
   },
   {
     "type": "checkbox",
+    "property": "zenwashi.essentials.ink-icons",
+    "label": "Essentials ink sleeping state 未加载项呈淡墨水墨调 (已加载保持原彩)",
+    "defaultValue": true
+  },
+  {
+    "type": "checkbox",
     "property": "zenwashi.tab.sleep-fade",
     "label": "Fade sleeping tabs 墨迹微褪 (休眠标签淡化)",
     "defaultValue": true
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.tab.switch-animation",
+    "label": "Tab Switch Animation 标签页切换动效",
+    "defaultValue": 1,
+    "options": [
+      {
+        "label": "No Animation",
+        "value": 0
+      },
+      {
+        "label": "Default",
+        "value": 1
+      },
+      {
+        "label": "Bounce Up",
+        "value": 3
+      },
+      {
+        "label": "Bounce Smooth",
+        "value": 2
+      },
+      {
+        "label": "Crossfade",
+        "value": 4
+      },
+      {
+        "label": "Zoom Out",
+        "value": 5
+      }
+    ],
+    "value": "number"
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.content.loading",
+    "label": "Tab Loading Effect 页面加载动效 (宣纸微敛)",
+    "defaultValue": "subtle",
+    "options": [
+      {
+        "value": "off",
+        "label": "Off 关闭加载动效"
+      },
+      {
+        "value": "subtle",
+        "label": "Subtle Washi Veil 宣纸微敛 (Default)"
+      },
+      {
+        "value": "deep",
+        "label": "Deep Washi Veil 宣纸深敛 (强景深柔焦)"
+      },
+      {
+        "value": "ink",
+        "label": "Sumi Ink Wash 水墨未干 (去色还色)"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.urlbar.recede",
+    "label": "URL Bar Open Effect 地址栏展开动效 (画卷退景)",
+    "defaultValue": "on",
+    "options": [
+      {
+        "value": "off",
+        "label": "Off 关闭退景动效"
+      },
+      {
+        "value": "on",
+        "label": "Scroll Receding 画卷柔焦退景 (Default)"
+      }
+    ]
   },
   {
     "type": "separator",
