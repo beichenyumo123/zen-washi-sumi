@@ -39,10 +39,18 @@
   --zenwashi-tab-selected-border: light-dark(rgba(60, 52, 42, 0.12), rgba(245, 242, 235, 0.14));
   --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(60, 52, 42, 0.08), 0 2px 6px rgba(0, 0, 0, 0.35));
 
-  /* Essentials 微卡片背景 (自然透出侧边栏底色) */
+  /* Essentials 微卡片背景与调色板语义 Token (支持各调色板 scheme 精确映射) */
   --zenwashi-essentials-bg: transparent;
   --zenwashi-essentials-hover-bg: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.08));
   --zenwashi-essentials-active-bg: light-dark(rgba(0, 0, 0, 0.09), rgba(255, 255, 255, 0.14));
+  --zenwashi-essentials-card-bg: light-dark(rgba(60, 52, 42, 0.045), rgba(255, 255, 255, 0.06));
+  --zenwashi-essentials-card-hover-bg: light-dark(#FAF8F3, #24272E);
+  --zenwashi-essentials-card-selected-bg: var(--zenwashi-tab-selected-bg);
+  --zenwashi-essentials-card-border: light-dark(rgba(60, 52, 42, 0.15), rgba(245, 242, 235, 0.14));
+  --zenwashi-essentials-card-shadow: light-dark(
+    0 1.5px 0 color-mix(in srgb, var(--zenwashi-fg-primary) 12%, transparent), 0 1px 3px color-mix(in srgb, var(--zenwashi-fg-primary) 5%, transparent),
+    0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
+  );
 
   /* 墨字字阶 */
   --zenwashi-fg-primary: light-dark(#262421, #E8E5DC);
@@ -616,25 +624,25 @@ zen-folder zen-folder {
 
 /* 
  * 7.1 已加载常态（Loaded Idle State）：
- * 告别刺眼纯白 (#FFFFFF)，采用柔和护眼的暖和纸微暗色阶，
- * 搭配清晰的细墨边与 1.5px 纸厚微立体底边，温润不晃眼。
+ * 告别刺眼生硬纯白与陈旧暖褐，全面联动调色板语义 Token (如 Catppuccin Latte 拿铁底色)，
+ * 搭配清晰的发丝微边与立体纸厚微底边，温润不晃眼。
  */
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab .tab-background,
 .tabbrowser-tab[zen-essential="true"] .tab-background {
   position: relative !important;
   overflow: hidden !important;
   border-radius: var(--zenwashi-essentials-radius, 8px) !important;
-  border: 1px solid light-dark(rgba(60, 52, 42, 0.15), rgba(245, 242, 235, 0.14)) !important;
-  background-color: light-dark(rgba(60, 52, 42, 0.045), rgba(255, 255, 255, 0.06)) !important;
+  border: 1px solid var(--zenwashi-essentials-card-border, var(--zenwashi-border-distinct)) !important;
+  background-color: var(--zenwashi-essentials-card-bg, light-dark(rgba(60, 52, 42, 0.045), rgba(255, 255, 255, 0.06))) !important;
   background-image: linear-gradient(
     180deg,
-    light-dark(rgba(255, 253, 248, 0.45), rgba(255, 255, 255, 0.03)) 0%,
+    light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.03)) 0%,
     transparent 100%
   ) !important;
-  box-shadow: light-dark(
-    0 1.5px 0 rgba(60, 52, 42, 0.10), 0 1px 3px rgba(60, 52, 42, 0.04),
+  box-shadow: var(--zenwashi-essentials-card-shadow, light-dark(
+    0 1.5px 0 color-mix(in srgb, var(--zenwashi-fg-primary) 12%, transparent), 0 1px 3px color-mix(in srgb, var(--zenwashi-fg-primary) 5%, transparent),
     0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
-  ) !important;
+  )) !important;
   transition: background-color 0.28s var(--zenwashi-ease),
               border-color 0.28s var(--zenwashi-ease),
               box-shadow 0.28s var(--zenwashi-ease),
@@ -686,9 +694,9 @@ zen-folder zen-folder {
  */
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background,
 .tabbrowser-tab[zen-essential="true"]:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background {
-  background-color: light-dark(rgba(60, 52, 42, 0.02), rgba(255, 255, 255, 0.02)) !important;
+  background-color: light-dark(color-mix(in srgb, var(--zenwashi-fg-primary) 3%, transparent), rgba(255, 255, 255, 0.02)) !important;
   background-image: none !important;
-  border-color: light-dark(rgba(60, 52, 42, 0.08), rgba(245, 242, 235, 0.06)) !important;
+  border-color: light-dark(color-mix(in srgb, var(--zenwashi-fg-primary) 8%, transparent), rgba(255, 255, 255, 0.06)) !important;
   box-shadow: none !important;
 }
 
@@ -716,10 +724,10 @@ zen-folder zen-folder {
 /* ---------------- 7.3 悬停态：温润浮起 + 唤醒原彩 ---------------- */
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
 .tabbrowser-tab[zen-essential="true"]:hover:not([selected]):not([visuallyselected]) .tab-background {
-  background-color: light-dark(#FAF8F3, #24272E) !important;
+  background-color: var(--zenwashi-essentials-card-hover-bg, light-dark(#FFFFFF, #24272E)) !important;
   border-color: color-mix(in srgb, var(--zenwashi-accent) 55%, transparent) !important;
   box-shadow: light-dark(
-    0 2.5px 0 var(--zenwashi-accent-tint), 0 4px 10px rgba(60, 52, 42, 0.08),
+    0 2.5px 0 var(--zenwashi-accent-tint), 0 4px 10px color-mix(in srgb, var(--zenwashi-fg-primary) 10%, transparent),
     0 2.5px 0 rgba(0, 0, 0, 0.65), 0 5px 12px rgba(0, 0, 0, 0.45)
   ) !important;
 }
@@ -742,7 +750,7 @@ zen-folder zen-folder {
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:active .tab-background,
 .tabbrowser-tab[zen-essential="true"]:active .tab-background {
   box-shadow: light-dark(
-    0 0px 0 rgba(60, 52, 42, 0.10), inset 0 1px 3px rgba(60, 52, 42, 0.12),
+    0 0px 0 transparent, inset 0 1px 3px color-mix(in srgb, var(--zenwashi-fg-primary) 14%, transparent),
     0 0px 0 rgba(0, 0, 0, 0.40), inset 0 1px 4px rgba(0, 0, 0, 0.45)
   ) !important;
   transition-duration: 0.10s !important;
@@ -754,20 +762,20 @@ zen-folder zen-folder {
   transition-duration: 0.10s !important;
 }
 
-/* ---------------- 7.5 选中态：暖熟宣卡片 + 矿物色印框 + 14px 落款横印 ---------------- */
+/* ---------------- 7.5 选中态：卡片提亮 + 矿物色印框 + 14px 落款横印 ---------------- */
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected="true"], [selected], [visuallyselected]) .tab-background,
 .tabbrowser-tab[zen-essential="true"]:is([selected="true"], [selected], [visuallyselected]) .tab-background {
-  background-color: light-dark(#FCFBF7, #272A32) !important;
+  background-color: var(--zenwashi-essentials-card-selected-bg, var(--zenwashi-tab-selected-bg)) !important;
   background-image: linear-gradient(
     145deg,
-    light-dark(rgba(255, 253, 248, 0.85), rgba(255, 255, 255, 0.06)) 20%,
+    light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.06)) 20%,
     var(--zenwashi-accent-tint) 120%
   ) !important;
   border-color: var(--zenwashi-accent) !important;
   outline: 1.5px solid var(--zenwashi-accent-tint) !important;
   outline-offset: -1px !important;
   box-shadow: light-dark(
-    0 2px 0 var(--zenwashi-accent), 0 4px 10px rgba(60, 52, 42, 0.10),
+    0 2px 0 var(--zenwashi-accent), 0 4px 10px color-mix(in srgb, var(--zenwashi-fg-primary) 12%, transparent),
     0 2px 0 var(--zenwashi-accent), 0 4px 12px rgba(0, 0, 0, 0.48)
   ) !important;
 }
@@ -1070,6 +1078,13 @@ zen-folder zen-folder {
 
 /* ---------------- 10.3 标签页关闭离场：折卷收拢 (Washi Fold) ---------------- */
 
+/* ⚠️ 本节在当前 Zen(实测 1.23.2b)上不生效，保留备用：Zen 已不再给关闭标签设置
+ * [closing] 属性(closing 只是普通 JS 属性，见 Tabbrowser.sys.mjs:6861 / tab.js:79)，
+ * 原生 CSS 里也没有任何 [closing] 规则；关闭改由 Zen 自己的
+ * gZenUIManager.animateItemClose() 接管(ZenUIManager.mjs:1167)：WAAPI 驱动，
+ * opacity 1→0、scale 1→0.95、duration 0.1s，并在其 promise 结束后立即移除 DOM。
+ * 因此下面这段选择器永远匹配不到，且即便匹配也会被 0.1s 的 DOM 移除截断。 */
+
 /* 沿顶部水平轴从容折卷收拢 (0.38s)，让三维纸张折痕与纵向收拢清晰可感 */
 .tabbrowser-tab[closing] {
   animation: zenwashiTabFold 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
@@ -1289,17 +1304,49 @@ browser {
   transform: translateZ(0);
 }
 
+/* 
+ * ---------------- 12.2.1 加载「柔焦」承载层 (宣纸微敛 / 画卷退景共用) ----------------
+ *
+ * 为什么柔焦不留在卡片上：
+ *   12.3 与 12.4 都需要「边框跟着卡片一起等比内缩」——那必须用 transform 打在
+ *   hbox.deck-selected (即 .browserSidebarContainer) 上。但 filter 在规范上是对
+ *   「元素自身连同子树」的绘制结果做后处理，元素自己的 border / outline / box-shadow
+ *   就在被处理的像素里，所以 filter 与 border 同层时边框必然被一起糊掉，无解。
+ *   因此把两个属性拆到两层：transform 留在卡片，filter + opacity 落到 browser。
+ *
+ * 为什么选 browser 这一层：
+ *   browser 自身没有任何 border / outline / 阴影 (见上方 :423-432)，是层级里最干净的一层；
+ *   而它的父级 .browserContainer 反而带着一条 outline: 1px (防白缝内压边)，不适合。
+ *   叠加 .browserContainer 的 overflow: clip，模糊会被裁在边框内侧，
+ *   所以哪怕 blur 开到 20px 以上也绝不会晕到边框上——这是结构保证，不是调参巧合。
+ *   opacity 必须与 filter 同层：若留在卡片上，边框会被一起降透明度而「发灰变软」。
+ *
+ * 数值来源：各档位规则通过下面三个自定义属性下发（自定义属性会向下继承到 browser，
+ * 而「何时生效」仍完全由各档位原有的选择器守卫决定，全屏 / 分屏 / Zen Glance 语义不变）。
+ * 本规则必须常驻、不能加 :has(...busy) 之类的条件，否则退出动画会因为同时失去
+ * transition 声明而瞬间跳变。
+ */
+#tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) browser {
+  filter: var(--zenwashi-veil-filter, none) !important;
+  opacity: var(--zenwashi-veil-opacity, 1) !important;
+  transition: filter 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  transition-delay: var(--zenwashi-veil-delay, 0s) !important;
+}
+
 /* ---------------- 12.3 页面加载效果：宣纸微敛 (zenwashi.content.loading) ---------------- */
 
 /* 
- * 直接作用于 #tabbrowser-tabpanels > hbox.deck-selected (即 .browserSidebarContainer.deck-selected)，
- * 与 Zen-Nebula 及第 11 节保持完全相同的渲染层级，确保 WebRender 的 filter: blur 与 transform 100% 生效！
+ * 几何(transform)打在 #tabbrowser-tabpanels > hbox.deck-selected
+ * (即 .browserSidebarContainer.deck-selected)上，边框 / 圆角 / 阴影随之等比内缩；
+ * 柔焦与透明度通过 --zenwashi-veil-* 下发给 12.2.1 的 browser 承载层，避免糊掉边框。
  * 默认档位 (subtle)：宣纸微敛
  */
 :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
   transform: scale(0.976) !important;
-  filter: blur(7px) brightness(0.90) saturate(0.85) !important;
-  opacity: 0.84 !important;
+  --zenwashi-veil-filter: blur(7px) brightness(0.90) saturate(0.85);
+  --zenwashi-veil-opacity: 0.84;
+  --zenwashi-veil-delay: 0.12s;
   transition-delay: 0.12s !important;
 }
 
@@ -1307,8 +1354,9 @@ browser {
 @media (-moz-pref("zenwashi.content.loading", "deep")), (-moz-pref("zenwashi.tab.loading-animation", 2)) {
   :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transform: scale(0.958) !important;
-    filter: blur(15px) brightness(0.80) saturate(0.75) !important;
-    opacity: 0.72 !important;
+    --zenwashi-veil-filter: blur(15px) brightness(0.80) saturate(0.75);
+    --zenwashi-veil-opacity: 0.72;
+    --zenwashi-veil-delay: 0.10s;
     transition-delay: 0.10s !important;
   }
 }
@@ -1317,8 +1365,9 @@ browser {
 @media (-moz-pref("zenwashi.content.loading", "ink")), (-moz-pref("zenwashi.tab.loading-animation", 3)) {
   :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transform: scale(0.976) !important;
-    filter: grayscale(92%) blur(4px) brightness(0.88) !important;
-    opacity: 0.80 !important;
+    --zenwashi-veil-filter: grayscale(92%) blur(4px) brightness(0.88);
+    --zenwashi-veil-opacity: 0.80;
+    --zenwashi-veil-delay: 0.10s;
     transition-delay: 0.10s !important;
   }
 }
@@ -1327,8 +1376,9 @@ browser {
 @media (-moz-pref("zenwashi.content.loading", "off")), (-moz-pref("zenwashi.tab.loading-animation", 0)) {
   :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transform: none !important;
-    filter: none !important;
-    opacity: 1 !important;
+    --zenwashi-veil-filter: none;
+    --zenwashi-veil-opacity: 1;
+    --zenwashi-veil-delay: 0s;
     transition-delay: 0s !important;
   }
 }
@@ -1337,15 +1387,16 @@ browser {
 
 :root:not([inFullscreen]):not([inDOMFullscreen]) #browser:has(#urlbar[open]) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
   transform: scale(0.976) !important;
-  filter: blur(8px) brightness(0.88) saturate(0.85) !important;
-  opacity: 0.88 !important;
+  --zenwashi-veil-filter: blur(8px) brightness(0.88) saturate(0.85);
+  --zenwashi-veil-opacity: 0.88;
+  --zenwashi-veil-delay: 0s;
   transition-delay: 0s !important;
 }
 
 @media (-moz-pref("zenwashi.urlbar.recede", "off")), (-moz-pref("zenwashi.urlbar.animation", 0)) {
   :root:not([inFullscreen]):not([inDOMFullscreen]) #browser:has(#urlbar[open]) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transform: none !important;
-    filter: none !important;
-    opacity: 1 !important;
+    --zenwashi-veil-filter: none;
+    --zenwashi-veil-opacity: 1;
   }
 }

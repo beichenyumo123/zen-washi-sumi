@@ -28,9 +28,24 @@
     --zenwashi-bg-surface: light-dark(#FFFFFF, #1F2126) !important;
     --zenwashi-bg-urlbar: light-dark(#FFFFFF, #1F2126) !important;
     --zenwashi-tab-selected-bg: light-dark(#FFFFFF, rgba(255, 255, 255, 0.16)) !important;
+    --zenwashi-tab-selected-border: light-dark(rgba(60, 52, 42, 0.12), rgba(245, 242, 235, 0.14)) !important;
+    --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(60, 52, 42, 0.08), 0 2px 6px rgba(0, 0, 0, 0.35)) !important;
+    --zenwashi-tab-hover-bg: light-dark(rgba(60, 52, 42, 0.05), rgba(245, 242, 235, 0.06)) !important;
+    --zenwashi-border-subtle: light-dark(rgba(60, 52, 42, 0.10), rgba(245, 242, 235, 0.09)) !important;
+    --zenwashi-border-distinct: light-dark(rgba(60, 52, 42, 0.18), rgba(245, 242, 235, 0.15)) !important;
     --zenwashi-fg-primary: light-dark(#262421, #E8E5DC) !important;
     --zenwashi-fg-secondary: light-dark(#6E685F, #928D84) !important;
     --zenwashi-fg-muted: light-dark(#A6A096, #66635C) !important;
+
+    /* Essentials (和纸素雅低亮微卡片) */
+    --zenwashi-essentials-card-bg: light-dark(rgba(60, 52, 42, 0.045), rgba(255, 255, 255, 0.06)) !important;
+    --zenwashi-essentials-card-hover-bg: light-dark(#FAF8F3, #24272E) !important;
+    --zenwashi-essentials-card-selected-bg: light-dark(#FCFBF7, #272A32) !important;
+    --zenwashi-essentials-card-border: light-dark(rgba(60, 52, 42, 0.15), rgba(245, 242, 235, 0.14)) !important;
+    --zenwashi-essentials-card-shadow: light-dark(
+      0 1.5px 0 rgba(60, 52, 42, 0.10), 0 1px 3px rgba(60, 52, 42, 0.04),
+      0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
+    ) !important;
   }
 }
 
@@ -42,11 +57,26 @@
     --zenwashi-bg-surface: light-dark(#FFFDFB, #1F1D2E) !important;
     --zenwashi-bg-urlbar: light-dark(#FFFDFB, #1F1D2E) !important;
     --zenwashi-tab-selected-bg: light-dark(#FFFDFB, #26233A) !important;
+    --zenwashi-tab-selected-border: light-dark(rgba(87, 82, 121, 0.14), rgba(224, 222, 244, 0.14)) !important;
+    --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(87, 82, 121, 0.08), 0 2px 6px rgba(0, 0, 0, 0.40)) !important;
+    --zenwashi-tab-hover-bg: light-dark(rgba(87, 82, 121, 0.06), rgba(224, 222, 244, 0.07)) !important;
+    --zenwashi-border-subtle: light-dark(rgba(87, 82, 121, 0.12), rgba(224, 222, 244, 0.10)) !important;
+    --zenwashi-border-distinct: light-dark(rgba(87, 82, 121, 0.18), rgba(224, 222, 244, 0.16)) !important;
     --zenwashi-fg-primary: light-dark(#575279, #E0DEF4) !important;
     --zenwashi-fg-secondary: light-dark(#797593, #908CAA) !important;
     --zenwashi-fg-muted: light-dark(#9893A5, #6E6A86) !important;
     --zenwashi-accent: light-dark(#B4637A, #EB6F92) !important;
     --zenwashi-accent-tint: light-dark(rgba(180, 99, 122, 0.16), rgba(235, 111, 146, 0.22)) !important;
+
+    /* Essentials (Rosé Pine 柔和温润微卡片) */
+    --zenwashi-essentials-card-bg: light-dark(#F2E9E1, rgba(255, 255, 255, 0.06)) !important;
+    --zenwashi-essentials-card-hover-bg: light-dark(#FFFDFB, #26233A) !important;
+    --zenwashi-essentials-card-selected-bg: light-dark(#FFFDFB, #26233A) !important;
+    --zenwashi-essentials-card-border: light-dark(rgba(87, 82, 121, 0.14), rgba(224, 222, 244, 0.14)) !important;
+    --zenwashi-essentials-card-shadow: light-dark(
+      0 1.5px 0 rgba(87, 82, 121, 0.12), 0 1px 3px rgba(87, 82, 121, 0.05),
+      0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
+    ) !important;
   }
 }
 
@@ -58,11 +88,26 @@
     --zenwashi-bg-surface: light-dark(#FFFFFF, #1E1E2E) !important;
     --zenwashi-bg-urlbar: light-dark(#FFFFFF, #1E1E2E) !important;
     --zenwashi-tab-selected-bg: light-dark(#FFFFFF, #313244) !important;
+    --zenwashi-tab-selected-border: light-dark(rgba(76, 79, 105, 0.14), rgba(205, 214, 244, 0.14)) !important;
+    --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(76, 79, 105, 0.08), 0 2px 6px rgba(0, 0, 0, 0.45)) !important;
+    --zenwashi-tab-hover-bg: light-dark(rgba(76, 79, 105, 0.06), rgba(205, 214, 244, 0.07)) !important;
+    --zenwashi-border-subtle: light-dark(rgba(76, 79, 105, 0.12), rgba(205, 214, 244, 0.10)) !important;
+    --zenwashi-border-distinct: light-dark(rgba(76, 79, 105, 0.18), rgba(205, 214, 244, 0.16)) !important;
     --zenwashi-fg-primary: light-dark(#4C4F69, #CDD6F4) !important;
     --zenwashi-fg-secondary: light-dark(#6C6F85, #A6ADC8) !important;
     --zenwashi-fg-muted: light-dark(#9CA0B0, #6C7086) !important;
     --zenwashi-accent: light-dark(#EA76CB, #F5C2E7) !important;
     --zenwashi-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 194, 231, 0.22)) !important;
+
+    /* Essentials (Latte 拿铁淡紫灰/莫卡深色调专属适配) */
+    --zenwashi-essentials-card-bg: light-dark(#E6E9EF, rgba(255, 255, 255, 0.06)) !important;
+    --zenwashi-essentials-card-hover-bg: light-dark(#FFFFFF, #313244) !important;
+    --zenwashi-essentials-card-selected-bg: light-dark(#FFFFFF, #313244) !important;
+    --zenwashi-essentials-card-border: light-dark(rgba(76, 79, 105, 0.14), rgba(205, 214, 244, 0.14)) !important;
+    --zenwashi-essentials-card-shadow: light-dark(
+      0 1.5px 0 rgba(76, 79, 105, 0.12), 0 1px 3px rgba(76, 79, 105, 0.05),
+      0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
+    ) !important;
   }
 }
 
@@ -74,11 +119,26 @@
     --zenwashi-bg-surface: light-dark(#FFFFFF, #2E3440) !important;
     --zenwashi-bg-urlbar: light-dark(#FFFFFF, #2E3440) !important;
     --zenwashi-tab-selected-bg: light-dark(#FFFFFF, #3B4252) !important;
+    --zenwashi-tab-selected-border: light-dark(rgba(46, 52, 64, 0.14), rgba(236, 239, 244, 0.14)) !important;
+    --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(46, 52, 64, 0.08), 0 2px 6px rgba(0, 0, 0, 0.45)) !important;
+    --zenwashi-tab-hover-bg: light-dark(rgba(46, 52, 64, 0.06), rgba(236, 239, 244, 0.07)) !important;
+    --zenwashi-border-subtle: light-dark(rgba(46, 52, 64, 0.12), rgba(236, 239, 244, 0.10)) !important;
+    --zenwashi-border-distinct: light-dark(rgba(46, 52, 64, 0.18), rgba(236, 239, 244, 0.16)) !important;
     --zenwashi-fg-primary: light-dark(#2E3440, #ECEFF4) !important;
     --zenwashi-fg-secondary: light-dark(#4C566A, #D8DEE9) !important;
     --zenwashi-fg-muted: light-dark(#9099A8, #7B88A1) !important;
     --zenwashi-accent: light-dark(#5E81AC, #88C0D0) !important;
     --zenwashi-accent-tint: light-dark(rgba(94, 129, 172, 0.16), rgba(136, 192, 208, 0.22)) !important;
+
+    /* Essentials (Nord 极地冷色微卡片) */
+    --zenwashi-essentials-card-bg: light-dark(#E5E9F0, rgba(255, 255, 255, 0.06)) !important;
+    --zenwashi-essentials-card-hover-bg: light-dark(#FFFFFF, #3B4252) !important;
+    --zenwashi-essentials-card-selected-bg: light-dark(#FFFFFF, #3B4252) !important;
+    --zenwashi-essentials-card-border: light-dark(rgba(46, 52, 64, 0.14), rgba(236, 239, 244, 0.14)) !important;
+    --zenwashi-essentials-card-shadow: light-dark(
+      0 1.5px 0 rgba(46, 52, 64, 0.12), 0 1px 3px rgba(46, 52, 64, 0.05),
+      0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
+    ) !important;
   }
 }
 
