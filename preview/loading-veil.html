@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Zen Washi &amp; Sumi — 加载「宣纸微敛」对照页</title>
+<style>
+/* =============================================================================
+   这是一个纯静态模拟页,不是主题运行时的一部分。
+   目的:把 userChrome.css 第 12.3 节的「宣纸微敛」动效在两种作用层级下并排渲染,
+        让"边框是否被一起模糊/缩放"这件事变得肉眼可判。
+
+   真实 DOM 层级(Zen / Firefox):
+     #tabbrowser-tabpanels          -> .viewport      (margin 10px, radius 18px, 透明)
+       hbox.deck-selected           -> .card          (border 1.5px + box-shadow)  <-- 现状动效打在这
+         .browserContainer          -> .browserContainer (overflow:clip + 1px 内压边 + 纸色底)
+           .browserStack            -> .browserStack  (页面内容)                    <-- 方案动效打在这
+             browser
+   ============================================================================= */
+
+/* ---------------------------------------------------------------- 主题真实 token
+   取自 colors.css 方案 A「和纸与松烟墨」+ userChrome.css:26-65 / :348-360 */
+:root {
+  --washi-bg-base:        #F7F6F2;
+  --washi-bg-surface:     #FFFFFF;
+  --washi-fg-primary:     #262421;
+  --washi-fg-secondary:   #6E685F;
+  --washi-fg-muted:       #A6A096;
+  --washi-line:           rgba(60, 52, 42, 0.18);   /* --zenwashi-border-distinct */
+  --washi-accent:         #376850;                  /* 竹青 */
+  --washi-ease:           cubic-bezier(0.22, 1, 0.36, 1);
+
+  --radius:               18px;                     /* --zenwashi-content-radius */
+  --margin:               10px;                     /* --zenwashi-content-margin */
+  --border-w:             1.5px;
+  --shadow: 0 10px 28px rgba(38, 36, 33, 0.18), 0 3px 10px rgba(38, 36, 33, 0.10);
+
+  /* UI 外壳(不属于主题) */
+  --ui-bg: #EDEBE6; --ui-fg: #262421; --ui-panel: #FFFFFF; --ui-line: rgba(0,0,0,0.12); --ui-muted:#6E685F;
+
+  /* ---- 动效参数(由下方滑块驱动) ---- */
+  --veil-scale: 0.976;
+  --veil-blur: 7px;
+  --veil-bright: 0.90;
+  --veil-sat: 0.85;
+  --veil-gray: 0%;
+  --veil-opacity: 0.84;
+  --veil-delay: 0.12s;
+}
+
+body.dark {
+  --washi-bg-base:      #141517;
+  --washi-bg-surface:   #1F2126;
+  --washi-fg-primary:   #E8E5DC;
+  --washi-fg-secondary: #928D84;
+  --washi-fg-muted:     #66635C;
+  --washi-line:         rgba(245, 242, 235, 0.15);
+  --washi-accent:       #4E8B6E;
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.78), 0 4px 14px rgba(0, 0, 0, 0.50);
+  --ui-bg: #141517; --ui-fg: #E8E5DC; --ui-panel: #1F2126; --ui-line: rgba(245,242,235,0.14); --ui-muted:#928D84;
+}
+
+/* 卡片描边色(实体 border 与 .browserContainer 的 1px 内压边共用) */
+body { --card-line: var(--washi-line); }
+body.line-accent { --card-line: var(--washi-accent); }
+body.line-heavy  { --card-line: rgba(0, 0, 0, 0.62); }
+body.dark.line-heavy { --card-line: rgba(255, 255, 255, 0.72); }
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 22px 22px 40px;
+  background: var(--ui-bg);
+  color: var(--ui-fg);
+  font: 13px/1.55 -apple-system, "Helvetica Neue", "Noto Sans SC", system-ui, sans-serif;
+  transition: background .2s ease, color .2s ease;
+}
+
+h1 { font-size: 17px; margin: 0 0 4px; font-weight: 600; letter-spacing: .02em; }
+.sub { color: var(--ui-muted); font-size: 12px; margin: 0 0 18px; }
+.sub code { background: var(--ui-line); padding: 1px 5px; border-radius: 4px; }
+
+/* ------------------------------------------------------------------ 控制台 */
+.panel {
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 26px;
+  align-items: flex-start;
+}
+.group { display: flex; flex-direction: column; gap: 7px; }
+.group > .label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ui-muted); }
+.row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+button {
+  font: inherit; font-size: 12px; padding: 5px 11px; border-radius: 7px; cursor: pointer;
+  border: 1px solid var(--ui-line); background: transparent; color: var(--ui-fg);
+  transition: background .15s ease, border-color .15s ease;
+}
+button:hover { background: var(--ui-line); }
+button.on { background: var(--washi-accent); border-color: var(--washi-accent); color: #fff; }
+
+label.chk { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
+input[type=range] { width: 168px; accent-color: var(--washi-accent); }
+.slid { display: grid; grid-template-columns: 82px 1fr 52px; align-items: center; gap: 8px; font-size: 12px; }
+.slid .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--ui-muted); }
+
+/* --------------------------------------------------------------- 舞台布局 */
+.stages { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .stages { grid-template-columns: 1fr; } }
+
+.col { display: flex; flex-direction: column; gap: 10px; }
+.col-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.col-title { font-weight: 600; font-size: 13px; }
+.tag { font-size: 11px; padding: 2px 7px; border-radius: 5px; border: 1px solid var(--ui-line); color: var(--ui-muted); }
+.tag.bad  { color: #B53D30; border-color: #B53D30; }
+.tag.good { color: var(--washi-accent); border-color: var(--washi-accent); }
+.col-note { font-size: 11.5px; color: var(--ui-muted); margin: 0; }
+
+.stage { position: relative; }
+.stage .viewport {
+  position: relative;
+  width: 100%;
+  height: 330px;
+  background: var(--washi-bg-base);
+  border-radius: 12px;          /* 模拟浏览器窗口圆角,非主题参数 */
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--ui-line);
+}
+
+/* ------- 主题三层结构 ------- */
+.tabpanels { position: absolute; inset: var(--margin); border-radius: var(--radius); }
+
+.card {
+  position: relative;
+  width: 100%; height: 100%;
+  border-radius: var(--radius);
+  border: var(--border-w) solid var(--card-line);
+  background-color: var(--card-line);   /* 同色防白边底色,userChrome.css:349 */
+  background-clip: padding-box;
+  box-shadow: var(--shadow);
+  transform-origin: center center;
+  transition: transform .48s var(--washi-ease),
+              filter    .48s var(--washi-ease),
+              opacity   .42s var(--washi-ease);
+  transition-delay: var(--veil-delay);
+}
+
+.browserContainer {
+  width: 100%; height: 100%;
+  border-radius: max(0px, calc(var(--radius) - var(--border-w) - 1px));
+  overflow: clip;                       /* 模糊与缩放都被裁在边框内侧,碰不到边框 */
+  outline: 1px solid var(--card-line);
+  outline-offset: -0.5px;
+  background-color: var(--washi-bg-surface);
+}
+
+.browserStack {
+  width: 100%; height: 100%;
+  border-radius: inherit;
+  overflow: clip;
+}
+
+/* 对应真实的 <browser>(userChrome.css:423-432):无 border、无 outline、无阴影,
+   只有圆角与 overflow: clip —— 所以它是最"干净"的柔焦目标:
+   模糊打在这里,绝不可能碰到任何主题装饰线。 */
+.browser {
+  width: 100%; height: 100%;
+  border-radius: inherit;
+  overflow: clip;
+  transform-origin: center center;
+  transition: filter .48s var(--washi-ease),
+              opacity .42s var(--washi-ease);
+  transition-delay: var(--veil-delay);
+}
+
+/* ==================================================================
+   两种做法 —— 两列的 transform 参数完全一样,区别只在 filter/opacity 打在哪一层
+   ================================================================== */
+
+/* A 现状:transform 与 filter 都打在 .card(带 border + box-shadow 的那一层)
+   对应 userChrome.css:1299 / 1308 / 1318 —— 边框被迫一起进滤镜子树 */
+.mode-current.is-veiled .card {
+  transform: scale(var(--veil-scale));
+  filter: grayscale(var(--veil-gray)) blur(var(--veil-blur))
+          brightness(var(--veil-bright)) saturate(var(--veil-sat));
+  opacity: var(--veil-opacity);
+}
+
+/* B 方案:几何与柔焦拆到两层
+   transform       -> .card     边框 / 圆角 / 阴影 / 内容 作为一个整体一起内缩
+   filter+opacity  -> .browser  只有网页像素被柔焦压暗,任何主题装饰线都不进滤镜子树
+
+   关键: 真实的 <browser>(userChrome.css:423-432)没有任何 border/outline/阴影,
+         再叠加 .browserContainer 的 overflow: clip 裁剪,
+         所以哪怕 blur 开到 22px 也绝不会晕到边框上 —— 这是结构保证,不是调参巧合。
+   另: opacity 也必须跟着下移,否则边框会被一起降透明度而"发灰变软"。 */
+.mode-proposed.is-veiled .card {
+  transform: scale(var(--veil-scale));
+}
+.mode-proposed.is-veiled .browser {
+  filter: grayscale(var(--veil-gray)) blur(var(--veil-blur))
+          brightness(var(--veil-bright)) saturate(var(--veil-sat));
+  opacity: var(--veil-opacity);
+}
+
+/* 参考线:标出卡片内缩"之前"的原始外轮廓。
+   画在 .tabpanels 上 —— 它在两种模式下都不被变换,所以虚线永远停在原位:
+   既能量出边框往内缩了多少,也能验证 A / B 两列的几何是否逐像素一致。 */
+.show-guides .tabpanels::after {
+  content: "";
+  position: absolute; inset: 0;
+  outline: 1px dashed var(--washi-accent);
+  outline-offset: -1px;
+  border-radius: var(--radius);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* --------------------------------------------------------- 角落放大镜 */
+.magnifier {
+  position: relative;
+  width: 172px; height: 122px;
+  overflow: hidden;
+  border-radius: 9px;
+  border: 1px solid var(--ui-line);
+  background: var(--washi-bg-base);
+  flex: none;
+}
+.mag-inner {
+  position: absolute;
+  left: 54px; top: 29px;          /* 把左上角对准放大镜中心 */
+  width: 560px; height: 380px;
+  transform: scale(3.2);
+  transform-origin: 0 0;
+}
+.mag-cap { font-size: 11px; color: var(--ui-muted); }
+.magrow { display: flex; gap: 14px; align-items: center; }
+
+/* ------------------------------------------------------------- 假网页内容
+   故意混入 1px 细线、11px 小字、高饱和色块 —— 这些都是"糊没糊"的显影剂。 */
+.page { width: 100%; height: 100%; background: var(--washi-bg-surface); color: var(--washi-fg-primary); }
+.hero {
+  padding: 16px 18px 14px;
+  background: linear-gradient(115deg, var(--washi-accent) 0%, color-mix(in srgb, var(--washi-accent) 55%, #000) 100%);
+  color: #fff;
+}
+.hero h2 { margin: 0 0 3px; font-size: 19px; font-weight: 600; letter-spacing: .04em; }
+.hero p  { margin: 0; font-size: 11px; opacity: .8; letter-spacing: .1em; }
+.pbody { padding: 13px 18px; }
+.pbody h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+.pbody p  { margin: 0 0 10px; font-size: 11.5px; line-height: 1.75; color: var(--washi-fg-secondary); }
+.hairs { display: grid; gap: 5px; margin-bottom: 11px; }
+.hair { height: 1px; background: var(--washi-fg-muted); opacity: .75; }
+.hair:nth-child(2) { width: 72%; }
+.hair:nth-child(3) { width: 88%; }
+.hair:nth-child(4) { width: 54%; }
+.swatches { display: flex; gap: 6px; margin-bottom: 11px; }
+.sw { width: 30px; height: 18px; border-radius: 3px; }
+table { width: 100%; border-collapse: collapse; font-size: 11px; color: var(--washi-fg-secondary); }
+td { border: 1px solid var(--washi-line); padding: 3px 6px; }
+.readout { font-size: 11.5px; color: var(--ui-muted); font-variant-numeric: tabular-nums; }
+.readout b { color: var(--ui-fg); font-weight: 600; }
+.note { margin-top: 22px; font-size: 12px; color: var(--ui-muted); line-height: 1.8; }
+.note h4 { font-size: 12px; color: var(--ui-fg); margin: 0 0 6px; }
+.note ul { margin: 0; padding-left: 18px; }
+.note code { background: var(--ui-line); padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body class="line-real">
+
+<h1>加载动效「宣纸微敛」— 几何与柔焦拆层对照</h1>
+<p class="sub">
+  目标效果:<b>边框跟着一起往内缩放,但不要被模糊</b>。
+  滑块同时作用于两列,所以差异只来自 <code>transform</code> 与 <code>filter</code> 是否被拆到不同层:
+  A 列两个都打在卡片上,B 列把 <code>filter</code>+<code>opacity</code> 下移到内容层。
+  真值取自 <code>userChrome.css:1299-1334</code>,色值取自 <code>colors.css</code> 方案 A(和纸与松烟墨)。
+</p>
+
+<div class="panel">
+  <div class="group">
+    <span class="label">档位(真实预置)</span>
+    <div class="row">
+      <button data-preset="subtle" class="on">宣纸微敛 (默认)</button>
+      <button data-preset="deep">宣纸深敛</button>
+      <button data-preset="ink">水墨未干</button>
+      <button data-preset="soft">克制版 0.992</button>
+      <button data-preset="off">关闭</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <span class="label">播放</span>
+    <div class="row">
+      <button id="btn-toggle">切到加载中</button>
+      <button id="btn-loop">自动循环</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <span class="label">观察辅助</span>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="chk-guides"> 参考线(内缩前的外轮廓)</label>
+      <label class="chk"><input type="checkbox" id="chk-dark"> 深色模式</label>
+    </div>
+    <div class="row">
+      <button data-line="real" class="on">真实边框色</button>
+      <button data-line="accent">强调色</button>
+      <button data-line="heavy">加深</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <span class="label">参数</span>
+    <div class="slid"><span>scale</span><input type="range" id="s-scale" min="0.94" max="1" step="0.001" value="0.976"><span class="v" id="v-scale">0.976</span></div>
+    <div class="slid"><span>blur</span><input type="range" id="s-blur" min="0" max="22" step="0.5" value="7"><span class="v" id="v-blur">7px</span></div>
+    <div class="slid"><span>brightness</span><input type="range" id="s-bright" min="0.6" max="1.05" step="0.01" value="0.9"><span class="v" id="v-bright">0.90</span></div>
+    <div class="slid"><span>saturate</span><input type="range" id="s-sat" min="0.5" max="1" step="0.01" value="0.85"><span class="v" id="v-sat">0.85</span></div>
+    <div class="slid"><span>grayscale</span><input type="range" id="s-gray" min="0" max="100" step="1" value="0"><span class="v" id="v-gray">0%</span></div>
+    <div class="slid"><span>opacity</span><input type="range" id="s-opacity" min="0.5" max="1" step="0.01" value="0.84"><span class="v" id="v-opacity">0.84</span></div>
+    <div class="slid"><span>delay</span><input type="range" id="s-delay" min="0" max="0.4" step="0.01" value="0.12"><span class="v" id="v-delay">0.12s</span></div>
+  </div>
+</div>
+
+<div class="stages">
+  <div class="col">
+    <div class="col-head">
+      <span class="col-title">A · 现状</span>
+      <span class="tag bad">边框被一起模糊(缩放是对的)</span>
+    </div>
+    <p class="col-note"><code>transform</code> 与 <code>filter</code> 都打在 <code>hbox.deck-selected</code>(即 <code>.browserSidebarContainer</code>)上 —— 它自己就带着 <code>border: 1.5px</code> 与 <code>box-shadow</code>,于是被一并卷进滤镜子树。</p>
+    <div class="stage mode-current" id="stage-a">
+      <div class="viewport"></div>
+    </div>
+    <div class="magrow">
+      <div class="stage mode-current magnifier" id="mag-a"><div class="mag-inner"></div></div>
+      <span class="mag-cap">左上角 3.2×<br>看边框是锐是糊</span>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="col-head">
+      <span class="col-title">B · 方案(几何 / 柔焦拆层)</span>
+      <span class="tag good">边框跟着一起缩,但保持锐利</span>
+    </div>
+    <p class="col-note"><code>transform</code> 留在 <code>.card</code>(边框、圆角、阴影随卡片一起内缩);<code>filter</code> + <code>opacity</code> 下移到 <code>browser</code> —— 那是唯一完全没有 border / outline / 阴影的层。几何与 A 列完全相同,只有清晰度不同。</p>
+    <div class="stage mode-proposed" id="stage-b">
+      <div class="viewport"></div>
+    </div>
+    <div class="magrow">
+      <div class="stage mode-proposed magnifier" id="mag-b"><div class="mag-inner"></div></div>
+      <span class="mag-cap">左上角 3.2×<br>边框同样内移,但始终是硬边</span>
+    </div>
+  </div>
+</div>
+
+<p class="readout" style="margin-top:18px">
+  卡片布局尺寸:<b id="ro-size">—</b> &nbsp;·&nbsp; 当前档位下每边内缩约 <b id="ro-inset">—</b>
+  &nbsp;·&nbsp; 两列几何一致,露出的都是工作区底色 <code>--zenwashi-bg-base</code> —— 唯一的区别就是边框糊不糊
+</p>
+
+<div class="note">
+  <h4>判定要点的顺序(先看放大镜)</h4>
+  <ul>
+    <li><b>放大镜里的边框(决定性)</b>:A 列的 1.5px 边被 <code>blur(7px)</code> 晕成一条柔和灰雾,内侧还糊进了一圈页面内容;B 列同样内移、同样变短,但边缘始终是干净硬边。</li>
+    <li><b>两列几何完全重合</b>:同一组滑块下,边框位置、圆角半径、阴影范围在 A / B 两列里逐像素一致 —— 所以看到任何几何差异都说明实现跑偏了。</li>
+    <li><b>圆角拐角</b>是糊得最明显的地方:A 列的直角拐点会被模糊抹圆;B 列的拐角保持锐利,只是半径按 0.976 等比缩了(18px → 约 17.6px,看不出差别)。</li>
+    <li><b>把 blur 拉到 22px 再看 B 列</b>:边框依然是硬边。两层保障:<code>browser</code> 自身没有任何 border / outline / 阴影,加上 <code>.browserContainer</code> 的 <code>overflow: clip</code> 把模糊裁在边框内侧。</li>
+    <li><b>把 opacity 也调到 0.5</b>:B 列边框不会随之变淡 —— 因为 opacity 和 filter 一起下移了。这正是它必须跟 filter 同层的原因。</li>
+    <li><b>页面正好是纯白时</b>:内缩露出的是工作区纸底,边框内侧那条窄缝会是纸色而非页面白,能看见一丝边界;但页面内容本身的内缩仍然不明显 —— 这是真实情况,不是 bug。</li>
+    <li style="margin-top:8px"><b>本页证明不了的事(务必实机确认)</b>:它只能证明"长什么样",证明不了 <code>filter</code> 打在 <code>browser</code> 这一层时 Firefox 的 WebRender 是否照常合成。原注释 <code>userChrome.css:1294-1296</code> 当初选外层正是出于这个顾虑 —— 改完请重载一次 Firefox 亲眼确认模糊仍旧生效。若失效,退路是把 <code>filter</code> 上提一层到 <code>.browserStack</code>(它同样没有 border/outline),而不是退回卡片层。</li>
+  </ul>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ 结构注入 */
+function cardHTML() {
+  return `
+  <div class="tabpanels">
+    <div class="card">
+      <div class="browserContainer">
+        <div class="browserStack">
+         <div class="browser">
+          <div class="page">
+            <div class="hero">
+              <h2>宣纸微敛</h2>
+              <p>ZEN WASHI &amp; SUMI · LOADING VEIL</p>
+            </div>
+            <div class="pbody">
+              <h3>细线与小字是显影剂</h3>
+              <p>1px 细线最容易被模糊吃掉。下面四条线如果糊成一团灰雾,说明 filter 覆盖到了不该覆盖的层级。</p>
+              <div class="hairs"><div class="hair"></div><div class="hair"></div><div class="hair"></div><div class="hair"></div></div>
+              <div class="swatches">
+                <div class="sw" style="background:#B53D30"></div>
+                <div class="sw" style="background:#376850"></div>
+                <div class="sw" style="background:#2B5079"></div>
+                <div class="sw" style="background:#B87C24"></div>
+                <div class="sw" style="background:#6B46C1"></div>
+              </div>
+              <table>
+                <tr><td>border</td><td>1.5px</td></tr>
+                <tr><td>radius</td><td>18px</td></tr>
+                <tr><td>margin</td><td>10px</td></tr>
+              </table>
+            </div>
+          </div>
+         </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+document.querySelectorAll('.viewport, .mag-inner').forEach(el => { el.insertAdjacentHTML('beforeend', cardHTML()); });
+
+/* --------------------------------------------------------------- 参数状态机 */
+const root = document.documentElement;
+const PRESETS = {
+  subtle: { scale: 0.976, blur: 7,  bright: 0.90, sat: 0.85, gray: 0,   opacity: 0.84, delay: 0.12 },
+  deep:   { scale: 0.958, blur: 15, bright: 0.80, sat: 0.75, gray: 0,   opacity: 0.72, delay: 0.10 },
+  ink:    { scale: 0.976, blur: 4,  bright: 0.88, sat: 1,    gray: 92,  opacity: 0.80, delay: 0.10 },
+  soft:   { scale: 0.992, blur: 3,  bright: 0.96, sat: 0.94, gray: 0,   opacity: 0.94, delay: 0.20 },
+  off:    { scale: 1,     blur: 0,  bright: 1,    sat: 1,    gray: 0,   opacity: 1,    delay: 0 }
+};
+const els = {
+  scale:   document.getElementById('s-scale'),
+  blur:    document.getElementById('s-blur'),
+  bright:  document.getElementById('s-bright'),
+  sat:     document.getElementById('s-sat'),
+  gray:    document.getElementById('s-gray'),
+  opacity: document.getElementById('s-opacity'),
+  delay:   document.getElementById('s-delay')
+};
+
+function apply() {
+  root.style.setProperty('--veil-scale',   els.scale.value);
+  root.style.setProperty('--veil-blur',    els.blur.value + 'px');
+  root.style.setProperty('--veil-bright',  els.bright.value);
+  root.style.setProperty('--veil-sat',     els.sat.value);
+  root.style.setProperty('--veil-gray',    els.gray.value + '%');
+  root.style.setProperty('--veil-opacity', els.opacity.value);
+  root.style.setProperty('--veil-delay',   els.delay.value + 's');
+  document.getElementById('v-scale').textContent   = (+els.scale.value).toFixed(3);
+  document.getElementById('v-blur').textContent    = els.blur.value + 'px';
+  document.getElementById('v-bright').textContent  = (+els.bright.value).toFixed(2);
+  document.getElementById('v-sat').textContent     = (+els.sat.value).toFixed(2);
+  document.getElementById('v-gray').textContent    = els.gray.value + '%';
+  document.getElementById('v-opacity').textContent = (+els.opacity.value).toFixed(2);
+  document.getElementById('v-delay').textContent   = (+els.delay.value).toFixed(2) + 's';
+  readout();
+}
+Object.values(els).forEach(el => el.addEventListener('input', apply));
+
+/* 真实内缩量:用 offsetWidth/Height(布局盒子,不受 transform 影响)推算 */
+function readout() {
+  const card = document.querySelector('#stage-a .card');
+  if (!card || !card.offsetWidth) return;
+  const w = card.offsetWidth, h = card.offsetHeight, s = +els.scale.value;
+  const ix = w * (1 - s) / 2, iy = h * (1 - s) / 2;
+  document.getElementById('ro-size').textContent  = w + ' × ' + h + ' px';
+  document.getElementById('ro-inset').textContent = ix.toFixed(1) + ' px(左右) / ' + iy.toFixed(1) + ' px(上下)';
+}
+window.addEventListener('resize', readout);
+
+/* ------------------------------------------------------------------ 预设按钮 */
+const presetBtns = [...document.querySelectorAll('[data-preset]')];
+presetBtns.forEach(btn => btn.addEventListener('click', () => {
+  const p = PRESETS[btn.dataset.preset];
+  els.scale.value = p.scale; els.blur.value = p.blur; els.bright.value = p.bright;
+  els.sat.value = p.sat; els.gray.value = p.gray; els.opacity.value = p.opacity; els.delay.value = p.delay;
+  presetBtns.forEach(b => b.classList.toggle('on', b === btn));
+  apply();
+}));
+
+/* ------------------------------------------------------- 加载中 / 自动循环 */
+const stages = [...document.querySelectorAll('.stage')];
+const btnToggle = document.getElementById('btn-toggle');
+const btnLoop = document.getElementById('btn-loop');
+let veiled = false, loopTimer = null;
+
+function setVeiled(on) {
+  veiled = on;
+  stages.forEach(s => s.classList.toggle('is-veiled', on));
+  btnToggle.textContent = on ? '结束加载' : '切到加载中';
+}
+btnToggle.addEventListener('click', () => setVeiled(!veiled));
+
+btnLoop.addEventListener('click', () => {
+  if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; btnLoop.classList.remove('on'); return; }
+  btnLoop.classList.add('on');
+  const cycle = () => {
+    setVeiled(false);
+    loopTimer = setTimeout(() => {
+      setVeiled(true);
+      loopTimer = setTimeout(cycle, 1500);
+    }, 750);
+  };
+  cycle();
+});
+
+/* ------------------------------------------------------- 观察辅助开关 */
+document.getElementById('chk-guides').addEventListener('change', e => {
+  stages.forEach(s => s.classList.toggle('show-guides', e.target.checked));
+});
+document.getElementById('chk-dark').addEventListener('change', e => {
+  document.body.classList.toggle('dark', e.target.checked);
+});
+
+const lineBtns = [...document.querySelectorAll('[data-line]')];
+lineBtns.forEach(btn => btn.addEventListener('click', () => {
+  document.body.classList.remove('line-real', 'line-accent', 'line-heavy');
+  document.body.classList.add('line-' + btn.dataset.line);
+  lineBtns.forEach(b => b.classList.toggle('on', b === btn));
+}));
+
+apply();
+</script>
+</body>
+</html>

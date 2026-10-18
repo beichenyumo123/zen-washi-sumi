@@ -175,24 +175,27 @@ zen-folder zen-folder {
 
 /* 
  * 文件夹与固定标签页 [zen-pinned-changed="true"] 图标防错位保护：
- * 当文件夹内的标签页发生站内跳转（如 B 站视频页自动追加参数）时，Zen 会注入 zen-pinned-changed="true"
+ * 当固定标签页或文件夹内的标签页发生站内跳转（如 B 站视频页自动追加参数）时，Zen 会注入 zen-pinned-changed="true"
  * 与 --zen-original-tab-icon，并通过高优先级选择器将 .tab-icon-stack / .tab-icon-image 缩小偏移至右下角作为角标，
  * 同时插入 .tab-reset-pin-button 与 .zen-tab-sublabel（“返回标签页”）。
- * 此处采用 #main-window #browser #navigator-toolbox 三重 ID 最高优先级全面锁定 16x16 居中盒模型。
+ * 若仅隐藏 .tab-reset-pin-button 而不锁定非文件夹固定标签页的 .tab-icon-stack 盒模型，
+ * 会导致脱离文档流的图标与左移的标题文字（.tab-label-container）直接重合。
+ * 此处采用 #main-window #browser #navigator-toolbox 高优先级选择器，对所有非 Essentials 标签页全面锁定 16x16 居中盒模型。
  */
 #main-window #browser #navigator-toolbox .tabbrowser-tab .tab-reset-pin-button,
 #main-window #browser #navigator-toolbox .tabbrowser-tab .zen-tab-sublabel,
-#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab .tab-icon-stack::before,
-#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab .tab-icon-stack::after {
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab) .tab-icon-stack::before,
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab) .tab-icon-stack::after {
   display: none !important;
   content: none !important;
   width: 0px !important;
   height: 0px !important;
   margin: 0px !important;
   padding: 0px !important;
+  background-image: none !important;
 }
 
-#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab:is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack {
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack {
   position: relative !important;
   inset: auto !important;
   top: auto !important;
@@ -215,7 +218,12 @@ zen-folder zen-folder {
   scale: 1 !important;
 }
 
-#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab:is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack > :is(.tab-icon-image, .tab-icon-pending) {
+/* 侧边栏折叠窄模式（仅显示图标）下恢复图标水平居中 */
+#main-window:not([zen-single-toolbar="true"]):not([zen-sidebar-expanded="true"]) #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack {
+  margin-inline: 0px !important;
+}
+
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])):not(:has(.tab-close-button:hover, .tab-reset-button:hover)) .tab-icon-stack > :is(.tab-icon-image, .tab-icon-pending) {
   position: absolute !important;
   inset: 0px !important;
   top: 0px !important;
@@ -235,12 +243,36 @@ zen-folder zen-folder {
   scale: 1 !important;
 }
 
-#main-window #browser #navigator-toolbox :is(zen-folder, .tab-group-container) .tabbrowser-tab:is([pinned], [zen-pinned-changed], :not([pinned])) .tab-label-container {
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack > :is(.tab-icon-image, .tab-icon-pending) {
+  position: absolute !important;
+  inset: 0px !important;
+  top: 0px !important;
+  left: 0px !important;
+  right: 0px !important;
+  bottom: 0px !important;
+  width: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  margin: auto !important;
+  padding: 0px !important;
+  translate: none !important;
+  scale: 1 !important;
+}
+
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])) .tab-label-container {
+  position: relative !important;
+  inset: auto !important;
   margin-inline-start: 0px !important;
   padding-inline-start: 0px !important;
   min-width: 0 !important;
-  transform: none !important;
   translate: none !important;
+}
+
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])):not(:has(.tab-close-button:hover, .tab-reset-button:hover)) .tab-label-container {
+  transform: none !important;
 }
 
 /* -----------------------------------------------------------------------------
