@@ -501,6 +501,26 @@ zen-folder zen-folder {
   :root {
     --zenwashi-content-border-width: 0px !important;
   }
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer,
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) .browserStack,
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) browser {
+    border-radius: var(--zenwashi-content-radius, 18px) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "hairline")) {
+  :root {
+    --zenwashi-content-border-width: 0.5px !important;
+  }
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer {
+    outline-width: 0.5px !important;
+    outline-offset: -0.25px !important;
+    border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - 0.5px)) !important;
+  }
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) .browserStack,
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) browser {
+    border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - 0.5px)) !important;
+  }
 }
 
 @media (-moz-pref("zenwashi.content.border", "subtle")) {
@@ -515,15 +535,45 @@ zen-folder zen-folder {
   }
 }
 
+@media (-moz-pref("zenwashi.content.border", "regular")) {
+  :root {
+    --zenwashi-content-border-width: 2px !important;
+  }
+}
+
 @media (-moz-pref("zenwashi.content.border", "bold")) {
   :root {
     --zenwashi-content-border-width: 2.5px !important;
   }
 }
 
+@media (-moz-pref("zenwashi.content.border", "thick")) {
+  :root {
+    --zenwashi-content-border-width: 3px !important;
+  }
+}
+
 @media (-moz-pref("zenwashi.content.border", "heavy")) {
   :root {
     --zenwashi-content-border-width: 4px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "frame")) {
+  :root {
+    --zenwashi-content-border-width: 5px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "gallery")) {
+  :root {
+    --zenwashi-content-border-width: 6px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "mat")) {
+  :root {
+    --zenwashi-content-border-width: 8px !important;
   }
 }
 

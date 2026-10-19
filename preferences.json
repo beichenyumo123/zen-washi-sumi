@@ -142,6 +142,10 @@
         "label": "None 无边框 (0px)"
       },
       {
+        "value": "hairline",
+        "label": "Hairline 极细蝉翼 (0.5px)"
+      },
+      {
         "value": "subtle",
         "label": "Subtle 发丝细线 (1px)"
       },
@@ -150,12 +154,32 @@
         "label": "Medium 经典雅致 (1.5px, 推荐)"
       },
       {
+        "value": "regular",
+        "label": "Regular 温润匀线 (2px)"
+      },
+      {
         "value": "bold",
         "label": "Bold 清晰实线 (2.5px)"
       },
       {
+        "value": "thick",
+        "label": "Thick 凝重墨边 (3px)"
+      },
+      {
         "value": "heavy",
         "label": "Heavy 醒目宽框 (4px)"
+      },
+      {
+        "value": "frame",
+        "label": "Frame 装裱画框 (5px)"
+      },
+      {
+        "value": "gallery",
+        "label": "Gallery 深装裱边 (6px)"
+      },
+      {
+        "value": "mat",
+        "label": "Mat 留白衬卡 (8px)"
       }
     ]
   },
