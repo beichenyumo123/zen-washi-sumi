@@ -40,18 +40,42 @@
   --zenwashi-tab-selected-border: light-dark(rgba(60, 52, 42, 0.12), rgba(245, 242, 235, 0.14));
   --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(60, 52, 42, 0.08), 0 2px 6px rgba(0, 0, 0, 0.35));
 
-  /* Essentials 微卡片背景与调色板语义 Token (支持各调色板 scheme 精确映射) */
-  --zenwashi-essentials-bg: transparent;
-  --zenwashi-essentials-hover-bg: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.08));
-  --zenwashi-essentials-active-bg: light-dark(rgba(0, 0, 0, 0.09), rgba(255, 255, 255, 0.14));
-  --zenwashi-essentials-card-bg: light-dark(rgba(60, 52, 42, 0.045), rgba(255, 255, 255, 0.06));
-  --zenwashi-essentials-card-hover-bg: light-dark(#FAF8F3, #24272E);
-  --zenwashi-essentials-card-selected-bg: var(--zenwashi-tab-selected-bg);
-  --zenwashi-essentials-card-border: light-dark(rgba(60, 52, 42, 0.15), rgba(245, 242, 235, 0.14));
-  --zenwashi-essentials-card-shadow: light-dark(
-    0 1.5px 0 color-mix(in srgb, var(--zenwashi-fg-primary) 12%, transparent), 0 1px 3px color-mix(in srgb, var(--zenwashi-fg-primary) 5%, transparent),
-    0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
+  /* Essentials 实体按键（厚键帽）语义 Token。
+   * 核心思路：用「边缘厚度」与「按压凹陷」表达状态，全程不使用任何模糊投影，因此没有外发光。
+   * 明暗两态分开配方：浅色下 surface 与 base 天然有差异，88/12 即可；深色下两者几乎同黑，
+   * 必须往 fg-primary 方向提亮，否则键面与纸底只差 0.3~1% 等于没有键面。 */
+  --zenwashi-key-radius: var(--zenwashi-essentials-radius, 8px);
+  --zenwashi-key-lip: 4px;            /* 键帽侧壁厚度（浮起态）—— 加厚强化实体感 */
+  --zenwashi-key-lip-pressed: 1px;    /* 按下后的剩余厚度 */
+  --zenwashi-key-face: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 88%, var(--zenwashi-bg-base)),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 80%, var(--zenwashi-fg-primary) 18%)
   );
+  --zenwashi-key-face-hover: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 98%, var(--zenwashi-bg-base)),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 74%, var(--zenwashi-fg-primary) 26%)
+  );
+  --zenwashi-key-face-selected: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 90%, var(--zenwashi-accent) 10%),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 78%, var(--zenwashi-accent) 18%)
+  );
+  /* 描边同样要分两态：浅色下描边比键面暗（墨线压纸），
+     深色下必须比键面亮（受光的棱），否则深色键面提亮后会把描边吃掉，轮廓消失。 */
+  --zenwashi-key-edge: light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 24%, transparent),
+    color-mix(in srgb, var(--zenwashi-fg-primary) 42%, transparent)
+  );
+  --zenwashi-key-edge-hover: light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 34%, transparent),
+    color-mix(in srgb, var(--zenwashi-fg-primary) 56%, transparent)
+  );
+  --zenwashi-key-edge-idle: light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 10%, transparent),
+    color-mix(in srgb, var(--zenwashi-fg-primary) 16%, transparent)
+  );
+  --zenwashi-key-edge-selected: var(--zenwashi-accent);
+  /* 按下时键帽的下沉行程 = 侧壁减少的量，保证视觉底边不动、不溢出标签 */
+  --zenwashi-key-travel: calc(var(--zenwashi-key-lip) - var(--zenwashi-key-lip-pressed));
 
   /* 墨字字阶 */
   --zenwashi-fg-primary: light-dark(#262421, #E8E5DC);
@@ -175,27 +199,30 @@ zen-folder zen-folder {
 }
 
 /*
- * 折叠文件夹内隐藏标签页防重叠保护：
- * 当文件夹处于折叠态，或文件夹内的激活标签页 ([folder-active="true"]) 被休眠卸载 ([pending]/[discarded]) 时，
- * Zen 会为这些需收拢隐藏的标签页标记 [aria-hidden="true"]。
- * 必须显式将其盒模型收拢为 0 并隐藏，防止被全局标签页 margin-block / transform / 休眠 opacity 规则强行撑开或显影而发生文字与图标叠印。
+ * 【已删除】折叠文件夹内 [aria-hidden="true"] 标签的强制收拢规则
+ * -----------------------------------------------------------------------------
+ * 这里原本有一条规则，把折叠文件夹内隐藏标签的盒模型强压为 0
+ * (opacity/visibility/height/max-height/min-height/margin-block)，
+ * 目的是防止全局 margin / transform / 休眠 opacity 规则把它们撑开而叠印。
+ * 它现在必须整块删除，因为会破坏 Zen 1.23.3 的收起动画：
+ *
+ *   set collapsed()  (tabgroup.mjs) 会先 toggleAttribute("collapsed")，
+ *   再**同步**调用 #updateTabAriaHidden() 给所有子标签打上 [aria-hidden]，
+ *   然后才 dispatch "TabGroupCollapse" 触发 ZenFolders.animateCollapse()。
+ *   而 animateCollapse 的第一件事是测量收起距离：
+ *     #measureCollapsedShift() → #calculateHeightShift()
+ *       → getBoundsWithoutFlushing(tabsContainer).height
+ *   此刻子标签已经带上 [aria-hidden]，只要主题还把它们的高度压成 0，
+ *   测出的高度就是 ≈0 → 收起目标退化为 marginTop: -4px，条目动画也从 0 开始，
+ *   于是「收起没有动画」。展开方向测的是自然高度，所以不受影响——
+ *   这正是「只有展开有动画」这个不对称表现的来源。
+ *
+ * 注意：仅仅去掉 !important 不够，兜底规则本身仍会参与布局、照样污染测量。
+ * Zen 收起/展开是自己负责的：动画结束后会给容器加 hidden 并清理 inline 样式；
+ * 而主题里真正可能撑开它们的全局规则早已用 :not([aria-hidden="true"]) 排除。
+ * 若将来真出现叠印，请改成「只在动画结束后生效」的定向规则，
+ * 绝不要在收起动画测量之前插手盒模型。
  */
-#main-window #browser #navigator-toolbox zen-folder .tabbrowser-tab[aria-hidden="true"],
-#main-window #browser #navigator-toolbox zen-folder .tabbrowser-tab[aria-hidden="true"] :is(.tab-stack, .tab-content, .tab-background, .tab-icon-stack, .tab-icon-image, .tab-label-container, .tab-label) {
-  opacity: 0 !important;
-  visibility: collapse !important;
-  pointer-events: none !important;
-}
-
-#main-window #browser #navigator-toolbox zen-folder .tabbrowser-tab[aria-hidden="true"] {
-  max-height: 0px !important;
-  min-height: 0px !important;
-  height: 0px !important;
-  margin-block: 0px !important;
-  padding-block: 0px !important;
-  border: none !important;
-  overflow: clip !important;
-}
 
 /* 当折叠文件夹内所有子标签页均处于 [aria-hidden="true"] 收拢态时，同步隐藏左侧贯穿导轨 */
 zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is(.tab-group-tabs, .tab-group-container, zen-folder-tabs)::after,
@@ -708,7 +735,16 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 }
 
 /* -----------------------------------------------------------------------------
-   7. Essentials: 已加载/未加载分层纸阶 + 温润低亮和纸底 + 落款印记（零破坏原生网格尺寸）
+   7. Essentials: 实体厚键帽（Raised Key）
+   -----------------------------------------------------------------------------
+   状态语言改为「厚度」与「凹陷」，而不是明度与辉光：
+     · 已加载  = 弹起的键帽：实体键面 + 1.5px 细边 + 4px 实心底部侧壁
+     · 未加载  = 按下去的键帽：无厚度（底边 1.5px）、键面透明、只剩淡边与一道内侧硬线
+     · 悬停    = 键面提亮、描边加深，厚度不变
+     · 点击    = 由「选中」触发的一次性落键动画 0.34s（不依赖 :active 的存续时间，快按也跑完）
+     · 选中    = 键帽保持浮起，侧壁换成矿物色封边
+   全程零 box-shadow、零模糊、零外发光；几何仍由 Zen 原生网格决定（不加宽高/内外边距）。
+   键面配色按明暗两态分别配方，四套 palette 自动跟随（深色必须往 fg 方向提亮，否则键面不可见）。
    ----------------------------------------------------------------------------- */
 #zen-essentials-container,
 #zen-essentials {
@@ -744,48 +780,36 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 .tabbrowser-tab[zen-essential="true"] .tab-background {
   position: relative !important;
   overflow: hidden !important;
-  border-radius: var(--zenwashi-essentials-radius, 8px) !important;
-  border: 1px solid var(--zenwashi-essentials-card-border, var(--zenwashi-border-distinct)) !important;
-  background-color: var(--zenwashi-essentials-card-bg, light-dark(rgba(60, 52, 42, 0.045), rgba(255, 255, 255, 0.06))) !important;
-  background-image: linear-gradient(
-    180deg,
-    light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.03)) 0%,
-    transparent 100%
-  ) !important;
-  box-shadow: var(--zenwashi-essentials-card-shadow, light-dark(
-    0 1.5px 0 color-mix(in srgb, var(--zenwashi-fg-primary) 12%, transparent), 0 1px 3px color-mix(in srgb, var(--zenwashi-fg-primary) 5%, transparent),
-    0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
-  )) !important;
-  transition: background-color 0.28s var(--zenwashi-ease),
-              border-color 0.28s var(--zenwashi-ease),
-              box-shadow 0.28s var(--zenwashi-ease),
-              opacity 0.28s var(--zenwashi-ease) !important;
+  box-sizing: border-box !important;
+  border-radius: var(--zenwashi-key-radius) !important;
+  /* 浮起：1.5px 细边 + 4px 实心「侧壁」。
+     侧壁用 border-bottom-width 而不是 box-shadow —— 不会被标签自身的 overflow: clip 裁掉，
+     也不会产生任何模糊扩散，正好满足「只要厚度、不要辉光」。 */
+  border: 1.5px solid var(--zenwashi-key-edge) !important;
+  border-bottom-width: var(--zenwashi-key-lip) !important;
+  background-color: var(--zenwashi-key-face) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  /* 颜色变化保持轻快(0.16s)；几何变化用 0.48s + 同一条缓动，与第 12.3 节「宣纸微敛」
+     的 0.48s 完全对齐 —— 页面失焦回弹时，键帽同步升起，两者读起来是同一个动作。
+     末尾的 0.06s 延迟只作用于「回弹」，等于给按压加了一个最短停留时间：
+     再快的点击也能看到键帽完整沉下去，而不是刚按下就弹回来。
+     按下时的快节奏由 7.4 / 7.6 各自覆盖(它们把 delay 归零)。 */
+  transition: background-color 0.16s var(--zenwashi-ease),
+              border-color 0.16s var(--zenwashi-ease),
+              border-bottom-width 0.48s var(--zenwashi-ease) 0.06s,
+              transform 0.48s var(--zenwashi-ease) 0.06s !important;
 }
 
 /* 
- * 底部状态印记（.tab-background::after）：
- * 已加载的卡片底部常驻一枚 5px 宽的温润小印点（即便像 GitHub/抖音这种黑白图标也能一眼认出已加载）；
- * 未加载时完全隐藏；激活选中时舒展为 14px 矿物色落款横印。
+ * 底部状态印记（.tab-background::after）已停用：
+ * 原来的 5×2px 小印点在 ~40px 的格子里基本看不出来，而且它承担了「已加载」唯一的正向信号，
+ * 太单薄。现在改由「键帽厚度」本身表达浮起状态，这枚小点既多余又抢结构，故整体移除。
  */
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab .tab-background::after,
 .tabbrowser-tab[zen-essential="true"] .tab-background::after {
-  content: "" !important;
-  display: block !important;
-  position: absolute !important;
-  bottom: 3px !important;
-  left: 50% !important;
-  width: 5px !important;
-  height: 2px !important;
-  border-radius: 999px !important;
-  background-color: var(--zenwashi-accent) !important;
-  opacity: 0.50 !important;
-  transform: translateX(-50%) scaleX(1) !important;
-  pointer-events: none !important;
-  transition: opacity 0.28s var(--zenwashi-ease),
-              width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-              height 0.28s var(--zenwashi-ease),
-              transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-              background-color 0.28s var(--zenwashi-ease) !important;
+  content: none !important;
+  display: none !important;
 }
 
 /* 已加载的网站图标：100% 保持鲜明原彩（如 DeepSeek 保持清晰蓝色），绝不置灰 */
@@ -807,16 +831,13 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
  */
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background,
 .tabbrowser-tab[zen-essential="true"]:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background {
-  background-color: light-dark(color-mix(in srgb, var(--zenwashi-fg-primary) 3%, transparent), rgba(255, 255, 255, 0.02)) !important;
+  /* 空槽（按下未弹起）：底边收回到 1.5px —— 没有厚度就是没浮起来；
+     键面完全透明，只留一圈更淡的边和一道内侧硬线，让图标「沉进纸里」。 */
+  background-color: transparent !important;
   background-image: none !important;
-  border-color: light-dark(color-mix(in srgb, var(--zenwashi-fg-primary) 8%, transparent), rgba(255, 255, 255, 0.06)) !important;
-  box-shadow: none !important;
-}
-
-:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background::after,
-.tabbrowser-tab[zen-essential="true"]:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-background::after {
-  opacity: 0 !important;
-  width: 0px !important;
+  border-color: var(--zenwashi-key-edge-idle) !important;
+  border-bottom-width: 1.5px !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--zenwashi-fg-primary) 6%, transparent) !important;
 }
 
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([pending], [pending="true"], [discarded], [discarded="true"]):not(:hover):not([selected]):not([visuallyselected]) .tab-icon-image,
@@ -834,79 +855,92 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   }
 }
 
-/* ---------------- 7.3 悬停态：温润浮起 + 唤醒原彩 ---------------- */
+/* ---------------- 7.3 悬停态：键面提亮 + 唤醒原彩 ---------------- */
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
 .tabbrowser-tab[zen-essential="true"]:hover:not([selected]):not([visuallyselected]) .tab-background {
-  background-color: var(--zenwashi-essentials-card-hover-bg, light-dark(#FFFFFF, #24272E)) !important;
-  border-color: color-mix(in srgb, var(--zenwashi-accent) 55%, transparent) !important;
-  box-shadow: light-dark(
-    0 2.5px 0 var(--zenwashi-accent-tint), 0 4px 10px color-mix(in srgb, var(--zenwashi-fg-primary) 10%, transparent),
-    0 2.5px 0 rgba(0, 0, 0, 0.65), 0 5px 12px rgba(0, 0, 0, 0.45)
-  ) !important;
-}
-
-:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background::after,
-.tabbrowser-tab[zen-essential="true"]:hover:not([selected]):not([visuallyselected]) .tab-background::after {
-  opacity: 0.70 !important;
-  width: 9px !important;
-  transform: translateX(-50%) scaleX(1) !important;
+  /* 悬停只提亮键面、加深描边，厚度不变 —— 不靠位移和辉光，避免和按下态抢语义。
+     注意：这里刻意不写 border-bottom-width。厚度的唯一来源是 7.1(4px) 与 7.4/7.6(1px)，
+     否则悬停态的更具体选择器会把按下态的"侧壁收薄"压掉，按压就看不见了。 */
+  background-color: var(--zenwashi-key-face-hover) !important;
+  border-color: var(--zenwashi-key-edge-hover) !important;
+  box-shadow: none !important;
 }
 
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover .tab-icon-image,
 .tabbrowser-tab[zen-essential="true"]:hover .tab-icon-image {
   opacity: 1 !important;
-  filter: grayscale(0%) contrast(1.04) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.10)) !important;
-  transform: scale(1.14) translateY(-1px) !important;
+  filter: none !important;
+  transform: scale(1.06) !important;
 }
 
-/* ---------------- 7.4 按下态：真实活字印石按压下沉反馈 ---------------- */
-:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:active .tab-background,
-.tabbrowser-tab[zen-essential="true"]:active .tab-background {
-  box-shadow: light-dark(
-    0 0px 0 transparent, inset 0 1px 3px color-mix(in srgb, var(--zenwashi-fg-primary) 14%, transparent),
-    0 0px 0 rgba(0, 0, 0, 0.40), inset 0 1px 4px rgba(0, 0, 0, 0.45)
-  ) !important;
-  transition-duration: 0.10s !important;
+/* ---------------- 7.4 点击落键：由「选中」触发的一次性动画 ----------------
+ * 为什么不再用 :active：
+ *   :active 的生命周期严格等于 mousedown→mouseup。快速点击时这个窗口可能只跨一两帧，
+ *   0.06s 的过渡跑不完、甚至可能一帧都没渲染，于是"按得快就没有按动效果"。
+ *   改成由 [selected] 触发的一次性关键帧动画后，动画一旦开始就一定跑完，
+ *   与鼠标按住多久无关 —— 每一次切换都必然看到完整的落键。
+ * 代价：按住不放时不会持续保持压下（那只有 :active 能做到），但标签点击本来都是瞬时的。
+ * 节奏：0.34s。22%(≈75ms) 落到底并保持到 60%，之后回弹。
+ */
+@keyframes zenwashiKeyTap {
+  0%   { transform: translateY(0) scale(1);                             border-bottom-width: var(--zenwashi-key-lip); }
+  22%  { transform: translateY(var(--zenwashi-key-travel)) scale(0.97); border-bottom-width: var(--zenwashi-key-lip-pressed); }
+  60%  { transform: translateY(var(--zenwashi-key-travel)) scale(0.97); border-bottom-width: var(--zenwashi-key-lip-pressed); }
+  100% { transform: translateY(0) scale(1);                             border-bottom-width: var(--zenwashi-key-lip); }
 }
 
-:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:active .tab-icon-image,
-.tabbrowser-tab[zen-essential="true"]:active .tab-icon-image {
-  transform: scale(0.95) translateY(1px) !important;
-  transition-duration: 0.10s !important;
+/* 图标是 .tab-background 的兄弟节点，必须同步下沉。
+ * 这里刻意动画独立的 `translate` 属性而不是 `transform`：
+ * 主题与 Zen 都在图标上用 `transform: ... !important` 锁过盒模型，
+ * 而 !important 会压过动画；`translate` 与 `transform` 是两个独立属性，互不干扰。 */
+@keyframes zenwashiKeyTapIcon {
+  0%   { translate: 0 0; }
+  22%  { translate: 0 var(--zenwashi-key-travel); }
+  60%  { translate: 0 var(--zenwashi-key-travel); }
+  100% { translate: 0 0; }
 }
 
-/* ---------------- 7.5 选中态：卡片提亮 + 矿物色印框 + 14px 落款横印 ---------------- */
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected], [visuallyselected]) .tab-background,
+.tabbrowser-tab[zen-essential="true"]:is([selected], [visuallyselected]) .tab-background {
+  animation: zenwashiKeyTap 0.34s var(--zenwashi-ease) 1;
+}
+
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected], [visuallyselected]) .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"]:is([selected], [visuallyselected]) .tab-icon-image {
+  animation: zenwashiKeyTapIcon 0.34s var(--zenwashi-ease) 1;
+}
+
+/* ---------------- 7.5 选中态：键帽保持浮起，侧壁换成矿物色封边 ---------------- */
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected="true"], [selected], [visuallyselected]) .tab-background,
 .tabbrowser-tab[zen-essential="true"]:is([selected="true"], [selected], [visuallyselected]) .tab-background {
-  background-color: var(--zenwashi-essentials-card-selected-bg, var(--zenwashi-tab-selected-bg)) !important;
-  background-image: linear-gradient(
-    145deg,
-    light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.06)) 20%,
-    var(--zenwashi-accent-tint) 120%
-  ) !important;
-  border-color: var(--zenwashi-accent) !important;
-  outline: 1.5px solid var(--zenwashi-accent-tint) !important;
-  outline-offset: -1px !important;
-  box-shadow: light-dark(
-    0 2px 0 var(--zenwashi-accent), 0 4px 10px color-mix(in srgb, var(--zenwashi-fg-primary) 12%, transparent),
-    0 2px 0 var(--zenwashi-accent), 0 4px 12px rgba(0, 0, 0, 0.48)
-  ) !important;
-}
-
-:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected="true"], [selected], [visuallyselected]) .tab-background::after,
-.tabbrowser-tab[zen-essential="true"]:is([selected="true"], [selected], [visuallyselected]) .tab-background::after {
-  opacity: 0.95 !important;
-  width: 14px !important;
-  height: 2.5px !important;
-  transform: translateX(-50%) scaleX(1) !important;
+  background-color: var(--zenwashi-key-face-selected) !important;
+  background-image: none !important;
+  border-color: var(--zenwashi-key-edge-selected) !important;
+  /* 刻意不写 border-bottom-width：厚度只由 7.1(4px) 与 7.4 的落键动画决定。
+     之前这里写了 4px，而它与旧的 :active 规则特异性相同且源码更靠后，
+     于是"点击已加载的 essentials"时侧壁永远回不到 1px —— 按压效果被这条规则吃掉了。 */
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected="true"], [selected], [visuallyselected]) .tab-icon-image,
 .tabbrowser-tab[zen-essential="true"]:is([selected="true"], [selected], [visuallyselected]) .tab-icon-image {
   opacity: 1 !important;
-  filter: grayscale(0%) contrast(1.05) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12)) !important;
-  transform: scale(1.08) translateY(-1px) !important;
+  filter: none !important;
+  transform: scale(1) !important;
 }
+
+/* -----------------------------------------------------------------------------
+ * 【已移除】7.6 加载中保持按下的状态
+ * -----------------------------------------------------------------------------
+ * 曾经用第 12.3 节完全相同的 [busy] 信号，让键帽在加载期间保持按下，
+ * 与「宣纸微敛」共用同一条回弹时间线。
+ * 但它和 7.4 的一次性落键动画互斥：动画在跑的时候会覆盖这些声明，
+ * 动画一结束(0.34s)若页面还在加载，声明重新生效，键帽会"二次按下去"——
+ * 观感是明显的抽动。两者只能取其一，而"每一次点击都看得见按动"优先级更高。
+ * 若将来想要回"加载期间保持按下"，应改为不再用一次性动画，
+ * 而是接受快速点击可能看不到按动（见 7.4 的说明）。
+ * ----------------------------------------------------------------------------- */
 
 /* 侧边栏按钮 */
 #tabs-newtab-button,
