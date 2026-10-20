@@ -1,0 +1,1141 @@
+@import "loadbar.css";
+@import "header-chrome.css";
+
+@media not (-moz-pref("zenwashi.urlbar.blended", false)) {
+:root {
+    --blended-addressbar-frame-gap: var(--zen-element-separation);
+    --blended-addressbar-pane-inner-highlight: inset 0 0 0 0px transparent;
+    --blended-addressbar-frame-radius: 14px;
+    --blended-addressbar-inner-radius: max(0px, calc(var(--blended-addressbar-frame-radius) - var(--blended-addressbar-frame-gap)));
+    --blended-addressbar-color-transition: 0ms linear;
+    --blended-addressbar-frame-shadow-standard:
+        0 4px 16px rgba(0, 0, 0, 0.14),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+    --blended-addressbar-frame-shadow-minimal:
+        0 0 0 0.5pt rgba(0, 0, 0, 0.15),
+        0 2px 8px rgba(0, 0, 0, 0.15);
+    --blended-addressbar-frame-shadow-medium:
+        0 5px 12px rgba(0, 0, 0, 0.10),
+        0 1px 2px rgba(0, 0, 0, 0.10);
+    --blended-addressbar-frame-shadow: var(--blended-addressbar-frame-shadow-standard);
+    --blended-addressbar-toolbar-separator-shadow: 0 -1px 0 0 inset rgba(128, 128, 128, 0.09);
+    --blended-addressbar-bookmark-popup-radius: 8px;
+    --blended-addressbar-bookmark-popup-border-color: color-mix(in srgb, MenuText 18%, transparent);
+}
+
+:root[data-blended-addressbar-color-loading] {
+    --blended-addressbar-color-transition: 120ms ease-out;
+}
+
+:root[data-blended-addressbar-frame-shadow="minimal"] {
+    --blended-addressbar-frame-shadow: var(--blended-addressbar-frame-shadow-minimal);
+    --blended-addressbar-pane-inner-highlight: inset 0 0 0 0.5pt rgba(255, 255, 255, 0.15);
+}
+
+/* A separate layer keeps the highlight above page content and clear of loadbar pseudo-elements. */
+.blended-addressbar-frame-highlight {
+    display: none;
+}
+:root[data-blended-addressbar-frame-shadow="minimal"]:not(:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"])) {
+    &:not([zen-single-toolbar="true"]) #zen-appcontent-wrapper,
+    &[zen-single-toolbar="true"] #zen-tabbox-wrapper {
+        position: relative;
+
+        > .blended-addressbar-frame-highlight {
+            display: block;
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            border-radius: inherit;
+            box-shadow: inset 0 0 0 0.5pt rgba(255, 255, 255, 0.15);
+            pointer-events: none;
+        }
+
+        &:has(#tabbrowser-tabpanels[zen-split-view="true"]) > .blended-addressbar-frame-highlight {
+            display: none;
+        }
+    }
+}
+
+:root[data-blended-addressbar-frame-shadow="medium"] {
+    --blended-addressbar-frame-shadow: var(--blended-addressbar-frame-shadow-medium);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --blended-addressbar-frame-shadow-standard:
+            0 6px 18px rgba(0, 0, 0, 0.34),
+            0 1px 5px rgba(0, 0, 0, 0.30);
+        --blended-addressbar-frame-shadow-medium:
+            0 6px 14px rgba(0, 0, 0, 0.30),
+            0 1px 3px rgba(0, 0, 0, 0.28);
+    }
+}
+
+/* Bookmark folder popups keep the native system menu palette. */
+menupopup[placespopup="true"] {
+    background: Menu !important;
+    background-color: Menu !important;
+    --panel-background: Menu !important;
+    --panel-color: MenuText !important;
+    --panel-background-color: Menu !important;
+    --panel-text-color: MenuText !important;
+    --background-color-canvas: Menu !important;
+    --menuitem-icon-fill: MenuText !important;
+    --panel-border-color: var(--blended-addressbar-bookmark-popup-border-color) !important;
+    --panel-border-radius: var(--blended-addressbar-bookmark-popup-radius) !important;
+    --arrowpanel-background: Menu !important;
+    --arrowpanel-color: MenuText !important;
+    --arrowpanel-border-color: var(--blended-addressbar-bookmark-popup-border-color) !important;
+    --arrowpanel-border-radius: var(--blended-addressbar-bookmark-popup-radius) !important;
+    color: MenuText !important;
+    fill: currentColor !important;
+    stroke: currentColor !important;
+    --toolbox-textcolor: MenuText;
+    --toolbarbutton-icon-fill: currentColor;
+    --toolbar-color: MenuText;
+    transition: none !important;
+}
+
+menupopup[placespopup="true"]::part(content) {
+    background: Menu !important;
+    background-color: Menu !important;
+    color: MenuText !important;
+    border-color: var(--blended-addressbar-bookmark-popup-border-color) !important;
+    border-radius: var(--blended-addressbar-bookmark-popup-radius) !important;
+    overflow: hidden !important;
+    transition: none !important;
+}
+
+menupopup[placespopup="true"] :is(menu, menuitem, .menu-iconic, .menuitem-iconic, .menu-iconic-text, .menuitem-iconic-text, .menu-text, .menuitem-text, .bookmark-item) {
+    color: MenuText !important;
+    fill: currentColor !important;
+    stroke: currentColor !important;
+    --toolbox-textcolor: MenuText;
+    --toolbarbutton-icon-fill: currentColor;
+    --toolbar-color: MenuText;
+}
+
+menupopup[placespopup="true"] .menu-icon {
+    color: MenuText !important;
+    fill: MenuText !important;
+    stroke: MenuText !important;
+    -moz-context-properties: fill, fill-opacity !important;
+}
+
+menupopup[placespopup="true"] :is(menu, menuitem, .bookmark-item):is([disabled], [disabled="true"]) {
+    color: GrayText !important;
+    fill: currentColor !important;
+    stroke: currentColor !important;
+    --toolbarbutton-icon-fill: currentColor;
+}
+
+/* URL bar */
+
+#navigator-toolbox[zen-sidebar-expanded="true"] {
+    padding-top: 2px !important;
+}
+
+/* Dual-toolbar addressbar */
+:root:not([zen-single-toolbar="true"]) {
+
+    /* Wrapper */
+
+    #zen-appcontent-wrapper {
+        z-index: 3;
+        margin: var(--blended-addressbar-frame-gap) var(--blended-addressbar-frame-gap) var(--blended-addressbar-frame-gap) 0 !important;
+        background-color: var(--blended-addressbar-frame-background, var(--zen-main-browser-background));
+        box-shadow: var(--blended-addressbar-frame-shadow);
+        border-radius: var(--blended-addressbar-frame-radius);
+        overflow: hidden;
+        isolation: isolate;
+        
+    }
+
+    @media -moz-pref("zen.tabs.vertical.right-side") {
+        #zen-appcontent-wrapper {
+            margin: var(--blended-addressbar-frame-gap) 0 var(--blended-addressbar-frame-gap) var(--blended-addressbar-frame-gap) !important;
+        }
+    }
+
+    &:has([zen-compact-mode="true"]) {
+        #zen-appcontent-wrapper {
+            margin: var(--blended-addressbar-frame-gap) !important;
+        }
+    }
+
+    &:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"]) {
+        #zen-appcontent-wrapper {
+            margin: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+
+        #nav-bar,
+        #nav-bar:not([hidden]):not([collapsed="true"]) + #PersonalToolbar:not([hidden]):not([collapsed="true"]) {
+            box-shadow: none !important;
+        }
+
+    }
+
+    &[chromehidden~="toolbar"],
+    &:has(#navigator-toolbox[tabs-hidden]) {
+        #zen-appcontent-wrapper {
+            margin: 0 !important;
+            border-radius: 0 0 var(--blended-addressbar-frame-radius) var(--blended-addressbar-frame-radius) !important;
+        }
+    }
+
+    /* The URL bar with bookmarks */
+    #zen-appcontent-navbar-wrapper {
+        background-color: var(--zen-tab-header-background, var(--zen-main-browser-background-toolbar));
+        box-shadow: none;
+        --blended-addressbar-header-muted-foreground: color-mix(in srgb, var(--zen-tab-header-foreground, currentColor) 42%, transparent);
+        transition: background-color var(--blended-addressbar-color-transition), color var(--blended-addressbar-color-transition);
+
+        #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"]),
+        #PersonalToolbar,
+        #PanelUI-button {
+            -moz-window-dragging: drag;
+            color: var(--zen-tab-header-foreground, inherit);
+            fill: currentColor;
+            transition: color var(--blended-addressbar-color-transition), fill var(--blended-addressbar-color-transition), stroke var(--blended-addressbar-color-transition);
+            --toolbox-textcolor: var(--zen-tab-header-foreground, currentColor);
+            --toolbarbutton-icon-fill: var(--zen-tab-header-foreground, currentColor);
+            --toolbar-color: var(--zen-tab-header-foreground, currentColor);
+            --toolbar-field-color: var(--zen-tab-header-foreground, currentColor);
+        }
+
+        /* Interactive children must stay clickable, not draggable: on a drag
+           region, press-and-hold menus (back/forward session history, bookmark
+           folders) roll up the moment the first pixel of cursor drift starts
+           moving the window, and a click with slight drift drags the window
+           instead of clicking. Spacers and the empty strip remain draggable. */
+        #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"]):is(toolbarbutton, toolbaritem),
+        #PersonalToolbar :is(toolbarbutton, .bookmark-item),
+        #PanelUI-button:is(toolbaritem, toolbarbutton) {
+            -moz-window-dragging: no-drag;
+        }
+
+        #PersonalToolbar #PlacesToolbarItems > toolbarbutton.bookmark-item,
+        #PersonalToolbar #PlacesToolbarItems > toolbarbutton.bookmark-item > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
+            transition: none !important;
+        }
+
+        :is(
+            #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"]),
+            #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"]) :is(toolbarbutton, .toolbarbutton-1, .toolbarbutton-icon, .toolbarbutton-text, .urlbar-icon),
+            #urlbar:not([zen-floating-urlbar="true"]) #urlbar-input-container :is(#identity-box, #trust-icon-container, #tracking-protection-icon-container, #zen-site-data-icon-button, .urlbar-page-action, .identity-box-button, .urlbar-icon),
+            #urlbar:not([zen-floating-urlbar="true"]) #urlbar-input-container :is(#identity-box, #trust-icon-container, #tracking-protection-icon-container, #zen-site-data-icon-button, .urlbar-page-action, .identity-box-button) :is(.toolbarbutton-icon, .urlbar-icon, image),
+            #personal-bookmarks,
+            #personal-bookmarks.browser-toolbar,
+            #PersonalToolbar :is(#personal-bookmarks, .browser-toolbar),
+            #PersonalToolbar :is(toolbarbutton, .toolbarbutton-1, .toolbarbutton-icon, .toolbarbutton-text, .bookmark-item),
+            #PanelUI-button,
+            #PanelUI-button :is(toolbarbutton, .toolbarbutton-1, .toolbarbutton-icon),
+            .titlebar-buttonbox-container :is(toolbarbutton, .toolbarbutton-1, .toolbarbutton-icon, .titlebar-button),
+            .titlebar-buttonbox-container :is(toolbarbutton, .toolbarbutton-1, .toolbarbutton-icon, .titlebar-button) *,
+            > :is(toolbarbutton, .toolbarbutton-1),
+            > :is(toolbarbutton, .toolbarbutton-1) :is(.toolbarbutton-icon, .toolbarbutton-text)
+        ) {
+            color: var(--zen-tab-header-foreground, inherit) !important;
+            fill: currentColor !important;
+            fill-opacity: 1 !important;
+            stroke: currentColor !important;
+            stroke-opacity: 1 !important;
+            transition: color var(--blended-addressbar-color-transition), fill var(--blended-addressbar-color-transition), stroke var(--blended-addressbar-color-transition);
+            --toolbox-textcolor: var(--zen-tab-header-foreground, currentColor);
+            --toolbarbutton-icon-fill: currentColor !important;
+            --toolbar-color: var(--zen-tab-header-foreground, currentColor);
+            --toolbar-field-color: var(--zen-tab-header-foreground, currentColor);
+            --urlbar-icon-fill-opacity: 1;
+        }
+
+        #urlbar:not([zen-floating-urlbar="true"]) #zen-site-data-icon-button[boosting] image {
+            color: var(--zen-tab-header-foreground, currentColor) !important;
+            fill: currentColor !important;
+            stroke: currentColor !important;
+            transition: color var(--blended-addressbar-color-transition), fill var(--blended-addressbar-color-transition), stroke var(--blended-addressbar-color-transition);
+            --toolbarbutton-icon-fill: currentColor;
+        }
+
+        :is(
+            #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"])[disabled],
+            #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"])[disabled="true"],
+            #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"]) :is([disabled], [disabled="true"], [muted], [soundplaying], .toolbarbutton-icon[disabled]),
+            #PersonalToolbar :is([disabled], [disabled="true"], [muted], [soundplaying]),
+            #PanelUI-button :is([disabled], [disabled="true"])
+        ) {
+            color: var(--blended-addressbar-header-muted-foreground) !important;
+            fill: currentColor !important;
+            stroke: currentColor !important;
+            transition: color var(--blended-addressbar-color-transition), fill var(--blended-addressbar-color-transition), stroke var(--blended-addressbar-color-transition);
+            --toolbarbutton-icon-fill: currentColor;
+        }
+
+        #urlbar:not([zen-floating-urlbar="true"]) {
+            color: var(--zen-tab-header-foreground, inherit);
+            transition: color var(--blended-addressbar-color-transition);
+            --toolbar-field-color: var(--zen-tab-header-foreground, currentColor);
+            --input-color: var(--zen-tab-header-foreground, currentColor);
+        }
+
+        #urlbar:not([zen-floating-urlbar="true"]) .urlbar-input-box,
+        #urlbar:not([zen-floating-urlbar="true"]) #urlbar-input {
+            color: var(--zen-tab-header-foreground, inherit);
+            transition: color var(--blended-addressbar-color-transition);
+            --input-color: var(--zen-tab-header-foreground, currentColor);
+        }
+
+        #urlbar:not([zen-floating-urlbar="true"]):is([focused], [open], [breakout-extend="true"]) .urlbar-input-box,
+        #urlbar:not([zen-floating-urlbar="true"]):is([focused], [open], [breakout-extend="true"]) #urlbar-input {
+            color: FieldText !important;
+            --input-color: FieldText;
+        }
+
+        #urlbar:not([zen-floating-urlbar="true"])[breakout][breakout-extend] {
+            top: 2px !important;
+        }
+
+        #urlbar:not([zen-floating-urlbar="true"])[breakout][breakout-extend] > .urlbar-input-container {
+            height: calc(var(--urlbar-container-height) - 10px) !important;
+        }
+
+        #urlbar:not([zen-floating-urlbar="true"]) #urlbar-input::selection {
+            background-color: SelectedItem !important;
+            color: SelectedItemText !important;
+        }
+    }
+
+    #navigator-toolbox:not([tabs-hidden]) :is(
+        #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"]),
+        #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"]) :is(toolbarbutton, .toolbarbutton-1, .toolbarbutton-icon, .toolbarbutton-text, .urlbar-icon, image),
+        #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([open]):not([breakout-extend="true"]) :is(#identity-box, #zen-site-data-icon-button, #zen-copy-url-button, .urlbar-page-action, .identity-box-button, .urlbar-icon),
+        #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([open]):not([breakout-extend="true"]) :is(#identity-box, #zen-site-data-icon-button, #zen-copy-url-button, .urlbar-page-action, .identity-box-button) :is(.urlbar-icon, image),
+        #PanelUI-button,
+        #PanelUI-button :is(toolbarbutton, .toolbarbutton-1, .toolbarbutton-icon, image)
+    ) {
+        color: var(--zen-tab-header-foreground, inherit) !important;
+        fill: currentColor !important;
+        fill-opacity: 1 !important;
+        stroke: currentColor !important;
+        stroke-opacity: 1 !important;
+        --toolbarbutton-icon-fill: currentColor !important;
+        --urlbar-icon-fill-opacity: 1;
+    }
+
+    #navigator-toolbox:not([tabs-hidden]) #zen-site-data-icon-button.identity-box-button,
+    #navigator-toolbox:not([tabs-hidden]) #zen-site-data-icon-button.identity-box-button > image {
+        color: var(--zen-tab-header-foreground, inherit) !important;
+        fill: currentColor !important;
+        fill-opacity: 1 !important;
+        stroke: currentColor !important;
+        stroke-opacity: 1 !important;
+        --toolbarbutton-icon-fill: currentColor !important;
+        --urlbar-icon-fill-opacity: 1;
+    }
+
+    #zen-site-data-icon-button:not([boosting]),
+    #zen-site-data-icon-button:not([boosting]) image {
+        color: var(--zen-tab-header-foreground, currentColor) !important;
+        fill: currentColor !important;
+        fill-opacity: 1 !important;
+        stroke: currentColor !important;
+        stroke-opacity: 1 !important;
+        --toolbarbutton-icon-fill: currentColor !important;
+        --urlbar-icon-fill-opacity: 1 !important;
+    }
+
+    /* Zen moves the macOS window controls between the sidebar and addressbar. */
+    #zen-sidebar-top-buttons .titlebar-buttonbox-container {
+        color: var(--zen-sidebar-themed-icon-fill, var(--toolbox-textcolor, currentColor)) !important;
+        transition: color var(--blended-addressbar-color-transition);
+        --zen-toolbar-element-bg: color-mix(in srgb, currentColor 14%, transparent) !important;
+    }
+
+    #zen-appcontent-navbar-wrapper .titlebar-buttonbox-container {
+        color: var(--zen-tab-header-foreground, inherit) !important;
+        transition: color var(--blended-addressbar-color-transition);
+        --toolbox-textcolor: var(--zen-tab-header-foreground, currentColor);
+        --zen-toolbar-element-bg: color-mix(in srgb, currentColor 14%, transparent) !important;
+    }
+
+    /* Zen moves these controls between the titlebar and nav-bar in Only Sidebar mode. */
+    :is(
+        :is(#titlebar > #zen-sidebar-top-buttons, #nav-bar > #zen-sidebar-top-buttons) :is(
+            #zen-toggle-compact-mode,
+            #history-panelmenu,
+            #bookmarks-menu-button,
+            #zen-expand-sidebar-button
+        ),
+        :is(#titlebar > #zen-sidebar-top-buttons, #nav-bar > #zen-sidebar-top-buttons) :is(
+            #zen-toggle-compact-mode,
+            #history-panelmenu,
+            #bookmarks-menu-button,
+            #zen-expand-sidebar-button
+        ) image,
+        #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([open]):not([breakout-extend="true"]) #zen-copy-url-button,
+        #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([open]):not([breakout-extend="true"]) #zen-copy-url-button image
+    ) {
+        color: var(--zen-tab-header-foreground, inherit) !important;
+        fill: currentColor !important;
+        fill-opacity: 1 !important;
+        stroke: currentColor !important;
+        stroke-opacity: 1 !important;
+        --toolbarbutton-icon-fill: currentColor !important;
+        --urlbar-icon-fill-opacity: 1 !important;
+    }
+
+    #nav-bar {
+        margin-inline-end: 0 !important;
+        padding-inline-start: var(--zen-element-separation) !important;
+        padding-inline-end: 0 !important;
+        box-shadow: var(--blended-addressbar-toolbar-separator-shadow);
+    }
+
+    #nav-bar:not([hidden]):not([collapsed="true"]) + #PersonalToolbar:not([hidden]):not([collapsed="true"]) {
+        box-shadow: var(--blended-addressbar-toolbar-separator-shadow);
+    }
+
+    @media (-moz-bool-pref: "uc.blended-addressbar.addressbar-bookmarks-separator.disabled") {
+        #nav-bar:not([hidden]):not([collapsed="true"]):has(+ #PersonalToolbar:not([hidden]):not([collapsed="true"])) {
+            box-shadow: none !important;
+        }
+    }
+
+    /* The webpage content wrapper */
+    #zen-tabbox-wrapper {
+        margin: 0 !important;
+        
+    }
+    
+    .urlbar-background {
+        --zen-toolbar-element-bg: transparent;
+    }
+
+    .titlebar-button.titlebar-close  {
+        border-top-right-radius: var(--blended-addressbar-frame-radius);
+        padding-inline-end: 22px !important;
+    }
+}
+
+/* Browser surface shared by both toolbar layouts. */
+#tabbrowser-tabpanels,
+#tabbrowser-tabbox {
+    overflow: hidden;
+}
+
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer {
+    :root:not([zen-no-padding="true"]) &:not(.zen-glance-overlay) {
+        --blended-addressbar-split-radius-top-left: 0px;
+        --blended-addressbar-split-radius-top-right: 0px;
+        --blended-addressbar-split-radius-bottom-right: 0px;
+        --blended-addressbar-split-radius-bottom-left: 0px;
+        --zen-native-inner-radius:
+            var(--blended-addressbar-split-radius-top-left)
+            var(--blended-addressbar-split-radius-top-right)
+            var(--blended-addressbar-split-radius-bottom-right)
+            var(--blended-addressbar-split-radius-bottom-left) !important;
+        --zen-big-shadow: none;
+    }
+}
+
+#tabbrowser-tabpanels > .browserSidebarContainer:not(.zen-glance-overlay) {
+    --zen-native-inner-radius:
+        var(--blended-addressbar-split-radius-top-left)
+        var(--blended-addressbar-split-radius-top-right)
+        var(--blended-addressbar-split-radius-bottom-right)
+        var(--blended-addressbar-split-radius-bottom-left) !important;
+}
+
+.browserSidebarContainer.zen-glance-background.deck-selected {
+    transform: scale(1) !important;
+}
+
+.zen-glance-overlay .browserContainer {
+    height: 98% !important;
+}
+
+#sidebar-box {
+    border-radius: 0 !important;
+}
+
+:root:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"])
+    #tabbrowser-tabpanels > .browserSidebarContainer:not(.zen-glance-overlay) {
+    --blended-addressbar-split-radius-top-left: 0px;
+    --blended-addressbar-split-radius-top-right: 0px;
+    --blended-addressbar-split-radius-bottom-right: 0px;
+    --blended-addressbar-split-radius-bottom-left: 0px;
+    --zen-native-inner-radius: 0 0 0 0 !important;
+}
+
+/* Single-toolbar mode keeps Zen's sidebar addressbar native. */
+:root[zen-single-toolbar="true"]:not([customizing]) #zen-appcontent-navbar-wrapper:has(#PersonalToolbar[collapsed]) {
+    min-height: 0 !important;
+    height: 0 !important;
+}
+
+:root[zen-single-toolbar="true"] {
+    --blended-addressbar-bookmarks-height: var(--zen-toolbar-height, 38px);
+    --blended-addressbar-bookmarks-hide-delay: 600ms;
+
+    #zen-appcontent-wrapper {
+        position: relative;
+    }
+
+    &:not([customizing]) #zen-appcontent-navbar-wrapper {
+        position: absolute !important;
+        inset: var(--blended-addressbar-frame-gap) 0 auto 0;
+        z-index: 2;
+        background: transparent !important;
+    }
+
+    #PersonalToolbar:not([hidden]):not([collapsed]) {
+        margin: 0 var(--blended-addressbar-frame-gap) 0 0 !important;
+        height: var(--blended-addressbar-bookmarks-height) !important;
+        min-height: var(--blended-addressbar-bookmarks-height) !important;
+        box-sizing: border-box;
+        padding-inline: clamp(8px, var(--blended-addressbar-frame-radius), 16px) !important;
+        background: var(--zen-tab-header-background, var(--blended-addressbar-frame-background, var(--zen-main-browser-background))) !important;
+        border-bottom: 0 !important;
+        box-shadow: none !important;
+        border-radius: var(--blended-addressbar-frame-radius) var(--blended-addressbar-frame-radius) 0 0;
+        overflow: hidden;
+        color: var(--zen-tab-header-foreground, inherit) !important;
+        --toolbox-textcolor: var(--zen-tab-header-foreground, currentColor);
+        --toolbarbutton-icon-fill: currentColor !important;
+        --toolbar-color: var(--zen-tab-header-foreground, currentColor);
+    }
+
+    @media not (-moz-bool-pref: "uc.blended-addressbar.addressbar-bookmarks-separator.disabled") {
+        #PersonalToolbar:not([hidden]):not([collapsed]) {
+            box-shadow: var(--blended-addressbar-toolbar-separator-shadow) !important;
+        }
+    }
+
+    #PersonalToolbar[collapsed] {
+        display: none !important;
+    }
+
+    &:has(#PersonalToolbar:not([hidden]):not([collapsed]))
+        #tabbrowser-tabpanels[has-toolbar-hovered] .browserContainer {
+        --margin-top-fix: 0px !important;
+    }
+
+    #zen-tabbox-wrapper {
+        margin: var(--blended-addressbar-frame-gap) var(--blended-addressbar-frame-gap) var(--blended-addressbar-frame-gap) 0 !important;
+        background-color: var(--blended-addressbar-frame-background, var(--zen-main-browser-background));
+        box-shadow: var(--blended-addressbar-frame-shadow);
+        border-radius: var(--blended-addressbar-frame-radius);
+        overflow: hidden;
+        z-index: auto !important;
+        isolation: auto;
+    }
+
+    @media -moz-pref("zen.view.hide-window-controls") {
+        #zen-tabbox-wrapper {
+            transition: padding-top var(--zen-hidden-toolbar-transition);
+            transition-delay: 0.2s;
+        }
+
+        &:not(:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"]))
+            #zen-appcontent-navbar-wrapper:is([zen-has-hover], [has-popup-menu], [zen-compact-mode-active]):has(#PersonalToolbar:not([hidden]):not([collapsed])) {
+            height: var(--blended-addressbar-bookmarks-height) !important;
+        }
+
+        &:not(:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"]))
+            #zen-appcontent-navbar-wrapper:is([zen-has-hover], [has-popup-menu], [zen-compact-mode-active]):has(#PersonalToolbar:not([hidden]):not([collapsed]))
+            + #zen-tabbox-wrapper {
+            padding-top: var(--blended-addressbar-bookmarks-height) !important;
+        }
+
+        #zen-appcontent-navbar-wrapper:not([zen-has-hover]):not([has-popup-menu]):not([zen-compact-mode-active]):has(#PersonalToolbar:not([hidden]):not([collapsed])),
+        #zen-appcontent-navbar-wrapper:not([zen-has-hover]):not([has-popup-menu]):not([zen-compact-mode-active]):has(#PersonalToolbar:not([hidden]):not([collapsed])) + #zen-tabbox-wrapper {
+            transition-delay: var(--blended-addressbar-bookmarks-hide-delay) !important;
+        }
+    }
+
+    @media not -moz-pref("zen.view.hide-window-controls") {
+        &:not(:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"]))
+            #zen-appcontent-navbar-wrapper:has(#PersonalToolbar:not([hidden]):not([collapsed])) {
+            height: var(--blended-addressbar-bookmarks-height) !important;
+        }
+
+        &:not(:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"]))
+            #zen-appcontent-navbar-wrapper:has(#PersonalToolbar:not([hidden]):not([collapsed]))
+            + #zen-tabbox-wrapper {
+            padding-top: var(--blended-addressbar-bookmarks-height) !important;
+        }
+    }
+
+    @media -moz-pref("zen.tabs.vertical.right-side") {
+        #PersonalToolbar:not([hidden]):not([collapsed]) {
+            margin: 0 0 0 var(--blended-addressbar-frame-gap) !important;
+        }
+
+        #zen-tabbox-wrapper {
+            margin: var(--blended-addressbar-frame-gap) 0 var(--blended-addressbar-frame-gap) var(--blended-addressbar-frame-gap) !important;
+        }
+    }
+
+    &:has([zen-compact-mode="true"]) #PersonalToolbar:not([hidden]):not([collapsed]) {
+        margin: 0 var(--blended-addressbar-frame-gap) 0 var(--blended-addressbar-frame-gap) !important;
+    }
+
+    &:has([zen-compact-mode="true"]) #zen-tabbox-wrapper {
+        margin: var(--blended-addressbar-frame-gap) var(--blended-addressbar-frame-gap) var(--blended-addressbar-frame-gap) var(--blended-addressbar-frame-gap) !important;
+    }
+
+    &:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"]) {
+        #zen-appcontent-navbar-wrapper {
+            min-height: 0 !important;
+            height: 0 !important;
+        }
+
+        #zen-tabbox-wrapper {
+            margin: 0 !important;
+            padding-top: 0 !important;
+            border-radius: var(--blended-addressbar-frame-radius) !important;
+            box-shadow: none !important;
+        }
+
+        #PersonalToolbar:not([hidden]):not([collapsed]) {
+            margin: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+    }
+}
+
+@media (-moz-bool-pref: "uc.blended-addressbar.single-toolbar.bookmarks-always-visible") {
+    :root[zen-single-toolbar="true"]:not(:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"]))
+        #zen-appcontent-navbar-wrapper:has(#PersonalToolbar:not([hidden]):not([collapsed])) {
+        height: var(--blended-addressbar-bookmarks-height) !important;
+        min-height: var(--blended-addressbar-bookmarks-height) !important;
+        opacity: 1 !important;
+        overflow: visible !important;
+        pointer-events: auto !important;
+        transition-delay: 0s !important;
+    }
+
+    :root[zen-single-toolbar="true"]:not(:is([inDOMFullscreen="true"], [inFullscreen="true"], [macOSNativeFullscreen], [zen-no-padding="true"]))
+        #zen-appcontent-navbar-wrapper:has(#PersonalToolbar:not([hidden]):not([collapsed]))
+        + #zen-tabbox-wrapper {
+        padding-top: var(--blended-addressbar-bookmarks-height) !important;
+        transition-delay: 0s !important;
+    }
+}
+
+@media (-moz-platform: macos) {
+    :root:not([zen-single-toolbar="true"]):not([zen-sidebar-expanded="true"]):not([zen-compact-mode="true"])
+        #nav-bar > .titlebar-buttonbox-container {
+        position: fixed;
+        inset-inline-start: 0;
+        top: 0;
+        z-index: 10;
+        width: var(--zen-toolbox-max-width, 60px) !important;
+        height: 42px;
+        margin: 0 !important;
+        padding: 0 !important;
+        justify-content: center;
+        overflow: visible;
+
+        > .titlebar-buttonbox {
+            appearance: none !important;
+            -moz-default-appearance: none !important;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            height: 100%;
+            margin: 0 !important;
+
+            > .titlebar-button {
+                appearance: none !important;
+                -moz-default-appearance: none !important;
+                display: flex !important;
+                flex: 0 0 10px;
+                width: 10px;
+                min-width: 10px;
+                height: 10px;
+                min-height: 10px;
+                padding: 0 !important;
+                border: 0 !important;
+                border-radius: 50% !important;
+                background-image: none !important;
+                box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.18);
+                list-style-image: none !important;
+            }
+
+            > .titlebar-close {
+                order: 0;
+                background-color: #ff5f57 !important;
+            }
+
+            > .titlebar-min {
+                order: 1;
+                background-color: #febc2e !important;
+            }
+
+            > :is(.titlebar-max, .titlebar-restore) {
+                order: 2;
+                background-color: #28c840 !important;
+            }
+        }
+    }
+
+    :root:not([zen-single-toolbar="true"]):not([zen-sidebar-expanded="true"]):not([zen-compact-mode="true"]):not([sizemode="maximized"], [sizemode="fullscreen"])
+        #nav-bar > .titlebar-buttonbox-container .titlebar-restore,
+    :root:not([zen-single-toolbar="true"]):not([zen-sidebar-expanded="true"]):not([zen-compact-mode="true"]):is([sizemode="maximized"], [sizemode="fullscreen"])
+        #nav-bar > .titlebar-buttonbox-container .titlebar-max {
+        display: none !important;
+    }
+
+    @media -moz-pref("zen.widget.mac.mono-window-controls") {
+        :root:not([window-modal-open="true"]):not([zen-single-toolbar="true"]) .titlebar-buttonbox-container {
+            color: var(--zen-tab-header-foreground, inherit) !important;
+            --zen-toolbar-element-bg: color-mix(in srgb, currentColor 14%, transparent) !important;
+        }
+
+        :root:not([zen-single-toolbar="true"]):not([zen-sidebar-expanded="true"]):not([zen-compact-mode="true"])
+            #nav-bar > .titlebar-buttonbox-container {
+            background-image: none !important;
+
+            > .titlebar-buttonbox {
+                opacity: 1 !important;
+            }
+
+            &:not([zen-has-hover="true"]) > .titlebar-buttonbox > .titlebar-button {
+                background-color: var(--zen-toolbar-element-bg) !important;
+                box-shadow: none;
+            }
+        }
+    }
+}
+
+#zen-browser-background::before {
+    background: linear-gradient(var(--blended-addressbar-window-tint-background, transparent), var(--blended-addressbar-window-tint-background, transparent)), var(--zen-main-browser-background-old) !important;
+    background-blend-mode: normal !important;
+}
+
+#zen-browser-background::after {
+    background: linear-gradient(var(--blended-addressbar-window-tint-background, transparent), var(--blended-addressbar-window-tint-background, transparent)), var(--zen-main-browser-background) !important;
+    background-blend-mode: normal !important;
+}
+
+.blended-addressbar-pane-highlight {
+    display: none;
+}
+
+/* Clip the page and its inner-shadow layer with one shared boundary. */
+:root:not([inDOMFullscreen="true"]) #tabbrowser-tabpanels[zen-split-view="true"] > .browserSidebarContainer[zen-split="true"]:not(.zen-glance-overlay) > .browserContainer {
+    position: absolute !important;
+    inset: var(--blended-addressbar-pane-clip-inset, 0) !important;
+    border-radius: var(--blended-addressbar-pane-clip-radius, 0) !important;
+    corner-shape: superellipse(var(--zen-squircle-value, 1.3));
+    overflow: hidden !important;
+
+    > .blended-addressbar-pane-highlight {
+        display: block;
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        border-radius: inherit;
+        corner-shape: inherit;
+        box-shadow: var(--blended-addressbar-pane-inner-highlight);
+        transition: box-shadow 90ms ease-in;
+        pointer-events: none;
+    }
+}
+
+:root:not([inDOMFullscreen="true"]) #tabbrowser-tabpanels[zen-split-view="true"] > .browserSidebarContainer[zen-split="true"].deck-selected:not(.zen-glance-overlay) {
+    outline: none !important;
+
+    > .browserContainer > .blended-addressbar-pane-highlight {
+        box-shadow: inset 0 0 0 1.5pt var(--zen-active-split-outline-color, var(--zen-primary-color)), var(--blended-addressbar-pane-inner-highlight);
+        transition-duration: 260ms;
+        transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+}
+
+/* Share the native browserstack grid cell; the stack's margin reserves the row.
+   Browser, notification, findbar and DevTools nodes retain their native parents. */
+:root:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"])
+#tabbrowser-tabpanels[zen-split-view="true"] > .browserSidebarContainer[zen-split="true"]:not(.zen-glance-overlay)
+> .browserContainer:has(> .blended-addressbar-pane-bar) {
+    --blended-addressbar-pane-bar-height: calc(var(--blended-addressbar-native-height, 36px) + 6px);
+
+    > .browserStack {
+        margin-block-start: var(--blended-addressbar-pane-bar-height) !important;
+        min-height: 0 !important;
+    }
+
+    > .blended-addressbar-pane-bar {
+        display: flex;
+    }
+
+    > .blended-addressbar-pane-highlight {
+        z-index: 4;
+    }
+}
+
+.blended-addressbar-pane-bar {
+    --blended-addressbar-dynamic-loadbar-color: var(--blended-addressbar-pane-foreground, var(--toolbar-color));
+    display: none;
+    grid-area: browserstack;
+    align-self: start;
+    position: relative;
+    z-index: 3;
+    box-sizing: border-box;
+    height: var(--blended-addressbar-pane-bar-height);
+    min-width: 0;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    color: var(--blended-addressbar-pane-foreground, var(--toolbar-color));
+    background: var(--blended-addressbar-pane-background, var(--zen-main-browser-background-toolbar));
+    transition: background-color var(--blended-addressbar-color-transition), color var(--blended-addressbar-color-transition);
+    border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+    -moz-window-dragging: no-drag;
+}
+
+:root[data-blended-addressbar-loadbar-focus-color="true"] .blended-addressbar-pane-bar {
+    --blended-addressbar-dynamic-loadbar-color: var(--zen-primary-color);
+}
+
+.blended-addressbar-pane-address,
+.blended-addressbar-pane-copy,
+.blended-addressbar-pane-site,
+.blended-addressbar-pane-reload {
+    appearance: none !important;
+    border: 0 !important;
+    border-radius: var(--blended-addressbar-native-action-radius, 5px);
+    background: transparent !important;
+    color: inherit !important;
+    font: var(--blended-addressbar-native-font, inherit) !important;
+    height: 100% !important;
+    box-sizing: border-box;
+    min-height: 0 !important;
+    margin: 0 !important;
+    -moz-window-dragging: no-drag;
+
+    &:hover {
+        background-color: color-mix(in srgb, currentColor 10%, transparent) !important;
+    }
+
+    &:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: -2px;
+    }
+}
+
+.blended-addressbar-pane-address {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-align: start;
+    padding: var(--blended-addressbar-native-text-padding, 0) !important;
+    cursor: text;
+    direction: ltr;
+}
+
+.blended-addressbar-pane-host {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.blended-addressbar-pane-path {
+    flex: 0 100 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.7;
+}
+
+.blended-addressbar-pane-reload {
+    flex: 0 0 26px;
+    padding: 5px;
+    cursor: pointer;
+
+    &::before {
+        content: "";
+        display: block;
+        width: 16px;
+        height: 16px;
+        background: currentColor;
+        mask: url("chrome://global/skin/icons/reload.svg") center / 16px no-repeat;
+    }
+
+    &[data-loading="true"]::before {
+        mask: none;
+        width: 10px;
+        height: 10px;
+        margin: 3px;
+        border-radius: 1px;
+    }
+}
+
+/* Visual proxies share native typography and shape; only #urlbar edits text. */
+.blended-addressbar-pane-field {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+    height: var(--blended-addressbar-native-height, 36px);
+    box-sizing: border-box;
+    padding: var(--blended-addressbar-native-input-padding, 2px 5px);
+    overflow: hidden;
+    border-radius: var(--blended-addressbar-native-radius, 8px);
+    background: var(--blended-addressbar-native-background, transparent);
+    border: var(--blended-addressbar-native-border, 0);
+    box-shadow: var(--blended-addressbar-native-shadow, none);
+
+    &:focus-within {
+        outline: 2px solid currentColor;
+        outline-offset: -2px;
+    }
+}
+
+.blended-addressbar-pane-copy,
+.blended-addressbar-pane-site {
+    flex: 0 0 var(--blended-addressbar-native-action-width, 28px);
+    width: var(--blended-addressbar-native-action-width, 28px);
+    display: grid;
+    place-items: center;
+    padding: 0;
+    cursor: pointer;
+
+    &::before {
+        content: "";
+        display: block;
+        width: 16px;
+        height: 16px;
+        background: currentColor;
+        mask: var(--blended-addressbar-native-copy-icon) center / 16px no-repeat;
+    }
+}
+
+/* Keep the native editor in its original DOM/top layer, anchored to the pane. */
+:root[data-blended-split-editor="true"] #urlbar-container {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+:root[data-blended-split-editor="true"] #urlbar {
+    &:is([focused], [breakout-extend], [open], :focus-within) {
+        font: var(--blended-addressbar-native-font, inherit) !important;
+    }
+    --urlbar-width: var(--blended-addressbar-editor-width) !important;
+    --zen-urlbar-width: var(--blended-addressbar-editor-width) !important;
+    --zen-urlbar-top: var(--blended-addressbar-editor-top) !important;
+    position: fixed !important;
+    inset: auto !important;
+    left: var(--blended-addressbar-editor-left) !important;
+    top: var(--blended-addressbar-editor-top) !important;
+    width: var(--blended-addressbar-editor-width) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    translate: none !important;
+    transform: none !important;
+
+
+    #urlbar-results {
+        max-height: min(252px, var(--blended-addressbar-editor-results-height)) !important;
+        overflow-y: auto !important;
+    }
+}
+
+.blended-addressbar-pane-site::before {
+    mask-image: var(--blended-addressbar-native-site-icon);
+}
+
+/* Hide the shared rows without display:none on the native editor's ancestors. */
+:root[data-blended-split-bars] {
+    #zen-appcontent-navbar-wrapper {
+        pointer-events: none !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        margin-block: 0 !important;
+        padding-block: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    #zen-appcontent-navbar-container {
+        pointer-events: none !important;
+    }
+
+    #nav-bar {
+        visibility: hidden !important;
+    }
+
+    #urlbar {
+        visibility: visible !important;
+        pointer-events: auto !important;
+
+        &:not([focused]):not([breakout-extend]):not([open]):not(:focus-within) {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+    }
+
+    #PersonalToolbar {
+        display: none !important;
+    }
+}
+
+/* Compensate the panes' trailing margin inside the page area, not beyond the
+   right sidebar. Keep the sidebar splitter's own spacing and hit target. */
+:root:not([inDOMFullscreen="true"])
+#tabbrowser-tabbox[zen-split-view="true"][sidebar-panel-open][sidebar-positionend] {
+    margin-right: 0 !important;
+
+    > #tabbrowser-tabpanels {
+        margin-right: calc(-1 * var(--zen-split-row-gap)) !important;
+    }
+}
+
+/* One effective spacing value for the frame, splits and sidebar boundary. */
+:root:not([inDOMFullscreen="true"]) #tabbrowser-tabbox {
+    --zen-split-row-gap: var(--blended-addressbar-frame-gap) !important;
+    --zen-split-column-gap: var(--blended-addressbar-frame-gap) !important;
+    --blended-addressbar-resize-hit-size: max(6px, var(--blended-addressbar-frame-gap));
+
+    .zen-split-view-splitter[orient="vertical"] {
+        width: var(--blended-addressbar-resize-hit-size) !important;
+        margin-left: calc((var(--blended-addressbar-frame-gap) + var(--blended-addressbar-resize-hit-size)) / -2) !important;
+    }
+
+    .zen-split-view-splitter[orient="horizontal"] {
+        height: var(--blended-addressbar-resize-hit-size) !important;
+        margin-top: calc((var(--blended-addressbar-frame-gap) - var(--blended-addressbar-resize-hit-size)) / 2) !important;
+    }
+}
+
+:root:not([inDOMFullscreen="true"]) #tabbrowser-tabbox[sidebar-panel-open] {
+    column-gap: 0 !important;
+
+    > #sidebar-splitter {
+        box-sizing: border-box;
+        width: var(--blended-addressbar-resize-hit-size) !important;
+        min-width: var(--blended-addressbar-resize-hit-size) !important;
+        margin-inline: calc((var(--blended-addressbar-frame-gap) - var(--blended-addressbar-resize-hit-size)) / 2) !important;
+    }
+}
+
+/* Native split percentages describe the page area, not the adjacent sidebar. */
+@supports (width: anchor-size(--blended-split-panels width)) {
+    #tabbrowser-tabpanels[zen-split-view="true"] {
+        anchor-name: --blended-split-panels;
+    }
+
+    #tabbrowser-tabbox[zen-split-view="true"] > #zen-splitview-overlay-wrapper {
+        left: anchor(--blended-split-panels left) !important;
+        right: auto !important;
+        width: anchor-size(--blended-split-panels width) !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --blended-addressbar-color-transition: 0ms linear !important;
+    }
+
+    #tabbrowser-tabpanels .blended-addressbar-pane-highlight {
+        transition: none !important;
+    }
+}
+
+/* Frame the sidebar like a passive pane. */
+:root:not([inDOMFullscreen="true"]) #tabbrowser-tabbox > #sidebar-box[sidebar-panel-open]:not([hidden]) {
+    --blended-addressbar-sidebar-top-radius: 0px;
+    position: relative;
+    border-radius: var(--blended-addressbar-sidebar-top-radius) 0 0 var(--blended-addressbar-frame-radius) !important;
+    corner-shape: superellipse(var(--zen-squircle-value, 1.3));
+    overflow: hidden !important;
+    box-shadow: none !important;
+    outline: none !important;
+
+    &[sidebar-positionend] {
+        border-radius: 0 var(--blended-addressbar-sidebar-top-radius) var(--blended-addressbar-frame-radius) 0 !important;
+    }
+
+    &::after {
+        content: none;
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        border-radius: inherit;
+        corner-shape: inherit;
+        box-shadow: var(--blended-addressbar-pane-inner-highlight);
+        pointer-events: none;
+    }
+}
+
+:root:not([inDOMFullscreen="true"]) #tabbrowser-tabbox[zen-split-view="true"] > #sidebar-box[sidebar-panel-open]:not([hidden]) {
+    --blended-addressbar-sidebar-top-radius: var(--blended-addressbar-frame-radius);
+
+    &::after {
+        content: "";
+    }
+}
+
+/* In single-tab dual-toolbar mode, reserve toolbar space only in the page. */
+:root[data-blended-sidebar-column] {
+    #zen-appcontent-wrapper {
+        position: relative;
+    }
+
+    #zen-appcontent-navbar-wrapper {
+        height: 0 !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        pointer-events: none !important;
+    }
+
+    #zen-appcontent-navbar-container {
+        position: absolute !important;
+        left: var(--blended-addressbar-sidebar-page-left) !important;
+        top: 0 !important;
+        width: var(--blended-addressbar-sidebar-page-width) !important;
+        height: var(--blended-addressbar-sidebar-toolbar-height) !important;
+        background: var(--zen-tab-header-background, var(--zen-main-browser-background-toolbar));
+        transition: background-color var(--blended-addressbar-color-transition), color var(--blended-addressbar-color-transition);
+        pointer-events: auto !important;
+        z-index: 3;
+    }
+
+    #nav-bar {
+        position: relative !important;
+        width: 100% !important;
+    }
+
+    #tabbrowser-tabpanels > .browserSidebarContainer:not(.zen-glance-overlay) {
+        position: relative;
+
+        > .browserContainer {
+            position: absolute !important;
+            inset: var(--blended-addressbar-sidebar-toolbar-height) 0 0 !important;
+            height: auto !important;
+        }
+    }
+}
+
+/* Keep the proxy's geometry while the real editor owns text, icons and focus. */
+:root[data-blended-split-editor="true"]:has(#urlbar:is([focused], [breakout-extend], [open], :focus-within))
+#tabbrowser-tabpanels > .browserSidebarContainer.deck-selected > .browserContainer > .blended-addressbar-pane-bar > .blended-addressbar-pane-field {
+    visibility: hidden !important;
+}
+}

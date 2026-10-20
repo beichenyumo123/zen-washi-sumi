@@ -1,4 +1,5 @@
 @import "colors.css";
+@import "styles/blended-addressbar.css";
 
 /* =============================================================================
    Zen Washi & Sumi (和纸与松烟墨) — Minimalist Zen Browser Theme
@@ -171,6 +172,36 @@ zen-folder-tabs:is(:hover, :has(.tabbrowser-tab:is([selected], [selected="true"]
 /* 嵌套子文件夹：在父级导轨内保持规整向内缩进 */
 zen-folder zen-folder {
   margin-left: 4px !important;
+}
+
+/*
+ * 折叠文件夹内隐藏标签页防重叠保护：
+ * 当文件夹处于折叠态，或文件夹内的激活标签页 ([folder-active="true"]) 被休眠卸载 ([pending]/[discarded]) 时，
+ * Zen 会为这些需收拢隐藏的标签页标记 [aria-hidden="true"]。
+ * 必须显式将其盒模型收拢为 0 并隐藏，防止被全局标签页 margin-block / transform / 休眠 opacity 规则强行撑开或显影而发生文字与图标叠印。
+ */
+#main-window #browser #navigator-toolbox zen-folder .tabbrowser-tab[aria-hidden="true"],
+#main-window #browser #navigator-toolbox zen-folder .tabbrowser-tab[aria-hidden="true"] :is(.tab-stack, .tab-content, .tab-background, .tab-icon-stack, .tab-icon-image, .tab-label-container, .tab-label) {
+  opacity: 0 !important;
+  visibility: collapse !important;
+  pointer-events: none !important;
+}
+
+#main-window #browser #navigator-toolbox zen-folder .tabbrowser-tab[aria-hidden="true"] {
+  max-height: 0px !important;
+  min-height: 0px !important;
+  height: 0px !important;
+  margin-block: 0px !important;
+  padding-block: 0px !important;
+  border: none !important;
+  overflow: clip !important;
+}
+
+/* 当折叠文件夹内所有子标签页均处于 [aria-hidden="true"] 收拢态时，同步隐藏左侧贯穿导轨 */
+zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is(.tab-group-tabs, .tab-group-container, zen-folder-tabs)::after,
+.tab-group-container:not(:has(.tabbrowser-tab:not([aria-hidden="true"])))::after {
+  opacity: 0 !important;
+  display: none !important;
 }
 
 /* 
@@ -629,7 +660,7 @@ zen-folder zen-folder {
   transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
 }
 
-.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):not([closing]) {
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):not([closing]):not([aria-hidden="true"]) {
   transform: none !important;
   margin-block: 1px !important;
 }
@@ -900,12 +931,12 @@ zen-folder zen-folder {
    8. Sleeping Tabs (墨迹微褪 · 严格排除所有 Essentials 容器)
    ----------------------------------------------------------------------------- */
 @media not (-moz-pref("zenwashi.tab.sleep-fade", false)) {
-  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([closing]) {
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([closing]):not([aria-hidden="true"]) {
     opacity: 0.6 !important;
     transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
   }
 
-  .tabbrowser-tab:not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]):not([closing]) {
+  .tabbrowser-tab:not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]):not([closing]):not([aria-hidden="true"]) {
     opacity: 1 !important;
   }
 }
@@ -1411,8 +1442,14 @@ browser {
 #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) browser {
   filter: var(--zenwashi-veil-filter, none) !important;
   opacity: var(--zenwashi-veil-opacity, 1) !important;
-  transition: filter 0.48s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  /* 外扩补偿：filter: blur() 会把元素边缘平均成透明，露出背后 .browserContainer 的
+   * 纯白底色（--zenwashi-bg-surface），形成边框内侧的白色软光晕。
+   * 这里把模糊层按模糊半径放大一点，让那圈透明边缘落到 .browserContainer 的
+   * overflow: clip 之外被裁掉。fallback 保留原有的 translateZ(0) 硬件加速基底。 */
+  transform: var(--zenwashi-veil-overscan, translateZ(0)) !important;
+  transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+              filter    0.48s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity   0.42s cubic-bezier(0.22, 1, 0.36, 1) !important;
   transition-delay: var(--zenwashi-veil-delay, 0s) !important;
 }
 
@@ -1429,6 +1466,7 @@ browser {
   --zenwashi-veil-filter: blur(7px) brightness(0.90) saturate(0.85);
   --zenwashi-veil-opacity: 0.84;
   --zenwashi-veil-delay: 0.12s;
+  --zenwashi-veil-overscan: scale(1.06) translateZ(0);   /* ≈3.3σ，盖住 blur(7px) 的透明边缘 */
   transition-delay: 0.12s !important;
 }
 
@@ -1439,6 +1477,7 @@ browser {
     --zenwashi-veil-filter: blur(15px) brightness(0.80) saturate(0.75);
     --zenwashi-veil-opacity: 0.72;
     --zenwashi-veil-delay: 0.10s;
+    --zenwashi-veil-overscan: scale(1.12) translateZ(0);   /* ≈3σ，盖住 blur(15px) 的透明边缘 */
     transition-delay: 0.10s !important;
   }
 }
@@ -1450,6 +1489,7 @@ browser {
     --zenwashi-veil-filter: grayscale(92%) blur(4px) brightness(0.88);
     --zenwashi-veil-opacity: 0.80;
     --zenwashi-veil-delay: 0.10s;
+    --zenwashi-veil-overscan: scale(1.04) translateZ(0);   /* ≈3σ，盖住 blur(4px) 的透明边缘 */
     transition-delay: 0.10s !important;
   }
 }
@@ -1461,6 +1501,7 @@ browser {
     --zenwashi-veil-filter: none;
     --zenwashi-veil-opacity: 1;
     --zenwashi-veil-delay: 0s;
+    --zenwashi-veil-overscan: translateZ(0);
     transition-delay: 0s !important;
   }
 }
@@ -1472,6 +1513,7 @@ browser {
   --zenwashi-veil-filter: blur(8px) brightness(0.88) saturate(0.85);
   --zenwashi-veil-opacity: 0.88;
   --zenwashi-veil-delay: 0s;
+  --zenwashi-veil-overscan: scale(1.07) translateZ(0);   /* ≈3σ，盖住 blur(8px) 的透明边缘 */
   transition-delay: 0s !important;
 }
 
@@ -1480,5 +1522,204 @@ browser {
     transform: none !important;
     --zenwashi-veil-filter: none;
     --zenwashi-veil-opacity: 1;
+    --zenwashi-veil-overscan: translateZ(0);
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   13. Blended Addressbar Unified Island (可开关：将融合式顶栏与内容区一同包裹进画卷边框)
+   ----------------------------------------------------------------------------- */
+@media not (-moz-pref("zenwashi.urlbar.blended", false)) {
+  /*
+   * 在「侧边栏 + 顶部工具栏」(:root:not([zen-single-toolbar="true"])) 模式下：
+   * 外层 #zen-appcontent-wrapper 同时容纳顶部地址栏 (#zen-appcontent-navbar-wrapper)
+   * 与下方网页内容区 (#zen-tabbox-wrapper)。
+   * 将原本单独作用于 .browserSidebarContainer 的外边距、大圆角、11 档装裱边框和 4 档立体漫射阴影
+   * 统一提升至 #zen-appcontent-wrapper，使动态取色的融合地址栏与网页内容严丝合缝包裹在同一个画卷边框中。
+   */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+    margin: var(--zenwashi-content-margin, 10px) !important;
+    padding: 0 !important;
+    border-radius: var(--zenwashi-content-radius, 18px) !important;
+    border: var(--zenwashi-content-border-width, 1.5px) solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+    background-color: var(--zen-tab-header-background, var(--zenwashi-bg-surface)) !important;
+    background-clip: padding-box !important;
+    overflow: hidden !important;
+    corner-shape: round !important;
+    box-sizing: border-box !important;
+    isolation: isolate !important;
+    z-index: 3 !important;
+    box-shadow: light-dark(
+      0 10px 28px rgba(38, 36, 33, 0.18), 0 3px 10px rgba(38, 36, 33, 0.10),
+      0 14px 40px rgba(0, 0, 0, 0.78), 0 4px 14px rgba(0, 0, 0, 0.50)
+    ) !important;
+    transition:
+      margin 0.24s ease,
+      border-radius 0.24s ease,
+      background-color var(--blended-addressbar-color-transition, 120ms ease-out),
+      border-color 0.24s ease,
+      box-shadow 0.24s ease !important;
+  }
+
+  @media (-moz-pref("zenwashi.content.shadow", "soft")) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+      box-shadow: light-dark(
+        0 5px 16px rgba(38, 36, 33, 0.12), 0 2px 6px rgba(38, 36, 33, 0.06),
+        0 8px 24px rgba(0, 0, 0, 0.58), 0 2px 8px rgba(0, 0, 0, 0.35)
+      ) !important;
+    }
+  }
+
+  @media (-moz-pref("zenwashi.content.shadow", "medium")) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+      box-shadow: light-dark(
+        0 10px 28px rgba(38, 36, 33, 0.18), 0 3px 10px rgba(38, 36, 33, 0.10),
+        0 14px 40px rgba(0, 0, 0, 0.78), 0 4px 14px rgba(0, 0, 0, 0.50)
+      ) !important;
+    }
+  }
+
+  @media (-moz-pref("zenwashi.content.shadow", "strong")) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+      box-shadow: light-dark(
+        0 14px 38px rgba(38, 36, 33, 0.26), 0 5px 14px rgba(38, 36, 33, 0.15),
+        0 20px 54px rgba(0, 0, 0, 0.88), 0 6px 18px rgba(0, 0, 0, 0.62)
+      ) !important;
+    }
+  }
+
+  @media (-moz-pref("zenwashi.content.shadow", "deep")) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+      box-shadow: light-dark(
+        0 18px 48px rgba(38, 36, 33, 0.36), 0 6px 18px rgba(38, 36, 33, 0.22), 0 0 12px rgba(38, 36, 33, 0.12),
+        0 26px 68px rgba(0, 0, 0, 0.96), 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 16px rgba(0, 0, 0, 0.50)
+      ) !important;
+    }
+  }
+
+  /* 顶部地址栏容器：透出网页动态采样色 (--zen-tab-header-background)，消除原本的和纸固定底色覆盖 */
+  :root:not([zen-single-toolbar="true"]) #zen-appcontent-navbar-wrapper,
+  :root:not([zen-single-toolbar="true"]) #zen-appcontent-navbar-container {
+    background-color: var(--zen-tab-header-background, var(--zenwashi-bg-surface)) !important;
+    background-image: none !important;
+    color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --toolbox-textcolor: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --toolbarbutton-icon-fill: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --toolbar-color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --toolbar-field-color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    transition:
+      background-color var(--blended-addressbar-color-transition, 120ms ease-out),
+      color var(--blended-addressbar-color-transition, 120ms ease-out) !important;
+  }
+
+  /*
+   * 微分割线：styles/blended-addressbar.css 会在 #nav-bar 上画 1px 分隔线，
+   * 但本文件第 4 节「顶栏与地址栏」里的 `#nav-bar { box-shadow: none !important }`
+   * 无条件把它覆盖了，导致“隐藏分割线”无论勾选与否都看不到线。
+   * 这里在未勾选（pref 为 false）时重新启用，并让颜色跟随顶栏对比色，
+   * 使分割线在任意网页取色上都保持可见。
+   */
+  :root {
+    --blended-addressbar-toolbar-separator-shadow:
+      inset 0 -1px 0 0 color-mix(in srgb, var(--zen-tab-header-foreground, currentColor) 15%, transparent);
+  }
+
+  @media not (-moz-bool-pref: "uc.blended-addressbar.addressbar-bookmarks-separator.disabled") {
+    :root:not([zen-single-toolbar="true"]) #nav-bar {
+      box-shadow: var(--blended-addressbar-toolbar-separator-shadow) !important;
+    }
+  }
+
+  /* 地址栏文字与图标颜色自动跟随顶栏动态对比色 (--zen-tab-header-foreground)，在深色网页上自动反白 */
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) #urlbar-input,
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-input-box {
+    color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --input-color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+  }
+
+  /* 未聚焦/未展开时的地址栏背景完全透明，无缝融入顶栏；悬停微亮，点击展开时恢复和纸浮层 */
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) #urlbar-background {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover #urlbar-background {
+    background-color: color-mix(in srgb, var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 7%, transparent) !important;
+  }
+
+  /* 内部内容区去重：由于外框已由 #zen-appcontent-wrapper 统一包裹，非分屏状态下移除内层重复边距、边框与阴影 */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #zen-tabbox-wrapper,
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox,
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabpanels:not([zen-split-view="true"]) {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    border-radius: 0 0 max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) !important;
+  }
+
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer,
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) .browserStack,
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) browser {
+    border: none !important;
+    outline: none !important;
+    border-radius: 0 0 max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) !important;
+  }
+
+  /*
+   * 在融合顶栏一体框模式下完整保留第 12.3 节「宣纸微敛」(zenwashi.content.loading) 与 12.4 节「画卷退景」加载/展开动画：
+   * - 页面加载时，由外层一体画框 #zen-appcontent-wrapper 整体执行等比微敛内缩 (scale 0.976 / 0.958)，
+   *   使顶部融合地址栏、装裱边框、漫射阴影与网页作为一个整体同步呼吸内敛，而内层 browser 保持宣纸柔焦 (blur)；
+   * - 地址栏展开 (#urlbar[open]) 时，不额外锁定 hbox.deck-selected，直接保留第 12.4 节原有的画卷退景缩放与柔焦。
+   */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+    transform-origin: center center !important;
+    transition:
+      transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+      margin 0.24s ease,
+      border-radius 0.24s ease,
+      background-color var(--blended-addressbar-color-transition, 120ms ease-out),
+      border-color 0.24s ease,
+      box-shadow 0.24s ease !important;
+  }
+
+  /* 默认档位 (subtle) 与水墨档位 (ink)：一体画框整体微敛至 0.976 */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+    transform: scale(0.976) !important;
+    transition-delay: 0.12s !important;
+  }
+
+  /* 档位 deep：宣纸深敛 (一体画框整体深敛至 0.958) */
+  @media (-moz-pref("zenwashi.content.loading", "deep")), (-moz-pref("zenwashi.tab.loading-animation", 2)) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+      transform: scale(0.958) !important;
+      transition-delay: 0.10s !important;
+    }
+  }
+
+  /* 档位 off：关闭加载缩放 */
+  @media (-moz-pref("zenwashi.content.loading", "off")), (-moz-pref("zenwashi.tab.loading-animation", 0)) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+      transform: none !important;
+      transition-delay: 0s !important;
+    }
+  }
+
+  /* 避免加载时内层 hbox.deck-selected 与外层 #zen-appcontent-wrapper 双重叠加缩放（仅重置 transform，保留第 11 节标签切换 scale 与 12.3 节柔焦变量继承） */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: none !important;
   }
 }

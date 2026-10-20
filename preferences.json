@@ -209,6 +209,47 @@
   },
   {
     "type": "separator",
+    "label": "Blended Addressbar 融合式一体顶栏",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.urlbar.blended",
+    "label": "Enable Blended Addressbar 启用融合顶栏（地址栏随网页变色，并与内容区一同包裹进画卷边框内）",
+    "defaultValue": true
+  },
+  {
+    "type": "checkbox",
+    "property": "uc.blended-addressbar.addressbar-bookmarks-separator.disabled",
+    "label": "Remove header separator 隐藏融合顶栏与网页之间的微分割线",
+    "defaultValue": false
+  },
+  {
+    "type": "dropdown",
+    "property": "uc.loadbar.mode",
+    "label": "Loading indicator 顶栏加载流光样式",
+    "defaultValue": "glow",
+    "options": [
+      {
+        "value": "glow",
+        "label": "URL bar glow 地址栏流光呼吸 (Default)"
+      },
+      {
+        "value": "edge",
+        "label": "Window edge 视口顶边流光"
+      },
+      {
+        "value": "progress",
+        "label": "Progress bar 顶部细进度条"
+      },
+      {
+        "value": "default",
+        "label": "Native 保持 Zen 原生加载条"
+      }
+    ]
+  },
+  {
+    "type": "separator",
     "label": "Tabs & Deck 标签与质感微调",
     "margin": "14px 0 10px 0"
   },

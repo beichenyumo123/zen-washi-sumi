@@ -1,14 +1,21 @@
 {
   "id": "zen-washi-sumi",
   "name": "Zen Washi & Sumi (和纸与松烟墨)",
-  "description": "A tranquil, eye-friendly East Asian ink & paper aesthetic for Zen Browser. Soft Torinoko washi paper tones for light mode, deep pine-soot ink for dark mode, paired with organic mineral accents (Bamboo, Umber, Cinnabar, Indigo).",
+  "description": "A tranquil, eye-friendly East Asian ink & paper aesthetic for Zen Browser. Soft Torinoko washi paper tones for light mode, deep pine-soot ink for dark mode, paired with organic mineral accents and optional Blended Addressbar integration.",
   "author": "db",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "createdAt": "2026-10-13",
-  "updatedAt": "2026-10-13",
+  "updatedAt": "2026-10-19",
   "style": {
     "chrome": "userChrome.css",
     "content": "userContent.css"
+  },
+  "scripts": {
+    "blended-bar.uc.js": {
+      "include": [
+        "chrome://browser/content/browser.xhtml"
+      ]
+    }
   },
   "preferences": "preferences.json",
   "tags": [
@@ -16,7 +23,7 @@
     "Sumi",
     "Ink",
     "Paper",
-    "Japanese",
+    "BlendedAddressbar",
     "Minimalist",
     "Eye-Care",
     "macOS"
