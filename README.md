@@ -44,6 +44,11 @@
 5. **纸墨质感滚动条**：
    - 内置极细墨色页面滚动条（支持关闭或完全隐藏）。
 
+6. **内置 New Icons 图标集（Integrated Icon Set）**：
+   - 已整合 [`qumeqa/zen-icons`](https://github.com/qumeqa/zen-icons) 的图标（工具栏、地址栏、面板、右键菜单），无需再单独安装 New Icons mod。
+   - 图标为 `chrome://` 外部 SVG + `context-fill`，颜色跟随主题前景色与融合顶栏的明暗自动变化。
+   - 可在 Sine 设置 → **Icons 图标集** 中一键关闭，回到 Zen 原生图标。
+
 ---
 
 ## 📂 文件结构
@@ -54,6 +59,15 @@ zen-washi-sumi/
 ├── preferences.json   # Sine 图形化配置面板（色彩预设、视口与标签微调）
 ├── userChrome.css     # 和纸与松烟墨界面样式、Token 与组件定义
 ├── userContent.css    # 网页端配套极细墨色滚动条
+├── styles/            # 融合顶栏、图标集等分模块样式
+│   ├── blended-addressbar.css
+│   ├── icons.css      # New Icons 图标集（内置）
+│   ├── header-chrome.css
+│   └── loadbar.css
+├── icons/             # 32 个外部 SVG 图标（chrome:// 引用，支持 context-fill）
+├── blended-bar.uc.js  # 融合顶栏采样脚本
+├── frame.js           # 页面颜色采样注入脚本
+├── scripts/           # 模块化辅助脚本
 ├── install.sh         # 一键同步到 Zen Profile 并注册脚本
 └── README.md          # 详细设计说明与指南
 ```

@@ -396,5 +396,16 @@
         "label": "Hide 隐藏主页面滚动条"
       }
     ]
+  },
+  {
+    "type": "separator",
+    "label": "Icons 图标集",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.icons.enabled",
+    "label": "New Icons 使用 New Icons 图标集（工具栏 / 地址栏 / 面板 / 右键菜单；关闭则用 Zen 原生图标）",
+    "defaultValue": true
   }
 ]

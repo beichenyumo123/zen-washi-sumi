@@ -1,0 +1,200 @@
+/* =============================================================================
+   Zen Washi & Sumi — New Icons 图标集（内置）
+   -----------------------------------------------------------------------------
+   图标素材来自 qumeqa/zen-icons（New Icons v1.4），已改为 chrome:// 外部 SVG
+   引用（Gecko 158 只给 chrome:// 图片传递 SVG context paint，data: URI 会
+   回退成透明/黑色）。图标本身仍是 stroke="context-fill"，颜色跟随元素 fill，
+   因此会随主题前景色与融合顶栏（--zen-tab-header-foreground）一起变化。
+
+   开关：zenwashi.icons.enabled（Sine 设置 → Icons 图标集）
+   ============================================================================= */
+
+@media not (-moz-pref("zenwashi.icons.enabled", false)) {
+#zen-toggle-compact-mode,
+#sidebar-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/00.svg") !important;
+}
+
+#zen-expand-sidebar-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/01.svg") !important;
+}
+
+#back-button,
+.panel-header>.subviewbutton-back,
+#PanelUI-zen-gradient-generator-color-page-left {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/02.svg") !important;
+}
+
+#forward-button,
+#PlacesChevron,
+.zen-current-workspace-indicator-chevron,
+#PanelUI-zen-gradient-generator-color-page-right {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/03.svg") !important;
+}
+
+#stop-reload-button[animate]>#reload-button>.toolbarbutton-animatable-box,
+#stop-reload-button[animate]>#stop-button>.toolbarbutton-animatable-box {
+  display: none !important;
+}
+
+#stop-reload-button[animate]>#reload-button>.toolbarbutton-icon,
+#stop-reload-button[animate]>#stop-button>.toolbarbutton-icon {
+  fill: currentColor !important;
+  opacity: 1 !important;
+}
+
+#reload-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/04.svg") !important;
+}
+
+#stop-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/05.svg") !important;
+}
+
+/* #stop-button>.toolbarbutton-icon {
+ list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/06.svg") !important;
+} */
+
+#home-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/07.svg") !important;
+}
+
+#developer-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/08.svg") !important;
+}
+
+#screenshot-button,
+.camera-icon,
+#zen-site-data-header-screenshot {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/09.svg") !important;
+}
+
+#bookmarks-menu-button,
+#zen-site-data-header-bookmark,
+#pageAction-panel-bookmark,
+#star-button,
+#zen-bookmark-button,
+#appMenu-library-bookmarks-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/10.svg") !important;
+}
+
+#library-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/11.svg") !important;
+}
+
+#history-panelmenu,
+#appMenu-library-history-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/12.svg") !important;
+}
+
+.urlbar-icon {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/13.svg") !important;
+}
+
+#translations-button {
+  gap: 1px !important;
+  height: 100% !important;
+  padding: 0 var(--urlbar-icon-padding) !important;
+  margin: 0 calc(-1 * var(--urlbar-icon-padding) / 2) !important;
+}
+
+#translations-button-icon {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/14.svg") !important;
+}
+
+#translations-button-locale {
+  height: 16px !important;
+  width: max-content !important;
+  padding: 0 !important;
+}
+
+#translations-button-circle-arrows {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/15.svg") !important;
+}
+
+#zen-site-data-icon-button image {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/16.svg") !important;
+}
+
+#nav-bar-overflow-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/17.svg") !important;
+}
+
+#sync-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/18.svg") !important;
+}
+
+/* menu */
+#context-forward {
+  --menuitem-icon: url("chrome://sine/content/zen-washi-sumi/icons/19.svg") !important;
+}
+
+#context-back {
+  --menuitem-icon: url("chrome://sine/content/zen-washi-sumi/icons/20.svg") !important;
+}
+
+#context-reload {
+  --menuitem-icon: url("chrome://sine/content/zen-washi-sumi/icons/21.svg") !important;
+}
+
+#context-stop {
+  --menuitem-icon: url("chrome://sine/content/zen-washi-sumi/icons/22.svg") !important;
+}
+
+#context-bookmarkpage {
+  --menuitem-icon: url("chrome://sine/content/zen-washi-sumi/icons/23.svg") !important;
+
+  &[starred] {
+    --menuitem-icon: url("chrome://sine/content/zen-washi-sumi/icons/24.svg") !important;
+  }
+}
+
+/* data */
+#zen-copy-current-url-button,
+#zen-site-data-header-share {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/25.svg") !important;
+}
+
+#zen-site-data-security-info[identity="secure"],
+#identity-popup[connection^="secure"] .identity-popup-security-connection,
+#identity-box[pageproxystate="valid"].verifiedDomain #identity-icon,
+#identity-box[pageproxystate="valid"].mixedActiveBlocked #identity-icon {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/26.svg") !important;
+}
+
+#zen-site-data-security-info[identity="not-secure"],
+#identity-box[pageproxystate="valid"].notSecure #identity-icon,
+#identity-box[pageproxystate="valid"].mixedActiveContent #identity-icon,
+#identity-box[pageproxystate="valid"].httpsOnlyErrorPage #identity-icon,
+.identity-popup-security-connection,
+#appMenu-report-broken-site-button {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/27.svg") !important;
+}
+
+#reader-mode-button>.urlbar-icon,
+#zen-site-data-header-reader-mode {
+  list-style-image: url("chrome://sine/content/zen-washi-sumi/icons/28.svg") !important;
+}
+
+/* popup */
+#protections-popup-mainView .subviewbutton-nav:not(.notFound)::after,
+#identity-popup-mainView .subviewbutton-nav::after,
+.widget-overflow-list .subviewbutton-nav::after,
+.PanelUI-subView .subviewbutton-nav::after,
+.menu-right {
+  content: url("chrome://sine/content/zen-washi-sumi/icons/29.svg") !important;
+}
+
+menupopup>menu::after {
+  background-image: url("chrome://sine/content/zen-washi-sumi/icons/30.svg") !important;
+}
+
+.urlbarView-row[has-action]:is([type="switchtab"], [type="remotetab"], [type="clipboard"]) {
+  &:is([type="switchtab"], [type="remotetab"]) .urlbarView-action:last-child {
+    &::after {
+      mask-image: url("chrome://sine/content/zen-washi-sumi/icons/31.svg") !important;
+      mask-size: 16px 16px !important;
+    }
+  }
+}
+}
