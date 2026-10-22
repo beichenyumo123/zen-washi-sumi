@@ -104,6 +104,51 @@
 
 ---
 
+### 踩坑点 5：与 Zen 内置层抢属性（!important / 动画 / 测量 / 内联变量）
+
+这一组坑的共同点：**主题写的是 CSS，但真正决定效果的是 Zen 的 JS + 内联样式 + 层叠顺序**。
+碰到"改了没反应 / 只有一半生效 / 深色才出问题"时，先按下面五条对照。
+
+#### 5.1 `!important` 会压掉 Zen 的动画
+- **层叠顺序**：动画属性 > 普通声明；而**带 `!important` 的作者声明又高于动画**。
+- 案例：折叠文件夹的 `[aria-hidden]` 标签上曾用 `height / max-height / opacity: 0 !important` 强制收拢，结果 `ZenFolders.animateCollapse()` 的 `opacity 1→0` + `height auto→0` 动画整段被压掉，文件夹"啪"一下就没了。
+- **只去掉 `!important` 也不够**：静态规则仍然参与布局，会干扰下一条的测量，症状变成"只有展开有动画、收起没有"。
+
+#### 5.2 不要在 Zen 测量之前动它要量的盒子
+- `tabgroup.mjs` 的 `set collapsed()` 是**先**给所有子标签打 `aria-hidden`，**再** dispatch 事件触发 `animateCollapse()`；
+- 而 `animateCollapse()` 第一步就是 `#measureCollapsedShift()` → `getBoundsWithoutFlushing(容器).height`；
+- 任何在这之前把子标签高度压成 0 的规则，都会让"收起距离"算成 ≈0，收起动画退化成 4px 抖动。
+- **正确做法**：整块删掉这类强制收拢规则；Zen 自己在动画结束后会给容器加 `hidden` 并清理内联样式。
+
+#### 5.3 `!important` 挡住动画时，改让它引用的自定义属性
+- 案例：融合模式下内容层上两角被 `border-radius: 0 0 r r !important` 钉死；
+  - 动画 `border-radius` → 被 `!important` 压掉；
+  - `clip-path` → 也补不回来（`overflow: clip` 已按 `0 0 r r` 裁掉内容，再裁只会取交集）。
+- **解法**：用 `@property` 注册变量，让那条 `!important` 声明**引用**变量，再动画这个变量：
+
+```css
+@property --zw-panel-tl { syntax: "<length>"; inherits: true; initial-value: 0px; }
+border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !important;
+```
+
+#### 5.4 Zen 从内联值复制的变量，只能覆盖目标元素
+- 窗口背景是 `#zen-browser-background`（`.zen-browser-generic-background`）的两个伪元素按 `--zen-background-opacity` 混合：
+  `::after` 用 `--zen-main-browser-background`，`::before` 用 `--zen-main-browser-background-old`。
+- `-old` 由 `ZenGradientGenerator.mjs` 从 `element.style.getPropertyValue()` 复制（**内联值，不是计算值**），
+  所以在 `:root` 上覆盖 `--zen-main-browser-background` 对它无效 → 深色下内容区会混进 Zen 自己的暗色（表现为比侧栏暗一截，如 `#11121C` vs `#1E2030`）。
+- **解法**：直接给 `#zen-browser-background / #zen-toolbar-background` 的 `::before / ::after` 上色，让两层同色，混合比例就无所谓了。
+
+#### 5.5 别依赖 `:active` 做按压反馈
+- `:active` 的生命周期严格等于 mousedown→mouseup；快速点击可能只跨一两帧、甚至一帧都没渲染。
+- **解法**：用状态变化（`[selected]` / `[busy]` / `#urlbar[open]`）触发**一次性关键帧动画**，动画一旦开始就必定跑完。
+- 按下（一次性动画）与按住（`:active`）不可兼得，需要选一个。
+
+#### 5.6 深色下"看起来正常"可能只是巧合
+- 浅色 `#FFF` 恰好等于主题浅色 surface，多次掩盖了 Zen 兜底色（`light-dark(#FFF, #202020)`）的存在；
+- 换到深色才暴露。**验证深浅两态时，浅色通过不能作为结论。**
+
+---
+
 ## 3. 日常维护与调试检查清单 (Checklist)
 
 修改 CSS 或追加新功能后，请按以下步骤逐项核验：
@@ -121,6 +166,13 @@
 4. **内容视口检查**：
    - [ ] 内容区悬浮留白对称度与阴影是否自然呈现？
    - [ ] 全屏模式下是否能自动贴合边缘无黑边？
+   - [ ] **深色**下内容区四周的底色是否与侧栏同色（不该比侧栏暗一截）？
+5. **两态与动效检查（务必深浅都验）**：
+   - [ ] 系统深/浅切换后，chrome 是否自动跟随（见 5.6：浅色通过不代表深色没问题）？
+   - [ ] 页面加载「宣纸微敛」：四角是否统一、与地址栏边缘是否协调？
+   - [ ] Cmd+T 新建标签：缩放效果的上两角是否与下方一致？
+   - [ ] 快速连点 Essentials / 普通标签：按压效果是否每次都能播完（见 5.5）？
+   - [ ] 文件夹收起是否仍有淡出 + 收拢动画（见 5.1 / 5.2）？
 
 ---
 
@@ -169,3 +221,34 @@
 ```
 
 保存后执行 `./install.sh` 并重启浏览器，即可在 Zen 浏览器的 Sine 设置面板中直接选用新配色！
+
+---
+
+## 6. 混合地址栏明暗钩子 (`data-blended-mode`)
+
+混合地址栏会按页面顶部采样颜色动态决定前景明暗。为了能按“实际渲染出来的明暗”切换素材，`blended-bar.uc.js` 会维护一个 `:root` 属性：
+
+| 属性值 | 含义 |
+| :-- | :-- |
+| `data-blended-mode="light"` | 采样背景较亮，地址栏按浅色渲染（深色前景） |
+| `data-blended-mode="dark"` | 采样背景较暗，地址栏按深色渲染（浅色前景） |
+| 属性不存在 | 没有可用采样色（透明/无法解析），地址栏使用主题默认 |
+
+判定依据是采样背景的相对亮度（阈值 `0.6`，与 `color-utils.js` 的 `chooseForeground()` 一致）；若背景色语法 `parseCssRgb()` 读不了（如 `color(display-p3 …)`），则退回用前景色判断（浅色文字 = 深色渲染）。它跟随**页面采样**，不是 `prefers-color-scheme`，因此“浅色系统 + 深色网页”时依然正确。关闭混合地址栏、页面切换为不适用主题或脚本卸载时，属性会被清除。
+
+用法示例：
+
+```css
+/* 单色图标：直接用 currentColor，不必判断明暗 */
+#my-button > .toolbarbutton-icon {
+  list-style-image: none !important;
+  background-color: currentColor !important;
+  mask: url("chrome://sine/content/zen-washi-sumi/my-icon.svg") center / 16px no-repeat !important;
+}
+
+/* 需要两套素材时 */
+:root[data-blended-mode="light"] #my-banner { background-image: url("banner-light.png"); }
+:root[data-blended-mode="dark"]  #my-banner { background-image: url("banner-dark.png"); }
+```
+
+调试：打开浏览器工具箱（Browser Toolbox），选中 `<html>`，切换标签页或滚动页面即可看到该属性变化。

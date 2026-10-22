@@ -32,7 +32,7 @@
       },
       {
         "value": "catppuccin",
-        "label": "Catppuccin 拿铁与莫卡 (Latte/Mocha)"
+        "label": "Catppuccin 拿铁与玛奇朵 (Latte/Macchiato)"
       },
       {
         "value": "nord",
@@ -223,6 +223,26 @@
     "property": "uc.blended-addressbar.addressbar-bookmarks-separator.disabled",
     "label": "Remove header separator 隐藏融合顶栏与网页之间的微分割线",
     "defaultValue": false
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.urlbar.sampling",
+    "label": "Live sampling 顶栏取色刷新",
+    "defaultValue": "off",
+    "options": [
+      {
+        "value": "off",
+        "label": "Event-driven 仅加载/主题变化时取色 (Default)"
+      },
+      {
+        "value": "relaxed",
+        "label": "Relaxed 每 2 秒刷新当前标签（滚动/动态背景也能跟随）"
+      },
+      {
+        "value": "eager",
+        "label": "Eager 每 0.5 秒刷新（最实时，耗电略高）"
+      }
+    ]
   },
   {
     "type": "dropdown",

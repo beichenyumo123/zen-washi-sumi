@@ -93,9 +93,12 @@
   --zenwashi-accent: light-dark(#376850, #4E8B6E);
   --zenwashi-accent-tint: light-dark(rgba(55, 104, 80, 0.15), rgba(78, 139, 110, 0.22));
 
-  /* 动效（从容温润的纸墨缓动节奏） */
+  /* 动效（从容温润的纸墨缓动节奏）
+   * 语义化分层：tap = 触碰级(颜色/小位移)，duration = 落位级(卡片浮现)，rise = 大型物体。
+   * 同一类动作永远用同一条曲线，整个界面才会有"活"的一致感，而不是各说各话。 */
   --zenwashi-duration: 240ms;
   --zenwashi-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --zenwashi-tap: 140ms;
 
   /* ---------------------------------------------------------------------------
      核心：深度注入 Zen 原生“编辑主题”引擎变量
@@ -421,6 +424,36 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 }
 
 /* 
+ * 窗口背景层：把 Zen 的「新旧双色叠加」压成同一种颜色
+ * -----------------------------------------------------------------------------
+ * 内容区背后是 #zen-browser-background（class .zen-browser-generic-background，
+ * 见 browser.xhtml）。Zen 给它铺了两层伪元素做主题切换过渡：
+ *   ::after  → background: var(--zen-main-browser-background)       opacity: var(--zen-background-opacity)
+ *   ::before → background: var(--zen-main-browser-background-old)    opacity: calc(1 - var(--zen-background-opacity))
+ *
+ * 问题在于 -old 那个变量是 ZenGradientGenerator 从元素的**内联样式**里复制出来的
+ * （它读 element.style.getPropertyValue，不是计算值），主题在 :root 上的
+ * `--zen-main-browser-background: var(--zenwashi-bg-base) !important` 根本影响不到它。
+ * 于是可见底色 = 主题色 与 Zen 自带旧色 的混合：
+ *   · 浅色：Zen 自带浅色本来就接近主题浅色 → 看不出来（这正是当初"浅色正常"的原因）
+ *   · 深色：旧色仍是 Zen 自己的暗调，混进来就偏成了 #11121C 一类，比侧栏暗一截
+ *
+ * 修法：两层都直接钉到调色板的 base（并保留可选的窗口染色层），
+ * 这样 --zen-background-opacity 无论取多少，混合结果都是同一个颜色。
+ */
+#zen-browser-background::before,
+#zen-browser-background::after,
+#zen-toolbar-background::before,
+#zen-toolbar-background::after {
+  background:
+    linear-gradient(
+      var(--blended-addressbar-window-tint-background, transparent),
+      var(--blended-addressbar-window-tint-background, transparent)
+    ),
+    var(--zenwashi-bg-base) !important;
+}
+
+/* 
  * 1. #tabbrowser-tabpanels 负责外边距 margin 与 overflow: visible（绝不加 position:relative 或 ::after）
  */
 #tabbrowser-tabpanels {
@@ -523,10 +556,29 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   overflow: clip !important;
   corner-shape: round !important;
   border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) - 1px)) !important;
-  background-color: transparent !important;
-  background: transparent !important;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) .browserStack {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* 
+ * 内容视口的兜底底色：显式绑到调色板的 surface，而不是留给 Zen 的 light-dark 兜底。
+ * -----------------------------------------------------------------------------
+ * Zen(zen-browser-container.css:18-21) 给 <browser type="content"> 画的是
+ *   background: light-dark(rgb(255,255,255), rgb(32,32,32));
+ * 浅色 #FFF 恰好等于主题的浅色 surface，所以**浅色看不出问题**；
+ * 深色 #202020 是中性深灰，和 Washi / Macchiato / Nord 的暗底都不一致，
+ * 页面上透明区域（加载中、about:blank、本身就是透明底的站点）就会被它顶出来。
+ * 所以这里不再依赖 transparent 透传，直接把 browser 的底色指定成 surface ——
+ * 不透明页面本来就会盖住它，透明页面则得到正确的调色板底色。
+ */
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) browser {
+  background: var(--zenwashi-bg-surface) !important;
+  background-color: var(--zenwashi-bg-surface) !important;
 }
 
 /* 全屏状态还原平铺 */
@@ -706,10 +758,61 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 /* 普通标签悬停态 */
 .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):hover:not([selected]):not([visuallyselected]) .tab-background {
   background-color: var(--zenwashi-tab-hover-bg) !important;
+  /* 悬停时先浮现一道发丝边，选中时再变成完整卡片 —— 边缘的定义逐级递进，
+     比"只换底色"更有实体感，且依然是零辉光。 */
+  border-color: var(--zenwashi-border-subtle) !important;
 }
 
-.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):hover .tab-label {
-  color: var(--zenwashi-fg-primary) !important;
+/* 
+ * 6.1 标签行的触摸反馈（--zenwashi-tap = 140ms）
+ * -----------------------------------------------------------------------------
+ * 之前这一块只有背景淡入，而 .tab-label 的颜色甚至没有过渡（瞬跳）；
+ * 整行也完全没有运动 —— 这是侧栏里面积最大、点得最多却最"死"的部分。
+ * 这里补三件事：
+ *   1. 文字颜色走 140ms 触碰级过渡（补上原先缺失的 transition）；
+ *   2. 悬停时整行内容右移 2px，鼠标移开时用 240ms 缓回 —— "碰到会回应，离开会归位"；
+ *   3. 只动画 .tab-content，不动 .tabbrowser-tab：
+ *      标签自身有 transform: none !important（第 6 节开头），而且这里用独立的
+ *      `translate` 属性而非 transform，可以完全绕开那句话的封锁（与 essentials 同法）。
+ */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) .tab-label {
+  transition: color var(--zenwashi-tap) var(--zenwashi-ease) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) .tab-content {
+  translate: 0 0;
+  transition: translate var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):hover .tab-content {
+  translate: 2px 0;
+  transition: translate var(--zenwashi-tap) var(--zenwashi-ease) !important;
+}
+
+/* 
+ * 6.2 点击落笔：普通标签的按压反馈（由「选中」触发的一次性动画）
+ * -----------------------------------------------------------------------------
+ * 普通标签是一条扁平纸带，没有侧壁厚度可用；而缩放会让文字变形，不能照搬 essentials。
+ * 所以用 .tab-content 的 `transform` 做一次短促的下沉：图标与标题一起被按下 2px 再回来。
+ *
+ * 为什么用 transform 而不是 hover 那条 translate：
+ *   两者是**独立的属性**，互不覆盖 —— 悬停仍在用 translate 做 2px 右移，
+ *   按下用 transform 做纵向沉降，可以同时生效（与 essentials 图标同一手法）。
+ *   而标签自身有 transform: none !important，所以只能动 .tab-content。
+ *
+ * 触发点与 essentials 一致：用 [selected]，不依赖 :active 的存续时间，
+ * 再快的点击也必定播完。节奏：0.28s，18%(≈50ms) 落到底并保持到 48%。
+ * 按下时背景同时变成选中卡片、内容从悬停的 2px 归位 —— 三件事凑成一次"落笔"。
+ */
+@keyframes zenwashiTabPress {
+  0%   { transform: translateY(0); }
+  18%  { transform: translateY(2px); }
+  48%  { transform: translateY(2px); }
+  100% { transform: translateY(0); }
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):is([selected], [visuallyselected]) .tab-content {
+  animation: zenwashiTabPress 0.28s var(--zenwashi-ease) 1;
 }
 
 /* 当前选中/激活的普通标签页：浅色纯和纸微卡片底色（无左侧指示线） */
@@ -790,15 +893,14 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   background-color: var(--zenwashi-key-face) !important;
   background-image: none !important;
   box-shadow: none !important;
-  /* 颜色变化保持轻快(0.16s)；几何变化用 0.48s + 同一条缓动，与第 12.3 节「宣纸微敛」
-     的 0.48s 完全对齐 —— 页面失焦回弹时，键帽同步升起，两者读起来是同一个动作。
-     末尾的 0.06s 延迟只作用于「回弹」，等于给按压加了一个最短停留时间：
-     再快的点击也能看到键帽完整沉下去，而不是刚按下就弹回来。
-     按下时的快节奏由 7.4 / 7.6 各自覆盖(它们把 delay 归零)。 */
-  transition: background-color 0.16s var(--zenwashi-ease),
-              border-color 0.16s var(--zenwashi-ease),
-              border-bottom-width 0.48s var(--zenwashi-ease) 0.06s,
-              transform 0.48s var(--zenwashi-ease) 0.06s !important;
+  /* 颜色跟着 7.4 的落键动画走(0.32s 同长)，让"换色"和"压下去"同时完成；
+     几何只用于悬停抬升的回落，用 0.24s 即可。
+     注意：这里的时长是**非按下时**的默认值；按下由 7.4 的一次性动画负责，
+     所以不再需要旧的 0.48s + 0.06s 延迟那套(:active 时代留下的)。 */
+  transition: background-color 0.32s var(--zenwashi-ease),
+              border-color 0.32s var(--zenwashi-ease),
+              border-bottom-width 0.24s var(--zenwashi-ease),
+              transform 0.24s var(--zenwashi-ease) !important;
 }
 
 /* 
@@ -855,15 +957,21 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   }
 }
 
-/* ---------------- 7.3 悬停态：键面提亮 + 唤醒原彩 ---------------- */
+/* ---------------- 7.3 悬停态：键面提亮 + 微微抬起 + 唤醒原彩 ----------------
+ * 之前悬停只有颜色变化、零位移，而按下是一整套几何运动，两种语言读起来就"生硬"。
+ * 现在悬停给一个 1px 的抬升：鼠标靠上去键帽先"被顶起"，按下时再压下去，
+ * 于是 hover → press 变成同一个动作的两拍，而不是两件互不相干的事。
+ * 注意：这里刻意不写 border-bottom-width（厚度的唯一来源是 7.1 与 7.4 的落键动画）。
+ */
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover:not([selected]):not([visuallyselected]) .tab-background,
 .tabbrowser-tab[zen-essential="true"]:hover:not([selected]):not([visuallyselected]) .tab-background {
-  /* 悬停只提亮键面、加深描边，厚度不变 —— 不靠位移和辉光，避免和按下态抢语义。
-     注意：这里刻意不写 border-bottom-width。厚度的唯一来源是 7.1(4px) 与 7.4/7.6(1px)，
-     否则悬停态的更具体选择器会把按下态的"侧壁收薄"压掉，按压就看不见了。 */
   background-color: var(--zenwashi-key-face-hover) !important;
   border-color: var(--zenwashi-key-edge-hover) !important;
   box-shadow: none !important;
+  transform: translateY(-1px) !important;
+  transition: background-color 0.16s var(--zenwashi-ease),
+              border-color 0.16s var(--zenwashi-ease),
+              transform var(--zenwashi-tap) var(--zenwashi-ease) !important;
 }
 
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover .tab-icon-image,
@@ -871,6 +979,9 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   opacity: 1 !important;
   filter: none !important;
   transform: scale(1.06) !important;
+  /* 图标是 .tab-background 的兄弟节点，键帽抬起时它必须一起抬，否则看着像往里陷 */
+  translate: 0 -1px;
+  transition: translate var(--zenwashi-tap) var(--zenwashi-ease) !important;
 }
 
 /* ---------------- 7.4 点击落键：由「选中」触发的一次性动画 ----------------
@@ -880,13 +991,14 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
  *   改成由 [selected] 触发的一次性关键帧动画后，动画一旦开始就一定跑完，
  *   与鼠标按住多久无关 —— 每一次切换都必然看到完整的落键。
  * 代价：按住不放时不会持续保持压下（那只有 :active 能做到），但标签点击本来都是瞬时的。
- * 节奏：0.34s。22%(≈75ms) 落到底并保持到 60%，之后回弹。
+ * 节奏：0.32s。0% 从"悬停抬起 -1px"出发（与 7.3 同一个起始位，按下去不会有 1px 的突跳），
+ *       20%(≈64ms) 落到底并保持到 50%，之后回弹到悬停位。
  */
 @keyframes zenwashiKeyTap {
-  0%   { transform: translateY(0) scale(1);                             border-bottom-width: var(--zenwashi-key-lip); }
-  22%  { transform: translateY(var(--zenwashi-key-travel)) scale(0.97); border-bottom-width: var(--zenwashi-key-lip-pressed); }
-  60%  { transform: translateY(var(--zenwashi-key-travel)) scale(0.97); border-bottom-width: var(--zenwashi-key-lip-pressed); }
-  100% { transform: translateY(0) scale(1);                             border-bottom-width: var(--zenwashi-key-lip); }
+  0%   { transform: translateY(-1px) scale(1);                             border-bottom-width: var(--zenwashi-key-lip); }
+  20%  { transform: translateY(var(--zenwashi-key-travel)) scale(0.97);    border-bottom-width: var(--zenwashi-key-lip-pressed); }
+  50%  { transform: translateY(var(--zenwashi-key-travel)) scale(0.97);    border-bottom-width: var(--zenwashi-key-lip-pressed); }
+  100% { transform: translateY(-1px) scale(1);                             border-bottom-width: var(--zenwashi-key-lip); }
 }
 
 /* 图标是 .tab-background 的兄弟节点，必须同步下沉。
@@ -894,20 +1006,20 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
  * 主题与 Zen 都在图标上用 `transform: ... !important` 锁过盒模型，
  * 而 !important 会压过动画；`translate` 与 `transform` 是两个独立属性，互不干扰。 */
 @keyframes zenwashiKeyTapIcon {
-  0%   { translate: 0 0; }
-  22%  { translate: 0 var(--zenwashi-key-travel); }
-  60%  { translate: 0 var(--zenwashi-key-travel); }
-  100% { translate: 0 0; }
+  0%   { translate: 0 -1px; }
+  20%  { translate: 0 var(--zenwashi-key-travel); }
+  50%  { translate: 0 var(--zenwashi-key-travel); }
+  100% { translate: 0 -1px; }
 }
 
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected], [visuallyselected]) .tab-background,
 .tabbrowser-tab[zen-essential="true"]:is([selected], [visuallyselected]) .tab-background {
-  animation: zenwashiKeyTap 0.34s var(--zenwashi-ease) 1;
+  animation: zenwashiKeyTap 0.32s var(--zenwashi-ease) 1;
 }
 
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected], [visuallyselected]) .tab-icon-image,
 .tabbrowser-tab[zen-essential="true"]:is([selected], [visuallyselected]) .tab-icon-image {
-  animation: zenwashiKeyTapIcon 0.34s var(--zenwashi-ease) 1;
+  animation: zenwashiKeyTapIcon 0.32s var(--zenwashi-ease) 1;
 }
 
 /* ---------------- 7.5 选中态：键帽保持浮起，侧壁换成矿物色封边 ---------------- */
@@ -1276,8 +1388,10 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 
 /* 
  * 默认基础动效 (Default):
- * 从 0.2s 延长至 0.42s 温润阻尼缓动，并显式包含 filter 与 transform 过渡，
- * 以便与第 12 节的加载「宣纸微敛」和地址栏「画卷退景」无缝共用同一合成层。
+ * 从 0.2s 延长至 0.42s 温润阻尼缓动，并显式包含 filter 与 transform 过渡。
+ * ⚠ 本节只负责「标签切换」。第 12.3 / 12.4 节已改为自己声明过渡，
+ *   不再借用这里的列表 —— 以后调整本节的切换模式或曲线，不会连带改变
+ *   加载「宣纸微敛」与地址栏「画卷退景」的节奏。
  */
 #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
   transform-origin: center center !important;
@@ -1399,6 +1513,27 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 
 /* ---------------- 12.1 地址栏面板本体与候选列表阶梯入场 ---------------- */
 
+/* 
+ * 页面缩放按钮（#urlbar-zoom-button，就是那枚「110%」）：平时隐身，悬停地址栏才浮现。
+ * -----------------------------------------------------------------------------
+ * 这个按钮由 JS 通过 hidden 属性控制（缩放 100% 时彻底移除），
+ * 所以**不能用 display 去覆盖**，否则会和原逻辑打架、且悬停时挤压地址文本。
+ * 改用 opacity + pointer-events：元素仍占着原位置，浮现时布局不跳动；
+ * hidden 时由原逻辑 display:none，我们的透明度规则不会把它复活。
+ * 同时挂上 :focus-within，键盘操作聚焦地址栏时也能显露（可访问性）。
+ */
+#urlbar-zoom-button {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.18s var(--zenwashi-ease) !important;
+}
+
+#urlbar:hover #urlbar-zoom-button,
+#urlbar:focus-within #urlbar-zoom-button {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
 #urlbar[open] #urlbar-background {
   border-radius: 12px !important;
   background-color: var(--zenwashi-bg-urlbar) !important;
@@ -1501,6 +1636,11 @@ browser {
   --zenwashi-veil-opacity: 0.84;
   --zenwashi-veil-delay: 0.12s;
   --zenwashi-veil-overscan: scale(1.06) translateZ(0);   /* ≈3.3σ，盖住 blur(7px) 的透明边缘 */
+  /* 解耦：本节自带过渡，不再借用第 11 节。
+     一并列出 filter / opacity，是为了"加载期间再切标签"时第 11 节的切换动画仍有过渡可用。 */
+  transition: transform 0.48s var(--zenwashi-ease),
+              opacity   0.42s var(--zenwashi-ease),
+              filter    0.48s var(--zenwashi-ease) !important;
   transition-delay: 0.12s !important;
 }
 
@@ -1512,6 +1652,9 @@ browser {
     --zenwashi-veil-opacity: 0.72;
     --zenwashi-veil-delay: 0.10s;
     --zenwashi-veil-overscan: scale(1.12) translateZ(0);   /* ≈3σ，盖住 blur(15px) 的透明边缘 */
+    transition: transform 0.48s var(--zenwashi-ease),
+                opacity   0.42s var(--zenwashi-ease),
+                filter    0.48s var(--zenwashi-ease) !important;
     transition-delay: 0.10s !important;
   }
 }
@@ -1524,6 +1667,9 @@ browser {
     --zenwashi-veil-opacity: 0.80;
     --zenwashi-veil-delay: 0.10s;
     --zenwashi-veil-overscan: scale(1.04) translateZ(0);   /* ≈3σ，盖住 blur(4px) 的透明边缘 */
+    transition: transform 0.48s var(--zenwashi-ease),
+                opacity   0.42s var(--zenwashi-ease),
+                filter    0.48s var(--zenwashi-ease) !important;
     transition-delay: 0.10s !important;
   }
 }
@@ -1536,6 +1682,9 @@ browser {
     --zenwashi-veil-opacity: 1;
     --zenwashi-veil-delay: 0s;
     --zenwashi-veil-overscan: translateZ(0);
+    transition: transform 0.48s var(--zenwashi-ease),
+                opacity   0.42s var(--zenwashi-ease),
+                filter    0.48s var(--zenwashi-ease) !important;
     transition-delay: 0s !important;
   }
 }
@@ -1548,6 +1697,9 @@ browser {
   --zenwashi-veil-opacity: 0.88;
   --zenwashi-veil-delay: 0s;
   --zenwashi-veil-overscan: scale(1.07) translateZ(0);   /* ≈3σ，盖住 blur(8px) 的透明边缘 */
+  transition: transform 0.48s var(--zenwashi-ease),
+              opacity   0.42s var(--zenwashi-ease),
+              filter    0.48s var(--zenwashi-ease) !important;
   transition-delay: 0s !important;
 }
 
@@ -1563,6 +1715,56 @@ browser {
 /* -----------------------------------------------------------------------------
    13. Blended Addressbar Unified Island (可开关：将融合式顶栏与内容区一同包裹进画卷边框)
    ----------------------------------------------------------------------------- */
+/*
+ * 面板入场时上两角的“临时圆角”
+ * -----------------------------------------------------------------------------
+ * 静态规则把内容层上两角钉成 0（与顶栏无缝）且带 !important，动画改不动它；
+ * clip-path 也补不回来（overflow: clip 已按 0 0 r r 裁掉内容，再裁只会取交集）。
+ * 因此让那两个角由自定义属性驱动，再动画属性本身 —— !important 声明不动，
+ * 但它引用到的值在变，圆角就能真的出现并平滑收回。
+ */
+@property --zw-panel-tl {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@property --zw-panel-tr {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+/*
+ * 地址栏展开期间（含 Cmd+T 新建标签页）：内容区上两角跟随变圆。
+ * -----------------------------------------------------------------------------
+ * 截图里 Cmd+T 的柔焦其实是第 12.4 节「画卷退景」——新建标签页会自动打开地址栏，
+ * 内容区随之向内缩放，露出自己那圈 0 0 r r，于是上直角、下圆角。
+ * 上面那个 keyframes 只在 deck-selected 变化后跑 0.42s，地址栏会一直开着，
+ * 动画结束后圆角就没了，所以这里按「地址栏是否展开」这个状态直接给变量赋值。
+ * 只覆盖地址栏展开；普通页面加载（[busy]）仍保持上直角、与地址栏统一。
+ */
+:root:has(#urlbar[open]) {
+  --zw-panel-tl: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
+  --zw-panel-tr: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
+}
+
+@keyframes zenwashiPanelSettle {
+  from {
+    --zw-panel-tl: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
+    --zw-panel-tr: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
+  }
+  to {
+    --zw-panel-tl: 0px;
+    --zw-panel-tr: 0px;
+  }
+}
+
+/* 触发点：面板成为 deck-selected（切标签、Cmd+T）时播一次，
+   时长/曲线与第 11 节切换动画一致，缩放结束即收回直角。 */
+#tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  animation: zenwashiPanelSettle 0.42s var(--zenwashi-ease) 1;
+}
+
 @media not (-moz-pref("zenwashi.urlbar.blended", false)) {
   /*
    * 在「侧边栏 + 顶部工具栏」(:root:not([zen-single-toolbar="true"])) 模式下：
@@ -1702,7 +1904,7 @@ browser {
     outline: none !important;
     box-shadow: none !important;
     background-color: transparent !important;
-    border-radius: 0 0 max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) !important;
+    border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) !important;
   }
 
   :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer,
@@ -1710,8 +1912,9 @@ browser {
   :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) browser {
     border: none !important;
     outline: none !important;
-    border-radius: 0 0 max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) !important;
+    border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) !important;
   }
+
 
   /*
    * 在融合顶栏一体框模式下完整保留第 12.3 节「宣纸微敛」(zenwashi.content.loading) 与 12.4 节「画卷退景」加载/展开动画：

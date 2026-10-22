@@ -32,8 +32,13 @@
   const scriptModuleBaseUrl = 'chrome://sine/content/zen-washi-sumi/scripts/';
   const washiPrefBranch = 'zenwashi.';
   const washiBlendedEnabledPref = 'zenwashi.urlbar.blended';
+  const washiSamplingModePref = 'zenwashi.urlbar.sampling';
   const washiContentRadiusPref = 'zenwashi.content.radius';
   const washiContentMarginPref = 'zenwashi.content.margin';
+  const liveSamplingIntervals = Object.freeze({
+    relaxed: 2000,
+    eager: 500
+  });
   const pageThemeCacheMaxEntries = 500;
   const scheduleSafetyMs = 100;
   const loadbarPrefBranch = 'uc.loadbar.';
@@ -108,6 +113,7 @@
   let scheduledActiveUpdateAt = 0;
   let scheduledActiveUpdateRaf = 0;
   let scheduledActiveUpdateTimer = 0;
+  let liveSamplingTimer = 0;
   let zenBoostMutationObserver = null;
   let lastZenBoostActive = false;
 
@@ -1027,6 +1033,39 @@
     return readBoolPref(washiBlendedEnabledPref, true);
   }
 
+  /**
+   * Exposes the rendered tone of the blended header on :root so stylesheets can
+   * swap artwork per scheme:
+   *
+   *   :root[data-blended-mode="dark"]  #my-image { ... }
+   *   :root[data-blended-mode="light"] #my-image { ... }
+   *
+   * The mode follows the sampled *background* and reuses the 0.6 luminance
+   * cut-off from chooseForeground() in color-utils.js, so it always matches
+   * the light/dark foreground the header actually renders. When the background
+   * uses a colour syntax parseCssRgb() cannot read (e.g. color(display-p3 ...)),
+   * it falls back to the resolved foreground: light text means a dark header.
+   * The attribute is absent when neither value yields a usable colour.
+   */
+  function setBlendedMode(background, foreground) {
+    const root = chromeDoc.documentElement;
+    const bgRgb = background ? parseCssRgb(background) : null;
+    let mode = '';
+    if (bgRgb) {
+      mode = getRelativeLuminance(bgRgb) > 0.6 ? 'light' : 'dark';
+    } else {
+      const fgRgb = foreground ? parseCssRgb(foreground) : null;
+      if (fgRgb) mode = getRelativeLuminance(fgRgb) > 0.5 ? 'dark' : 'light';
+    }
+    if (!mode) {
+      if (root.hasAttribute('data-blended-mode')) root.removeAttribute('data-blended-mode');
+      return;
+    }
+    if (root.getAttribute('data-blended-mode') !== mode) {
+      root.setAttribute('data-blended-mode', mode);
+    }
+  }
+
   function setVar(value, foreground) {
     if (!isWashiBlendedEnabled()) {
       clearTabHeaderTheme();
@@ -1039,12 +1078,15 @@
     } else {
       removeStylePropertyIfChanged(rootStyle, '--zen-tab-header-foreground');
     }
+    setBlendedMode(value, foreground);
   }
 
   function clearTabHeaderTheme() {
     const rootStyle = chromeDoc.documentElement.style;
     removeStylePropertyIfChanged(rootStyle, '--zen-tab-header-background');
     removeStylePropertyIfChanged(rootStyle, '--zen-tab-header-foreground');
+    const root = chromeDoc.documentElement;
+    if (root.hasAttribute('data-blended-mode')) root.removeAttribute('data-blended-mode');
   }
 
   function setThemeDebugAttributes(reason = '', theme = null, href = '') {
@@ -1876,11 +1918,15 @@
           applyFramePrefs();
           scheduleSplitAddressbars();
           schedulePaneCornerRadiiUpdate();
+          refreshLiveSampling();
           if (isWashiBlendedEnabled()) {
             void updateActive({ reason: 'washi-blended-enabled' });
           } else {
             clearAdaptivePageTheme('washi-blended-disabled');
           }
+        }
+        if (topic === 'nsPref:changed' && changed === washiSamplingModePref) {
+          refreshLiveSampling();
         }
       }
     };
@@ -3919,6 +3965,78 @@
     if (DEBUG) console.info('[blended-addressbar:urlbar] Post-load sampling');
   }
 
+  // Opt-in periodic refresh. The default pipeline is event-driven; this timer
+  // only nudges the persistent frame sampler so scrolling, canvas or
+  // dynamically painted backgrounds can keep the header in sync.
+  function normalizeWashiSamplingMode(value) {
+    const mode = String(value || '').trim().toLowerCase();
+    return mode === 'relaxed' || mode === 'eager' ? mode : 'off';
+  }
+
+  function getWashiSamplingMode() {
+    return normalizeWashiSamplingMode(readStringPref(washiSamplingModePref, 'off'));
+  }
+
+  function getLiveSamplingIntervalMs() {
+    return liveSamplingIntervals[getWashiSamplingMode()] || 0;
+  }
+
+  function stopLiveSampling() {
+    if (liveSamplingTimer) clearInterval(liveSamplingTimer);
+    liveSamplingTimer = 0;
+  }
+
+  function requestFrameSampleNow(browser) {
+    if (!browser) return;
+    // Re-loading the persistent frame scripts is the existing refresh path:
+    // their init guard immediately forces one sample when already installed.
+    requestPersistentFrameTheme(browser);
+  }
+
+  function isChromeWindowActive() {
+    if (chromeDoc.hidden) return false;
+    try {
+      if (window.docShell && window.docShell.isActive === false) return false;
+    } catch {}
+
+    const services = getServices();
+    const activeWindow = services?.focus?.activeWindow || null;
+    if (activeWindow) return activeWindow === window;
+    return chromeDoc.hasFocus();
+  }
+
+  function runLiveSamplingTick() {
+    if (addressbarEnhancementsDisposed || !isWashiBlendedEnabled()) {
+      stopLiveSampling();
+      return;
+    }
+    if (!getLiveSamplingIntervalMs()) {
+      stopLiveSampling();
+      return;
+    }
+    // Skip background windows: only the focused browser window keeps sampling.
+    if (!isChromeWindowActive()) return;
+
+    const targets = new Set();
+    if (gBrowser?.selectedBrowser) targets.add(gBrowser.selectedBrowser);
+    for (const browser of splitAddressbars.bars.keys()) targets.add(browser);
+
+    for (const browser of targets) {
+      const href = getBrowserHref(browser);
+      if (!href || !isPageThemeEligibleHref(href)) continue;
+      // The loading burst already samples this tab; don't compete with it.
+      if (gBrowser.getTabForBrowser?.(browser)?.hasAttribute('busy')) continue;
+      requestFrameSampleNow(browser);
+    }
+  }
+
+  function refreshLiveSampling() {
+    const interval = getLiveSamplingIntervalMs();
+    stopLiveSampling();
+    if (!isWashiBlendedEnabled() || !interval) return;
+    liveSamplingTimer = setInterval(runLiveSamplingTick, interval);
+  }
+
   async function updateActive(options = {}) {
     if (!isWashiBlendedEnabled()) {
       clearAdaptivePageTheme('washi-blended-disabled');
@@ -4321,6 +4439,7 @@
     if (addressbarEnhancementsDisposed) return;
     clearInterval(loadbarTimer);
     clearTimeout(splitRefreshTimer);
+    stopLiveSampling();
     splitObserver?.disconnect();
     splitRootObserver?.disconnect();
     splitEditorObserver?.disconnect();
@@ -4332,6 +4451,7 @@
     paintLoadProgress(chromeDoc.getElementById('urlbar'), null);
     splitAddressbars.cleanup();
     chromeDoc.documentElement.removeAttribute('data-blended-split-bars');
+    chromeDoc.documentElement.removeAttribute('data-blended-mode');
     positionSplitEditor();
     for (const name of ['height', 'radius', 'background', 'border', 'shadow', 'font', 'copy-icon', 'site-icon', 'input-padding', 'text-padding', 'action-width', 'action-radius']) {
       removeStylePropertyIfChanged(chromeDoc.documentElement.style, `--blended-addressbar-native-${name}`);
@@ -4352,6 +4472,7 @@
     observeLoadbarPrefs();
     observeNativeZenThemePrefs();
     observeSplitAddressbars();
+    refreshLiveSampling();
 
     gBrowser.tabContainer.addEventListener('TabSelect', () => {
       chromeDoc.documentElement.removeAttribute('data-blended-addressbar-color-loading');

@@ -225,8 +225,9 @@ menupopup[placespopup="true"] :is(menu, menuitem, .bookmark-item):is([disabled],
         :is(
             #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"]),
             #nav-bar-customization-target > :not(#urlbar-container):not(#urlbar[zen-floating-urlbar="true"]) :is(toolbarbutton, .toolbarbutton-1, .toolbarbutton-icon, .toolbarbutton-text, .urlbar-icon),
-            #urlbar:not([zen-floating-urlbar="true"]) #urlbar-input-container :is(#identity-box, #trust-icon-container, #tracking-protection-icon-container, #zen-site-data-icon-button, .urlbar-page-action, .identity-box-button, .urlbar-icon),
-            #urlbar:not([zen-floating-urlbar="true"]) #urlbar-input-container :is(#identity-box, #trust-icon-container, #tracking-protection-icon-container, #zen-site-data-icon-button, .urlbar-page-action, .identity-box-button) :is(.toolbarbutton-icon, .urlbar-icon, image),
+            /* Gecko 158 moved the URL bar container from #urlbar-input-container to .urlbar-input-container. */
+            #urlbar:not([zen-floating-urlbar="true"]) .urlbar-input-container :is(#identity-box, #trust-icon-container, #tracking-protection-icon-container, #zen-site-data-icon-button, .urlbar-page-action, .identity-box-button, .urlbar-icon),
+            #urlbar:not([zen-floating-urlbar="true"]) .urlbar-input-container :is(#identity-box, #trust-icon-container, #tracking-protection-icon-container, #zen-site-data-icon-button, .urlbar-page-action, .identity-box-button) :is(.toolbarbutton-icon, .urlbar-icon, image),
             #personal-bookmarks,
             #personal-bookmarks.browser-toolbar,
             #PersonalToolbar :is(#personal-bookmarks, .browser-toolbar),

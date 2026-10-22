@@ -83,27 +83,29 @@
 /* [方案 C] Catppuccin (拿铁与莫卡) · 舒缓柔和粉彩低对比度配色 */
 @media (-moz-pref("zenwashi.palette", "catppuccin")) {
   :root {
-    /* Light: Latte (底色 #EFF1F5 / 卡片 #E6E9EF) | Dark: Mocha (底色 #181825 / 卡片 #1E1E2E) */
-    --zenwashi-bg-base: light-dark(#EFF1F5, #181825) !important;
-    --zenwashi-bg-surface: light-dark(#FFFFFF, #1E1E2E) !important;
-    --zenwashi-bg-urlbar: light-dark(#FFFFFF, #1E1E2E) !important;
-    --zenwashi-tab-selected-bg: light-dark(#FFFFFF, #313244) !important;
-    --zenwashi-tab-selected-border: light-dark(rgba(76, 79, 105, 0.14), rgba(205, 214, 244, 0.14)) !important;
+    /* Light: Latte (底色 #EFF1F5 / 卡片 #E6E9EF)
+     * Dark : Macchiato (mantle #1E2030 / base #24273A / surface0 #363A4F / text #CAD3F5)
+     *         浅色用 Latte，深色用 Macchiato —— 不再用 Mocha。 */
+    --zenwashi-bg-base: light-dark(#EFF1F5, #1E2030) !important;
+    --zenwashi-bg-surface: light-dark(#FFFFFF, #24273A) !important;
+    --zenwashi-bg-urlbar: light-dark(#FFFFFF, #24273A) !important;
+    --zenwashi-tab-selected-bg: light-dark(#FFFFFF, #363A4F) !important;
+    --zenwashi-tab-selected-border: light-dark(rgba(76, 79, 105, 0.14), rgba(202, 211, 245, 0.14)) !important;
     --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(76, 79, 105, 0.08), 0 2px 6px rgba(0, 0, 0, 0.45)) !important;
-    --zenwashi-tab-hover-bg: light-dark(rgba(76, 79, 105, 0.06), rgba(205, 214, 244, 0.07)) !important;
-    --zenwashi-border-subtle: light-dark(rgba(76, 79, 105, 0.12), rgba(205, 214, 244, 0.10)) !important;
-    --zenwashi-border-distinct: light-dark(rgba(76, 79, 105, 0.18), rgba(205, 214, 244, 0.16)) !important;
-    --zenwashi-fg-primary: light-dark(#4C4F69, #CDD6F4) !important;
-    --zenwashi-fg-secondary: light-dark(#6C6F85, #A6ADC8) !important;
-    --zenwashi-fg-muted: light-dark(#9CA0B0, #6C7086) !important;
-    --zenwashi-accent: light-dark(#EA76CB, #F5C2E7) !important;
-    --zenwashi-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 194, 231, 0.22)) !important;
+    --zenwashi-tab-hover-bg: light-dark(rgba(76, 79, 105, 0.06), rgba(202, 211, 245, 0.07)) !important;
+    --zenwashi-border-subtle: light-dark(rgba(76, 79, 105, 0.12), rgba(202, 211, 245, 0.10)) !important;
+    --zenwashi-border-distinct: light-dark(rgba(76, 79, 105, 0.18), rgba(202, 211, 245, 0.16)) !important;
+    --zenwashi-fg-primary: light-dark(#4C4F69, #CAD3F5) !important;
+    --zenwashi-fg-secondary: light-dark(#6C6F85, #A5ADCB) !important;
+    --zenwashi-fg-muted: light-dark(#9CA0B0, #6E738D) !important;
+    --zenwashi-accent: light-dark(#EA76CB, #F5BDE6) !important;
+    --zenwashi-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 189, 230, 0.22)) !important;
 
-    /* Essentials (Latte 拿铁淡紫灰/莫卡深色调专属适配) */
+    /* Essentials (Latte 拿铁 / Macchiato 深色调专属适配) */
     --zenwashi-essentials-card-bg: light-dark(#E6E9EF, rgba(255, 255, 255, 0.06)) !important;
-    --zenwashi-essentials-card-hover-bg: light-dark(#FFFFFF, #313244) !important;
-    --zenwashi-essentials-card-selected-bg: light-dark(#FFFFFF, #313244) !important;
-    --zenwashi-essentials-card-border: light-dark(rgba(76, 79, 105, 0.14), rgba(205, 214, 244, 0.14)) !important;
+    --zenwashi-essentials-card-hover-bg: light-dark(#FFFFFF, #363A4F) !important;
+    --zenwashi-essentials-card-selected-bg: light-dark(#FFFFFF, #363A4F) !important;
+    --zenwashi-essentials-card-border: light-dark(rgba(76, 79, 105, 0.14), rgba(202, 211, 245, 0.14)) !important;
     --zenwashi-essentials-card-shadow: light-dark(
       0 1.5px 0 rgba(76, 79, 105, 0.12), 0 1px 3px rgba(76, 79, 105, 0.05),
       0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
@@ -213,7 +215,7 @@
 /* Catppuccin Latte (拿铁粉黛单色强调) */
 @media (-moz-pref("zenwashi.accent", "catppuccin-latte")) {
   :root {
-    --zenwashi-accent: light-dark(#EA76CB, #F5C2E7) !important;
-    --zenwashi-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 194, 231, 0.22)) !important;
+    --zenwashi-accent: light-dark(#EA76CB, #F5BDE6) !important;
+    --zenwashi-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 189, 230, 0.22)) !important;
   }
 }
