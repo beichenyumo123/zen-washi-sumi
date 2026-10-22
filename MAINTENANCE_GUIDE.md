@@ -147,6 +147,20 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
 - 浅色 `#FFF` 恰好等于主题浅色 surface，多次掩盖了 Zen 兜底色（`light-dark(#FFF, #202020)`）的存在；
 - 换到深色才暴露。**验证深浅两态时，浅色通过不能作为结论。**
 
+#### 5.7 地址栏面板是另一套 Token（`#urlbar-background` 已不存在）
+- **现象**：`zenwashi.palette` 切换后侧栏、标签页都变了，但 Cmd+T / Cmd+L 唤出的地址栏浮层仍是中性白 / 中性黑，候选项悬停也是中性灰。
+- **原因**：
+  1. Gecko 158 起地址栏底板由 `#urlbar-background` 改为 `<div class="urlbar-background">`（见 `UrlbarInputBase.#markup`），旧 id 选择器会**静默失效**；
+  2. Zen 在 `#urlbar[breakout-extend] .urlbar-background` 上硬编码 `--zen-urlbar-background-base: light-dark(#fff, #181818)` 并 `!important` 上色；
+  3. `.urlbarView-url` 被 Zen 写死为 `light-dark(#4f4f4f, #aaa)`，行悬停 Token 指向 `--toolbarbutton-background-color-hover`（中性色），都不读调色板。
+- **固化做法**（见 `userChrome.css` 第 12.1 节）：
+  - 地址栏底板统一用 `.urlbar-background` class 选择器；
+  - 面板底色用 `--zenwashi-bg-urlbar`，描边用 1px `--zenwashi-border-distinct` 发丝墨线，靠纸影托起浮层（不要用满强度 accent 粗边或 3px accent 外环，浅色下会显脏）；亚克力开启时用 `color-mix` 保留磨砂；
+  - 改写 `--urlbarview-*` / `--toolbar-field-*` Token，覆盖行悬停、选中、URL 行与操作文字；
+  - `.searchmode-switcher-panel` / `.urlbarView-result-menu` 走 `--panel-*` / `--panel-list-*`，需单独重绘。
+- **面板圆角**：由 Sine 设置项 `zenwashi.urlbar.panel.radius` 直接映射到 `--zenwashi-urlbar-panel-radius`（默认 `15px`），改完立即在 Cmd+T 浮层生效；不要写死在选择器里。
+- **验证**：至少要在深色 + 两套 palette（如 washi / catppuccin）下打开 Cmd+T 检查（呼应 5.6）。
+
 ---
 
 ## 3. 日常维护与调试检查清单 (Checklist)
@@ -173,6 +187,11 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
    - [ ] Cmd+T 新建标签：缩放效果的上两角是否与下方一致？
    - [ ] 快速连点 Essentials / 普通标签：按压效果是否每次都能播完（见 5.5）？
    - [ ] 文件夹收起是否仍有淡出 + 收拢动画（见 5.1 / 5.2）？
+6. **地址栏面板检查（Cmd+T / Cmd+L）**：
+   - [ ] 面板底色是否等于当前 palette 的 surface（深色下不该是中性 `#181818`）？
+   - [ ] 候选项悬停 / 选中是否呈现和纸微阶与强调色联动？
+   - [ ] URL 行、操作文字是否使用次级墨色，而不是 Zen 写死的 `#aaa`？
+   - [ ] 搜索模式切换面板、候选结果右键菜单是否也是和纸浮层色？
 
 ---
 

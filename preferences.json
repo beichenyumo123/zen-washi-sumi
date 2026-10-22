@@ -270,6 +270,18 @@
   },
   {
     "type": "separator",
+    "label": "Addressbar Panel 地址栏浮层",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "string",
+    "property": "zenwashi.urlbar.panel.radius",
+    "label": "Panel corner radius 地址栏浮层圆角 (Cmd+T / Cmd+L)",
+    "defaultValue": "15px",
+    "placeholder": "15px"
+  },
+  {
+    "type": "separator",
     "label": "Tabs & Deck 标签与质感微调",
     "margin": "14px 0 10px 0"
   },

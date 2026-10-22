@@ -30,6 +30,8 @@
   --zenwashi-essentials-radius: 8px;
   --zenwashi-content-radius: 18px;
   --zenwashi-content-margin: 10px;
+  /* 地址栏浮层 (Cmd+T / Cmd+L) 圆角；Sine 会把 zenwashi.urlbar.panel.radius 映射到同名变量 */
+  --zenwashi-urlbar-panel-radius: 15px;
 
   /* 和纸与松烟墨色彩基调 (Light: 鳥の子色 #F7F6F2 / Dark: 松烟墨 #141517) */
   --zenwashi-bg-base: light-dark(#F7F6F2, #141517);
@@ -395,17 +397,11 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   border: none !important;
 }
 
-#urlbar-background {
-  background-color: var(--zenwashi-bg-urlbar) !important;
-  border: 1px solid var(--zenwashi-border-subtle) !important;
-  border-radius: 8px !important;
-  box-shadow: none !important;
-}
-
-#urlbar[focused="true"] #urlbar-background {
-  border-color: var(--zenwashi-accent) !important;
-  outline: 2px solid var(--zenwashi-accent-tint) !important;
-}
+/* 
+ * 地址栏底板自 Gecko 158 起由 `#urlbar-background` 改为纯 class `.urlbar-background`
+ * （见 UrlbarInputBase.#markup），所以旧 id 选择器早已静默失效。
+ * 底板与展开面板的配色统一收敛到第 12.1 节，这里不再重复声明。
+ */
 
 /* -----------------------------------------------------------------------------
    5. High-Depth Floating Island (零 position:relative / 零 ::after，防止 XUL Flex 坍缩，同时释放漫射大阴影)
@@ -1535,17 +1531,91 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   pointer-events: auto !important;
 }
 
-#urlbar[open] #urlbar-background {
-  border-radius: 12px !important;
+/* 
+ * 12.1.1 面板底色：Cmd+T / Cmd+L 唤出的地址栏浮层
+ * -----------------------------------------------------------------------------
+ * Gecko 158 起地址栏底板元素是 `<div class="urlbar-background">`，没有 id
+ * （见 UrlbarInputBase.#markup），旧的 `#urlbar-background` 选择器一律失效。
+ * 与此同时 Zen 在 `#urlbar[breakout-extend] .urlbar-background` 上写死了
+ *   --zen-urlbar-background-base: light-dark(#fff, #181818)
+ * 并强制上色 —— 这就是无论切哪套调色板，面板都是一块中性白 / 中性黑的原因。
+ *
+ * 用户样式表的 !important 优先级高于作者样式表，所以这里可以稳定覆盖：
+ *   · 底色 = --zenwashi-bg-urlbar（四套基底方案自动联动）
+ *   · 描边 = 发丝墨线（不用满强度 accent，避免浅色下出现一圈发脏的深灰粗边）
+ *   · 投影 = 和纸漫射纸影，靠阴影而不是描边来托起浮层
+ */
+#urlbar:is([open], [breakout-extend]) {
+  border-radius: var(--zenwashi-urlbar-panel-radius, 15px) !important;
+}
+
+#urlbar:is([open], [breakout-extend]) > .urlbar-background {
   background-color: var(--zenwashi-bg-urlbar) !important;
-  border: 1.5px solid var(--zenwashi-accent) !important;
+  background-image: none !important;
+  border: 1px solid var(--zenwashi-border-distinct) !important;
+  border-radius: var(--zenwashi-urlbar-panel-radius, 15px) !important;
   outline: none !important;
-  box-shadow: light-dark(
-    0 18px 44px rgba(38, 36, 33, 0.16), 0 4px 14px rgba(38, 36, 33, 0.08),
-    0 22px 54px rgba(0, 0, 0, 0.72), 0 6px 18px rgba(0, 0, 0, 0.48)
-  ), 0 0 0 3px var(--zenwashi-accent-tint) !important;
-  transition: box-shadow 0.36s var(--zenwashi-ease),
-              border-color 0.36s var(--zenwashi-ease) !important;
+  box-shadow:
+    0 20px 48px light-dark(rgba(38, 36, 33, 0.16), rgba(0, 0, 0, 0.72)),
+    0 5px 16px light-dark(rgba(38, 36, 33, 0.08), rgba(0, 0, 0, 0.48)) !important;
+  transition:
+    box-shadow 0.36s var(--zenwashi-ease),
+    border-color 0.36s var(--zenwashi-ease) !important;
+}
+
+/* 亚克力地址栏（zen.theme.acrylic-urlbar）开启时保留磨砂，但把颜色换成和纸色 */
+@media -moz-pref("zen.theme.acrylic-urlbar") and (not (prefers-reduced-transparency: reduce)) {
+  :root:not([zen-no-acrylic="true"]) #urlbar:is([open], [breakout-extend]) > .urlbar-background {
+    background-color: color-mix(in srgb, var(--zenwashi-bg-urlbar) 92%, transparent) !important;
+    backdrop-filter: var(--zen-backdrop-underlay) blur(40px) !important;
+  }
+}
+
+/* 
+ * 12.1.2 面板内的墨字与候选项色阶
+ * -----------------------------------------------------------------------------
+ * 候选项的悬停 / 选中、URL 行、操作文字、一次性搜索引擎按钮都优先读这组
+ * `--urlbarview-*` / `--toolbar-field-*` Token；把 Token 直接改写成调色板值，
+ * 比逐条覆盖具体类名更稳，也能同时覆盖 Zen 在 zen-omnibox.css 里的硬编码值。
+ */
+#urlbar {
+  --toolbar-field-text-color: var(--zenwashi-fg-primary) !important;
+  --toolbar-field-text-color-focus: var(--zenwashi-fg-primary) !important;
+  --urlbarview-background-color-hover: var(--zenwashi-tab-hover-bg) !important;
+  --urlbarview-background-color-selected: var(--zenwashi-accent-tint) !important;
+  --urlbarview-text-color-secondary: var(--zenwashi-fg-secondary) !important;
+  --urlbarview-text-color-selected: var(--zenwashi-fg-primary) !important;
+  --urlbarview-text-color-action: var(--zenwashi-fg-secondary) !important;
+  --urlbarview-separator-color: var(--zenwashi-border-subtle) !important;
+}
+
+/* Zen 把 URL 行与标题分隔符写死成 light-dark(#4f4f4f, #aaa)，改回调色板次级墨色 */
+#urlbar .urlbarView-url,
+#urlbar .urlbarView-title-separator::before {
+  color: var(--zenwashi-fg-secondary) !important;
+}
+
+/* 
+ * 12.1.3 地址栏自带的两块浮层
+ * -----------------------------------------------------------------------------
+ *   · .searchmode-switcher-panel：点搜索图标弹出的「本次用哪个引擎搜索」面板
+ *   · .urlbarView-result-menu：候选结果右键菜单（panel-list popover）
+ * 它们走的是 `--panel-*` / `--panel-list-*` Token，不继承 #urlbar 的颜色，
+ * 所以需要单独按和纸浮层重绘，否则会露出 Zen 自带的中性面板色。
+ */
+.searchmode-switcher-panel,
+.urlbarView-result-menu {
+  --panel-background-color: var(--zenwashi-bg-surface) !important;
+  --panel-text-color: var(--zenwashi-fg-primary) !important;
+  --panel-border-color: var(--zenwashi-border-subtle) !important;
+  --panel-separator-color: var(--zenwashi-border-subtle) !important;
+  --panel-list-background-color: var(--zenwashi-bg-surface) !important;
+  --panel-list-text-color: var(--zenwashi-fg-primary) !important;
+  --panel-list-border-color: var(--zenwashi-border-subtle) !important;
+  --button-background-color-menu-hover: var(--zenwashi-tab-hover-bg) !important;
+  --button-text-color-menu-hover: var(--zenwashi-fg-primary) !important;
+  --button-background-color-menu-active: var(--zenwashi-accent-tint) !important;
+  --button-text-color-menu-active: var(--zenwashi-fg-primary) !important;
 }
 
 .urlbarView-row {
@@ -1875,13 +1945,13 @@ browser {
   }
 
   /* 未聚焦/未展开时的地址栏背景完全透明，无缝融入顶栏；悬停微亮，点击展开时恢复和纸浮层 */
-  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) #urlbar-background {
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-background {
     background-color: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
   }
 
-  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover #urlbar-background {
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover .urlbar-background {
     background-color: color-mix(in srgb, var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 7%, transparent) !important;
   }
 
