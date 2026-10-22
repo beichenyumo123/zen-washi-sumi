@@ -1101,7 +1101,10 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   isolation: isolate !important;
 }
 
-/* 胶囊横条主体：圆角微光胶囊药丸横线 */
+/* 
+ * 胶囊横条主体：绝对定位铺满整行，不再被右侧按钮截短。
+ * 这样无论「清除」按钮显示与否，横线都独占一行；按钮只是浮在横线右端的一枚纸片。
+ */
 .pinned-tabs-container-separator toolbarseparator,
 .pinned-tabs-container-separator > toolbarseparator {
   appearance: none !important;
@@ -1113,8 +1116,13 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   background-color: var(--zenwashi-border-distinct) !important;
   opacity: 0.65 !important;
   margin: 0 !important;
-  flex: 1 1 auto !important;
-  position: relative !important;
+  flex: none !important;
+  position: absolute !important;
+  /* 右侧留 12px 呼吸位：胶囊右端完整收圆，不再顶到侧栏滚动条下面 */
+  inset-inline: 0 12px !important;
+  top: 50% !important;
+  translate: 0 -50% !important;
+  pointer-events: none !important;
   z-index: 1 !important;
   transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
               opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
@@ -1128,10 +1136,10 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 
 /* 
  * 右侧“清除”按钮：
- * 1. 强制常驻显示（覆盖原生仅在侧边栏 hover 时显现的逻辑）；
- * 2. 背景设置实色/高不透明度表面色 (--zenwashi-bg-surface / 混合色)，
- *    杜绝底层任何贯穿横线透过按钮半透明材质映出来；
- * 3. 显式提升 z-index，完全压制下层任何原生线条。
+ * 1. 平时隐藏（与 Zen 原生一致），侧栏悬停或按钮获得焦点时才浮现；
+ * 2. 绝对定位浮在横线右端，不参与 flex 排布 —— 隐藏时不会截短横线，横线始终满行；
+ * 3. 不透明表面色遮住从下方穿过的横线，让纸片像压在胶囊线上；
+ * 4. 默认 pointer-events: none，避免看不见时误点清空标签。
  */
 .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
 #titlebar .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
@@ -1139,13 +1147,17 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   appearance: none !important;
   display: inline-flex !important;
   visibility: visible !important;
-  opacity: 1 !important;
-  position: relative !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  /* 与胶囊线右端对齐，同样留出 12px 呼吸位 */
+  inset-inline-end: 12px !important;
+  top: 50% !important;
+  translate: 0 -50% !important;
   z-index: 2 !important;
   flex-shrink: 0 !important;
   border-radius: 9999px !important;
   padding: 2px 9px !important;
-  margin-left: 6px !important;
+  margin: 0 !important;
   font-size: 11px !important;
   /* 采用实色和纸卡片表面色叠加轻微微光，确保遮蔽底层透射 */
   background: var(--zenwashi-bg-surface) !important;
@@ -1155,9 +1167,20 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   color: var(--zenwashi-fg-secondary) !important;
   border: none !important;
   cursor: pointer !important;
-  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
-              color var(--zenwashi-duration) var(--zenwashi-ease),
-              box-shadow var(--zenwashi-duration) var(--zenwashi-ease) !important;
+  pointer-events: none !important;
+  transition:
+    opacity 0.16s var(--zenwashi-ease),
+    background-color var(--zenwashi-duration) var(--zenwashi-ease),
+    color var(--zenwashi-duration) var(--zenwashi-ease),
+    box-shadow var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 侧栏悬停 / 按钮聚焦时才浮现；横线是独立元素，显隐按钮都不会让横线缩短 */
+#navigator-toolbox[zen-has-implicit-hover="true"] .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
+.pinned-tabs-container-separator:hover .zen-workspace-close-unpinned-tabs-button,
+.pinned-tabs-container-separator:focus-within .zen-workspace-close-unpinned-tabs-button {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* 内部图标与“清除”文字标签强制保持常驻可见 */
@@ -1511,22 +1534,37 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 /* ---------------- 12.1 地址栏面板本体与候选列表阶梯入场 ---------------- */
 
 /* 
- * 页面缩放按钮（#urlbar-zoom-button，就是那枚「110%」）：平时隐身，悬停地址栏才浮现。
+ * 页面缩放按钮（#urlbar-zoom-button，就是那枚「110%」）：
+ * 平时完全收起、不占位，悬停或聚焦地址栏时才展开淡入。
  * -----------------------------------------------------------------------------
- * 这个按钮由 JS 通过 hidden 属性控制（缩放 100% 时彻底移除），
- * 所以**不能用 display 去覆盖**，否则会和原逻辑打架、且悬停时挤压地址文本。
- * 改用 opacity + pointer-events：元素仍占着原位置，浮现时布局不跳动；
- * hidden 时由原逻辑 display:none，我们的透明度规则不会把它复活。
+ * 这个按钮由 JS 通过 hidden 属性控制（缩放 100% 时彻底移除），所以：
+ *   · 不用 display 去覆盖，避免和原逻辑打架；
+ *   · 用 max-width / padding-inline / margin-inline 真正收拢到 0，
+ *     把占位还给地址文本，不再在按钮之间留下一段摸不着的空档；
+ *   · 展开时同一组属性做过渡，地址文本是平滑让位，而不是硬跳一下。
+ * hidden 仍由原生 display:none 处理，`:not([hidden])` 保证不会把它复活。
  * 同时挂上 :focus-within，键盘操作聚焦地址栏时也能显露（可访问性）。
  */
 #urlbar-zoom-button {
+  max-width: 0 !important;
+  min-width: 0 !important;
+  padding-inline: 0 !important;
+  margin-inline: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
-  transition: opacity 0.18s var(--zenwashi-ease) !important;
+  overflow: hidden !important;
+  transition:
+    opacity 0.16s var(--zenwashi-ease),
+    max-width 0.22s var(--zenwashi-ease),
+    padding-inline 0.22s var(--zenwashi-ease),
+    margin-inline 0.22s var(--zenwashi-ease) !important;
 }
 
-#urlbar:hover #urlbar-zoom-button,
-#urlbar:focus-within #urlbar-zoom-button {
+#urlbar:hover #urlbar-zoom-button:not([hidden]),
+#urlbar:focus-within #urlbar-zoom-button:not([hidden]) {
+  max-width: 6em !important;
+  padding-inline: 7px !important;
+  margin-inline: 6px !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
