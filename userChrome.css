@@ -2532,6 +2532,20 @@ browser {
 
 /* 系统开了"降低透明度"就整块不生效，避免把 UI 变成一片糊 */
 @media not (prefers-reduced-transparency: reduce) {
+  /*
+   * 真正的拦路虎：第 4 节把 :root / #main-window / #browser 这三个「窗口画布」本身
+   * 涂成了实心纸色，连同 .zen-browser-generic-background 元素自己的底色。
+   * 它们在最底层，只要不透明，上面再怎么调 alpha 都是「纸盖纸」——
+   * 现象就是开关怎么切都一模一样。必须先把这一层让空，桌面才有机会透上来。
+   * off 档时上层伪元素仍是 100% 纸色（inset:0 全覆盖），所以观感与改之前一致。
+   */
+  :root:not([zen-compact-mode="true"]),
+  :root:not([zen-compact-mode="true"]) #main-window,
+  :root:not([zen-compact-mode="true"]) #browser,
+  :root:not([zen-compact-mode="true"]) .zen-browser-generic-background {
+    background-color: transparent !important;
+  }
+
   :root:not([zen-compact-mode="true"]) #zen-browser-background::before,
   :root:not([zen-compact-mode="true"]) #zen-browser-background::after {
     background:

@@ -283,6 +283,18 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
   所以 `off` 档即使整块规则命中也不会有任何变化（这是刻意的安全兜底）。
 - **非 macOS**：没有 vibrancy 时半透明透出的是窗口自身底色，观感退化成"更薄的纸"，
   不会出错，但也谈不上磨砂。
+- **第一次翻车（值得记）**：只把 `#zen-browser-background` 的 `::before/::after` 调成 60%，
+  用户反馈"开不开一模一样"。原因不在新写的规则，而在**第 4 节**：
+  ```css
+  :root, #main-window, #browser, .zen-browser-generic-background, ... {
+    background-color: var(--zenwashi-bg-base) !important;
+  }
+  ```
+  这三个「窗口画布」本身被涂成了实心纸，而且还在最底层——纸盖纸，上面调多少 alpha 都看不出来。
+  修法是玻璃模式下先把这一层让空（`background-color: transparent`），
+  再让 `#zen-browser-background` 的伪元素独自承担 alpha。
+  **教训**：做透明度之前，先把"这块颜色到底是谁在画"从最底层往上数一遍，
+  别只盯着自己新写的那条规则。
 
 ---
 
