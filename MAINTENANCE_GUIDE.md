@@ -295,6 +295,13 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
   再让 `#zen-browser-background` 的伪元素独自承担 alpha。
   **教训**：做透明度之前，先把"这块颜色到底是谁在画"从最底层往上数一遍，
   别只盯着自己新写的那条规则。
+- **第二次翻车（同一个教训的加强版）**：把窗口画布让空后玻璃出来了，但侧栏**顶部一条
+  不透明灰带**，玻璃从标题栏高度往下才开始。原因是 Firefox 的 `browser-shared.css` 在
+  macOS 上给 `#navigator-toolbox::after` 挂了 `-moz-default-appearance: -moz-window-titlebar`，
+  画的是原生标题栏底色，`z-index: -1` 压在侧栏后面——实心纸时看不见，一透明就露出来。
+  修法：玻璃模式下 `appearance: none` 关掉它。
+  同一个坑的两种形态：**底色不一定在你选的那个元素上，也不一定在 `background-color` 上**，
+  `appearance` / 伪元素 / 原生控件都可能偷偷画一层。
 
 ---
 
