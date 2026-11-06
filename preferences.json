@@ -256,6 +256,12 @@
     ]
   },
   {
+    "type": "checkbox",
+    "property": "zenwashi.diagnostics.glass",
+    "label": "⚠️ Diagnostics 玻璃调试（侧栏画洋红条纹、窗口层画绿色，验证规则到底有没有生效）",
+    "defaultValue": false
+  },
+  {
     "type": "separator",
     "label": "Blended Addressbar 融合式一体顶栏",
     "margin": "14px 0 10px 0"

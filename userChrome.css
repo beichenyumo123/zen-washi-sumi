@@ -2610,3 +2610,26 @@ browser {
     box-shadow: none !important;
   }
 }
+
+/* -----------------------------------------------------------------------------
+   16.1 玻璃诊断（zenwashi.diagnostics.glass）
+   -----------------------------------------------------------------------------
+   排查"开关没区别"用：打开后侧栏会变成洋红/青条纹，整窗纸层会变成纯绿。
+     · 看到条纹 + 绿色 → §16 的规则确实生效，问题在"窗口本身不透"（OS 层）
+     · 什么都看不到   → §16 根本没被应用（选择器/媒体查询/层叠），继续往上查
+   纯诊断用，平时保持关闭。
+   ----------------------------------------------------------------------------- */
+@media -moz-bool-pref: "zenwashi.diagnostics.glass" {
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    background-image: repeating-linear-gradient(
+      45deg,
+      #ff00ff 0 12px,
+      #00ffff 12px 24px
+    ) !important;
+  }
+
+  :root:not([zen-compact-mode="true"]) #zen-browser-background::before,
+  :root:not([zen-compact-mode="true"]) #zen-browser-background::after {
+    background: #00ff00 !important;
+  }
+}
