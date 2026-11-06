@@ -38,6 +38,7 @@
 3. **悬浮画卷视口（Floating Webview Island）**：
    - 原生圆角同步（默认 `16px`），消除双圆角毛边。
    - 网页视口宛如铺设在和纸/深墨案台上的独立画卷，支持自定义外边距与漫射纸影。
+   - 圆角形状可选 **Round 圆弧 / Squircle 连续圆角**：`border-radius` 画的是四分之一圆，切点处曲率突变，半径开到 20px 以上时会"看着不够顺"；Squircle 走 Gecko 的 `corner-shape`（macOS 式超椭圆，曲率连续）。需先在 `about:config` 打开 `layout.css.corner-shape.enabled` 并重启 Zen，未开启时该设置自动退回圆弧。
 
 4. **护眼墨迹微褪（Ink Fade on Sleeping Tabs）**：
    - 休眠或闲置未加载的标签页墨色自动微褪（`opacity: 0.6`），降低信息噪音，让注意力聚焦于当前任务。
@@ -95,9 +96,12 @@ zen-washi-sumi/
 ├── frame.js           # 页面颜色采样注入脚本
 ├── js/
 │   ├── tab-close.uc.js    # 标签关闭动效（WAAPI 时间轴 + 让位收拢）
-│   └── tab-indicator.uc.js # 垂直标签切换的瞬态墨痕（opt-in）
-├── scripts/           # 模块化辅助脚本
+│   ├── tab-indicator.uc.js # 垂直标签切换的瞬态墨痕（opt-in）
+│   └── floating-urlbar-center.uc.js # Cmd+T / Cmd+L 浮层在内容区居中
+├── scripts/           # 采样 / 配色 / 面板布局等模块化辅助脚本
+├── preview/           # 开发期调试页（loading-veil.html）
 ├── install.sh         # 一键同步到 Zen Profile 并注册脚本
+├── MAINTENANCE_GUIDE.md # 架构与踩坑复盘（改样式前先读）
 └── README.md          # 详细设计说明与指南
 ```
 
@@ -105,13 +109,37 @@ zen-washi-sumi/
 
 ## 🚀 安装与使用
 
-在终端中执行一键安装脚本：
+**前置条件**：[Zen Browser](https://zen-browser.app/) + 已启用 [Sine](https://github.com/zen-browser/sine) Mod 体系（主题走 Sine 的 `theme.json` / `preferences.json` 注册，不是纯 `userChrome.css` 拖放）。
 
 ```bash
-cd /Users/db/Documents/Project/Zen-Theme/zen-washi-sumi
+git clone https://github.com/beichenyumo123/zen-washi-sumi.git
+cd zen-washi-sumi
 ./install.sh
 ```
 
-脚本将自动寻找你本地已配置 Sine 的 Zen Profile，完成 Mod 文件同步并在 `mods.json` 与 `chrome.css` 中注入注册配置。
+脚本会自动扫描你本地已配置 Sine 的 Zen Profile，完成 Mod 文件同步，并在 `mods.json` 与 `chrome.css` 中注入注册配置（同时维护 PDF 阅读器需要的 `<profile>/chrome/userContent.css` 托管块）。
 
-安装完成后重启 Zen 浏览器，前往 **Zen 设置 → Sine → Mods**，即可在 **Zen Washi & Sumi (和纸与松烟墨)** 下随时调整传统色强调、对比度及视口圆角。
+- **多 Profile / 自动扫描失败**时，手动指定 `sine-mods` 目录：
+  ```bash
+  ./install.sh "/path/to/Profiles/xxxx.default/chrome/sine-mods"
+  ```
+- 若 Zen 正在运行，脚本会先安全退出 Zen 再写入（Sine 会把内存里的旧 `mods.json` 回写磁盘，运行中安装会被覆盖）。
+- 安装完成后重启 Zen，前往 **Zen 设置 → Sine → Mods**，即可在 **Zen Washi & Sumi (和纸与松烟墨)** 下调整传统色强调、对比度、视口圆角与各类动效。
+
+**更新**：`git pull` 后重新执行 `./install.sh` 并重启 Zen。
+
+**卸载**：在 Sine 设置里关闭 / 移除本 Mod，然后删除 `<profile>/chrome/sine-mods/zen-washi-sumi` 目录即可。
+
+---
+
+## 🙏 致谢
+
+- [Zen Browser](https://zen-browser.app/) 与 [Sine](https://github.com/zen-browser/sine)：主题的宿主与 Mod 框架。
+- [`qumeqa/zen-icons`](https://github.com/qumeqa/zen-icons)：内置 New Icons 图标集（`icons/`）。
+- 融合顶栏的取色思路参考了社区里一批「地址栏随网页变色」的实现，采样与配色收敛逻辑为本主题重写。
+
+## 📄 License
+
+[MIT](LICENSE) © 2026 db (beichenyumo123)
+
+主题内的第三方图标集（`icons/`）遵循其上游仓库的授权；`icons/` 以外未标注的代码、样式与文档均为本仓库原创。
