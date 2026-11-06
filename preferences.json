@@ -108,6 +108,13 @@
     "placeholder": "10px"
   },
   {
+    "type": "string",
+    "property": "zenwashi.compact.content.margin",
+    "label": "Compact content margin 简洁模式内容区四周留白",
+    "defaultValue": "8px",
+    "placeholder": "8px"
+  },
+  {
     "type": "dropdown",
     "property": "zenwashi.content.shadow",
     "label": "Paper shadow depth 纸面悬浮阴影档位",
@@ -185,6 +192,22 @@
   },
   {
     "type": "dropdown",
+    "property": "zenwashi.content.corner-style",
+    "label": "Corner style 圆角形状 (Squircle 需先在 about:config 开启 layout.css.corner-shape.enabled 并重启)",
+    "defaultValue": "round",
+    "options": [
+      {
+        "value": "round",
+        "label": "Round 普通圆弧 (CSS 默认)"
+      },
+      {
+        "value": "squircle",
+        "label": "Squircle 连续圆角 (macOS 式超椭圆，大半径更顺)"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
     "property": "zenwashi.content.border.color",
     "label": "Content border tone 边框色调风格",
     "defaultValue": "distinct",
@@ -220,9 +243,28 @@
   },
   {
     "type": "checkbox",
+    "property": "zenwashi.urlbar.color-transition",
+    "label": "Smooth color transition 顶栏/画卷边框随网页变色时渐变（160ms）",
+    "defaultValue": true
+  },
+  {
+    "type": "checkbox",
     "property": "uc.blended-addressbar.addressbar-bookmarks-separator.disabled",
     "label": "Remove header separator 隐藏融合顶栏与网页之间的微分割线",
     "defaultValue": false
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.urlbar.glass",
+    "label": "Frosted URL field 磨砂玻璃地址栏输入框（未聚焦/未展开时保留半透明玻璃胶囊）",
+    "defaultValue": true
+  },
+  {
+    "type": "string",
+    "property": "zenwashi.urlbar.field.radius",
+    "label": "URL field corner radius 磨砂输入框圆角",
+    "defaultValue": "9px",
+    "placeholder": "9px"
   },
   {
     "type": "dropdown",
@@ -346,6 +388,50 @@
   },
   {
     "type": "dropdown",
+    "property": "zenwashi.tab.close-animation",
+    "label": "Tab Close Animation 标签页关闭动效",
+    "defaultValue": 1,
+    "options": [
+      {
+        "label": "Off 无动效（立即关闭）",
+        "value": 0
+      },
+      {
+        "label": "Washi Slide 和纸抽离 (Default)",
+        "value": 1
+      },
+      {
+        "label": "Fade 短淡出（130ms，无上浮）",
+        "value": 2
+      }
+    ],
+    "value": "number"
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.tab.close-simplify-switch",
+    "label": "Skip switch effect on close 关闭标签时跳过内容切换动效",
+    "defaultValue": true
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.tab.indicator",
+    "label": "Tab Indicator 标签切换墨痕",
+    "defaultValue": 0,
+    "options": [
+      {
+        "label": "Off 无（保持纯卡片）",
+        "value": 0
+      },
+      {
+        "label": "Ink Trail 墨痕（仅切换途中）",
+        "value": 1
+      }
+    ],
+    "value": "number"
+  },
+  {
+    "type": "dropdown",
     "property": "zenwashi.content.loading",
     "label": "Tab Loading Effect 页面加载动效 (宣纸微敛)",
     "defaultValue": "subtle",
@@ -406,6 +492,254 @@
       {
         "value": "hide",
         "label": "Hide 隐藏主页面滚动条"
+      }
+    ]
+  },
+  {
+    "type": "separator",
+    "label": "Surface 界面细节",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.toolbar.bottom-radius",
+    "label": "Top bar bottom corners 顶栏（工具栏那层纸面）的下方圆角",
+    "defaultValue": "0px",
+    "options": [
+      {
+        "value": "0px",
+        "label": "0 直角（默认，与改前一致）"
+      },
+      {
+        "value": "8px",
+        "label": "8px 克制"
+      },
+      {
+        "value": "12px",
+        "label": "12px 柔和"
+      },
+      {
+        "value": "16px",
+        "label": "16px 明显"
+      },
+      {
+        "value": "20px",
+        "label": "20px 悬浮条"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.urlbar.bottom-radius",
+    "label": "Address bar bottom corners 地址栏下方圆角（未展开的输入框与展开的面板都生效）",
+    "defaultValue": "follow",
+    "options": [
+      {
+        "value": "follow",
+        "label": "Follow top 跟随上方（默认）"
+      },
+      {
+        "value": "0px",
+        "label": "0 直角（贴住内容区）"
+      },
+      {
+        "value": "6px",
+        "label": "6px 克制"
+      },
+      {
+        "value": "9px",
+        "label": "9px 与输入框同圆"
+      },
+      {
+        "value": "12px",
+        "label": "12px 圆润"
+      },
+      {
+        "value": "15px",
+        "label": "15px 与面板同圆"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.urlbar.result-radius",
+    "label": "Result row radius 地址栏候选项圆角",
+    "defaultValue": "8px",
+    "options": [
+      {
+        "value": "0px",
+        "label": "0 直角"
+      },
+      {
+        "value": "4px",
+        "label": "4px 克制"
+      },
+      {
+        "value": "8px",
+        "label": "8px 和纸手感 (Default)"
+      },
+      {
+        "value": "12px",
+        "label": "12px 明显圆润"
+      },
+      {
+        "value": "16px",
+        "label": "16px 胶囊感"
+      }
+    ]
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.urlbar.float-centered",
+    "label": "Center Cmd+T panel on content 新建标签页面板以「侧栏右侧的页面区域」为中心并垂直居中",
+    "defaultValue": true
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.sidebar.workspace-indicator",
+    "label": "Workspace indicator 显示侧栏顶部的工作区指示器（关闭后整行隐藏，标签列表上移）",
+    "defaultValue": true
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.settings.skin",
+    "label": "Settings skin 设置页换肤（about:preferences 使用和纸配色与圆角卡片）",
+    "defaultValue": true
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.tabs.fade-edges",
+    "label": "Tab strip fade 标签条上下边缘渐隐（标签溢出时柔和淡出，不再被硬边切断）",
+    "defaultValue": true
+  },
+  {
+    "type": "separator",
+    "label": "PDF Reader 阅读器",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.pdf.enabled",
+    "label": "Washi PDF skin 启用 PDF 阅读器外观（和纸取景框 / 工具栏 / 侧栏面板 / 纸页圆角）",
+    "defaultValue": true
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.pdf.page-radius",
+    "label": "Page corner radius 纸页圆角",
+    "defaultValue": "6px",
+    "options": [
+      {
+        "value": "0px",
+        "label": "0 直角（与原生一致）"
+      },
+      {
+        "value": "4px",
+        "label": "4px 克制"
+      },
+      {
+        "value": "6px",
+        "label": "6px 和纸手感 (Default)"
+      },
+      {
+        "value": "10px",
+        "label": "10px 明显圆润"
+      },
+      {
+        "value": "14px",
+        "label": "14px 卡片感"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.pdf.page-shadow",
+    "label": "Page shadow depth 纸页投影",
+    "defaultValue": "medium",
+    "options": [
+      {
+        "value": "off",
+        "label": "Off 无投影"
+      },
+      {
+        "value": "soft",
+        "label": "Soft 轻薄一层"
+      },
+      {
+        "value": "medium",
+        "label": "Medium 清晰悬浮 (Default)"
+      },
+      {
+        "value": "strong",
+        "label": "Strong 明显立体"
+      },
+      {
+        "value": "deep",
+        "label": "Deep 强烈纵深"
+      }
+    ]
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.pdf.page-border",
+    "label": "Page hairline border 纸页发丝描边（浅色纸面上圆角靠它才看得清）",
+    "defaultValue": true
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.pdf.floating-toolbar",
+    "label": "Floating toolbar 悬浮胶囊工具栏（纸页顶到窗口边，工具栏浮在其上）",
+    "defaultValue": true
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.pdf.toolbar-width",
+    "label": "Floating toolbar width 悬浮工具栏最大宽度",
+    "defaultValue": "860px",
+    "options": [
+      {
+        "value": "100%",
+        "label": "Full 通栏（只留两侧 8px）"
+      },
+      {
+        "value": "1080px",
+        "label": "1080px 宽屏"
+      },
+      {
+        "value": "860px",
+        "label": "860px 标准胶囊 (Default)"
+      },
+      {
+        "value": "720px",
+        "label": "720px 紧凑"
+      },
+      {
+        "value": "560px",
+        "label": "560px 窄条"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.pdf.page-gap",
+    "label": "Page separation 页与页之间的连接方式",
+    "defaultValue": "gap",
+    "options": [
+      {
+        "value": "gap",
+        "label": "Gap 只留间距，不画线 (Default)"
+      },
+      {
+        "value": "dashed",
+        "label": "Dashed 间距正中一条细虚线"
+      },
+      {
+        "value": "dotted",
+        "label": "Dotted 间距正中一条细点线"
+      },
+      {
+        "value": "none",
+        "label": "None 无缝连排（页页相接，同时去掉圆角与投影）"
       }
     ]
   },

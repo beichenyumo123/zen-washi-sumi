@@ -1,6 +1,7 @@
 @import "colors.css";
 @import "styles/blended-addressbar.css";
 @import "styles/icons.css";
+@import "styles/pdf-viewer.css";
 
 /* =============================================================================
    Zen Washi & Sumi (和纸与松烟墨) — Minimalist Zen Browser Theme
@@ -30,6 +31,11 @@
   --zenwashi-essentials-radius: 8px;
   --zenwashi-content-radius: 18px;
   --zenwashi-content-margin: 10px;
+  /* 圆角形状：round = 普通圆弧（CSS 默认）；squircle = 连续圆角（超椭圆）。
+     squircle 依赖 Gecko 的实验特性，需先在 about:config 打开
+     layout.css.corner-shape.enabled = true，再用 Sine 设置项
+     zenwashi.content.corner-style 切到 Squircle；未开启时声明自动失效，退回 round。 */
+  --zenwashi-corner-shape: round;
   /* 地址栏浮层 (Cmd+T / Cmd+L) 圆角；Sine 会把 zenwashi.urlbar.panel.radius 映射到同名变量 */
   --zenwashi-urlbar-panel-radius: 15px;
 
@@ -41,7 +47,7 @@
   /* 当前选中标签页卡片底色 (温润清晰的浅色和纸微卡片) */
   --zenwashi-tab-selected-bg: light-dark(#FFFFFF, rgba(255, 255, 255, 0.16));
   --zenwashi-tab-selected-border: light-dark(rgba(60, 52, 42, 0.12), rgba(245, 242, 235, 0.14));
-  --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(60, 52, 42, 0.08), 0 2px 6px rgba(0, 0, 0, 0.35));
+  --zenwashi-tab-selected-shadow: 0 2px 6px light-dark(rgba(60, 52, 42, 0.08), rgba(0, 0, 0, 0.35));
 
   /* Essentials 实体按键（厚键帽）语义 Token。
    * 核心思路：用「边缘厚度」与「按压凹陷」表达状态，全程不使用任何模糊投影，因此没有外发光。
@@ -112,8 +118,80 @@
   --zen-colors-secondary: var(--zenwashi-bg-base) !important;
   --zen-colors-tertiary: var(--zenwashi-bg-surface) !important;
   --zen-themed-toolbar-bg: var(--zenwashi-bg-base) !important;
-  --zen-themed-toolbar-bg-transparent: var(--zenwashi-bg-base) !important;
+  }
+
+/* -----------------------------------------------------------------------------
+   1.1 Paper Shadow Tiers (网页内容区四档纸面阴影)
+   -----------------------------------------------------------------------------
+   light-dark() 只能返回“一个颜色”，不能包住一整条阴影列表：
+     box-shadow: light-dark(0 10px 28px …, 0 14px 40px …)   ← 整条声明无效
+   而本主题明暗两态的 offset/blur 本来就不同，所以这里用 prefers-color-scheme
+   切换整条 box-shadow。默认 = medium（与设置默认值一致）。
+   ----------------------------------------------------------------------------- */
+:root {
+  --zenwashi-paper-shadow:
+    0 10px 28px rgba(38, 36, 33, 0.18),
+    0 3px 10px rgba(38, 36, 33, 0.10);
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 14px 40px rgba(0, 0, 0, 0.78),
+      0 4px 14px rgba(0, 0, 0, 0.50);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "soft")) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 5px 16px rgba(38, 36, 33, 0.12),
+      0 2px 6px rgba(38, 36, 33, 0.06);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "soft")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.58),
+      0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "strong")) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 14px 38px rgba(38, 36, 33, 0.26),
+      0 5px 14px rgba(38, 36, 33, 0.15);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "strong")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 20px 54px rgba(0, 0, 0, 0.88),
+      0 6px 18px rgba(0, 0, 0, 0.62);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "deep")) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 18px 48px rgba(38, 36, 33, 0.36),
+      0 6px 18px rgba(38, 36, 33, 0.22),
+      0 0 12px rgba(38, 36, 33, 0.12);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "deep")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 26px 68px rgba(0, 0, 0, 0.96),
+      0 8px 24px rgba(0, 0, 0, 0.75),
+      0 0 16px rgba(0, 0, 0, 0.50);
+  }
+}
+
 
 /* -----------------------------------------------------------------------------
    2. Modular Color Palette System (模块化调色板)
@@ -389,6 +467,41 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   border: none !important;
 }
 
+/* 顶栏下方圆角（zenwashi.toolbar.bottom-radius）
+   -----------------------------------------------------------------------------
+   目标元素是「融合顶栏」里真正上色的那一层：#zen-appcontent-navbar-wrapper
+   （styles/blended-addressbar.css 给它铺 --zen-tab-header-background）。
+   它和页面同属 #zen-appcontent-wrapper 这张卡，所以把它的下方两角圆掉，
+   圆角处露出来的是卡片底色，视觉上顶栏就成了一根浮在页面上的圆角条。
+
+   之前试错的三个都不是它：#navigator-toolbox 与 #zen-toolbar-background 是
+   整窗背景层（position: absolute; inset: 0），#nav-bar 在主题里是透明的。
+   默认不设 → 尺寸 0 → 与改前完全一致。 */
+@media (-moz-pref("zenwashi.toolbar.bottom-radius", "8px")) {
+  #zen-appcontent-navbar-wrapper {
+    border-end-start-radius: 8px !important;
+    border-end-end-radius: 8px !important;
+  }
+}
+@media (-moz-pref("zenwashi.toolbar.bottom-radius", "12px")) {
+  #zen-appcontent-navbar-wrapper {
+    border-end-start-radius: 12px !important;
+    border-end-end-radius: 12px !important;
+  }
+}
+@media (-moz-pref("zenwashi.toolbar.bottom-radius", "16px")) {
+  #zen-appcontent-navbar-wrapper {
+    border-end-start-radius: 16px !important;
+    border-end-end-radius: 16px !important;
+  }
+}
+@media (-moz-pref("zenwashi.toolbar.bottom-radius", "20px")) {
+  #zen-appcontent-navbar-wrapper {
+    border-end-start-radius: 20px !important;
+    border-end-end-radius: 20px !important;
+  }
+}
+
 /* 顶栏与地址栏 */
 #nav-bar {
   background-color: transparent !important;
@@ -479,51 +592,15 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   border: var(--zenwashi-content-border-width, 1.5px) solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
   outline: none !important;
   overflow: visible !important;
-  corner-shape: round !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
   box-sizing: border-box !important;
-  /* 默认 Medium 经典立体漫射阴影（不在此处写 transition !important，以免覆盖第 11 节标签切换动效） */
-  box-shadow: light-dark(
-    0 10px 28px rgba(38, 36, 33, 0.18), 0 3px 10px rgba(38, 36, 33, 0.10),
-    0 14px 40px rgba(0, 0, 0, 0.78), 0 4px 14px rgba(0, 0, 0, 0.50)
-  ) !important;
+  /* 默认 Medium 经典立体漫射阴影；档位由 --zenwashi-paper-shadow 统一切换。
+     不在此处写 transition !important，以免覆盖第 11 节标签切换动效。 */
+  box-shadow: var(--zenwashi-paper-shadow) !important;
 }
 
-/* 阴影各档位直接绑定到 .browserSidebarContainer */
-@media (-moz-pref("zenwashi.content.shadow", "soft")) {
-  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
-    box-shadow: light-dark(
-      0 5px 16px rgba(38, 36, 33, 0.12), 0 2px 6px rgba(38, 36, 33, 0.06),
-      0 8px 24px rgba(0, 0, 0, 0.58), 0 2px 8px rgba(0, 0, 0, 0.35)
-    ) !important;
-  }
-}
-
-@media (-moz-pref("zenwashi.content.shadow", "medium")) {
-  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
-    box-shadow: light-dark(
-      0 10px 28px rgba(38, 36, 33, 0.18), 0 3px 10px rgba(38, 36, 33, 0.10),
-      0 14px 40px rgba(0, 0, 0, 0.78), 0 4px 14px rgba(0, 0, 0, 0.50)
-    ) !important;
-  }
-}
-
-@media (-moz-pref("zenwashi.content.shadow", "strong")) {
-  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
-    box-shadow: light-dark(
-      0 14px 38px rgba(38, 36, 33, 0.26), 0 5px 14px rgba(38, 36, 33, 0.15),
-      0 20px 54px rgba(0, 0, 0, 0.88), 0 6px 18px rgba(0, 0, 0, 0.62)
-    ) !important;
-  }
-}
-
-@media (-moz-pref("zenwashi.content.shadow", "deep")) {
-  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
-    box-shadow: light-dark(
-      0 18px 48px rgba(38, 36, 33, 0.36), 0 6px 18px rgba(38, 36, 33, 0.22), 0 0 12px rgba(38, 36, 33, 0.12),
-      0 26px 68px rgba(0, 0, 0, 0.96), 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 16px rgba(0, 0, 0, 0.50)
-    ) !important;
-  }
-}
+/* 四档阴影统一由 1.1 节的 --zenwashi-paper-shadow 提供，
+   面板只引用变量，不再重复 4 条 media query。 */
 
 /* 
  * 3. 内层视口容器 (.browserContainer) 专门负责 overflow: clip 圆角裁切，
@@ -535,7 +612,7 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   border: none !important;
   box-shadow: none !important;
   overflow: clip !important;
-  corner-shape: round !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
   border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) - 1px)) !important;
   outline: 1px solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
   outline-offset: -0.5px !important;
@@ -551,7 +628,7 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) .browserStack,
 #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) browser {
   overflow: clip !important;
-  corner-shape: round !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
   border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) - 1px)) !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -685,6 +762,28 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
 }
 
 
+/* 视口圆角形状 (zenwashi.content.corner-style)
+ * -----------------------------------------------------------------------------
+ * 为什么会有这一项：
+ *   border-radius 画的是**四分之一圆**，它在「直边 → 圆弧」的两个切点处曲率是突变的
+ *   （0 → 1/R）。半径小的时候看不出来；半径开到 25px 这种尺寸，弧线和直边的"接头"
+ *   就会被眼睛捕捉到，表现为"圆角不够顺/有点硬"。macOS 的窗口圆角用的是连续圆角
+ *   （超椭圆 squircle，曲率从 0 平滑过渡到峰值），所以放在系统窗口旁边对比更明显。
+ *
+ * 能不能做：Gecko 已经实现了 CSS 的 corner-shape（超椭圆），但默认锁在静态 pref 后面：
+ *   about:config → layout.css.corner-shape.enabled = true（改完要重启，静态 pref 不热生效）
+ *   打开后，把这里切到 Squircle 才会真的变形；没打开时 corner-shape 属性整条被解析器
+ *   丢弃，--zenwashi-corner-shape: squircle 不会产生任何影响，自动退回普通圆弧。
+ *
+ * 只作用在网页视口那四层（外框 / browserContainer / browserStack+browser），
+ * 不动标签、地址栏、面板，避免一次改到全站。
+ */
+@media (-moz-pref("zenwashi.content.corner-style", "squircle")) {
+  :root {
+    --zenwashi-corner-shape: squircle;
+  }
+}
+
 /* 视口边框色彩模式 (zenwashi.content.border.color) */
 @media (-moz-pref("zenwashi.content.border.color", "accent")) {
   :root {
@@ -727,7 +826,7 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   background: none !important;
 }
 
-/* 普通标签页微调边距与圆角（排除 [closing] 状态以免覆盖折卷收拢关键帧动效） */
+/* 普通标签页微调边距与圆角 */
 .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) {
   border-radius: var(--zenwashi-tab-radius, 8px) !important;
   box-shadow: none !important;
@@ -736,9 +835,22 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
 }
 
-.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):not([closing]):not([aria-hidden="true"]) {
-  transform: none !important;
-  margin-block: 1px !important;
+/* 静态几何锁：刻意不用 !important。
+ *
+ * Zen 的开关标签动效由 gZenVerticalTabsManager.animateItemOpen/Close() 驱动，
+ * 走 WAAPI（Animation 来源）。CSS 层叠中「作者 !important」高于「Animation」，
+ * 原先的 transform: none !important / margin-block: 1px !important 会把关闭动画里的
+ * scale(1→0.95) 和负 margin 让位整段压掉；第 8 节的 opacity: 1 !important 又把
+ * 最后剩下的淡出也压掉了。三者叠加的结果是关闭动画完全不可见，节点直接消失，
+ * 列表瞬移。
+ *
+ * 去掉 !important 后：静止时这两条照样生效（选择器特异性足够高），
+ * 动画期间交给 WAAPI 接管；Motion One 结束时 commitStyles() 把终值写回内联样式，
+ * 再由 DOM 移除接走，因此不会回弹。
+ * （closing 只是 JS 属性，Zen 从不给关闭中的标签设置 [closing] 属性。） */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):not([aria-hidden="true"]) {
+  transform: none;
+  margin-block: 1px;
 }
 
 .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) .tab-background {
@@ -1074,13 +1186,18 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
    8. Sleeping Tabs (墨迹微褪 · 严格排除所有 Essentials 容器)
    ----------------------------------------------------------------------------- */
 @media not (-moz-pref("zenwashi.tab.sleep-fade", false)) {
-  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([closing]):not([aria-hidden="true"]) {
-    opacity: 0.6 !important;
+  /* 休眠标签的淡化同样不能加 !important：
+   * 关闭一个休眠标签时，WAAPI 的 opacity 淡出也需要能压过它。 */
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([aria-hidden="true"]) {
+    opacity: 0.6;
     transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
   }
 
-  .tabbrowser-tab:not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]):not([closing]):not([aria-hidden="true"]) {
-    opacity: 1 !important;
+  /* 非休眠态恢复完全不透明。刻意不用 !important：
+   * 关闭动画（WAAPI，opacity 1→0）只有在普通声明之上才能生效；
+   * 静止态这里本来就是 1，去掉权重不影响休眠淡入淡出。 */
+  .tabbrowser-tab:not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]):not([aria-hidden="true"]) {
+    opacity: 1;
   }
 }
 
@@ -1198,6 +1315,78 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   color: var(--zenwashi-accent) !important;
   box-shadow: 0 1px 4px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.3)),
               0 0 0 1px var(--zenwashi-accent) !important;
+}
+
+/* ---------------- 9.15 标签条上下边缘渐隐 ---------------- */
+
+/* 标签多到溢出时，上下两端不再被硬边切断，而是化进和纸背景里。
+   注意 mask 会强制建立合成层：标签数量很多时滚动可能有极轻微的额外开销，
+   所以留了开关（zenwashi.tabs.fade-edges）。 */
+@media not (-moz-pref("zenwashi.tabs.fade-edges", false)) {
+  /* 下端：遮罩。它画在 #zen-tabs-wrapper 的滚动坐标系里，内容滚到底时正好进入
+     可视区末尾，所以能看见。 */
+  #zen-tabs-wrapper {
+    mask-image: linear-gradient(
+      to bottom,
+      #000 0,
+      #000 calc(100% - 18px),
+      transparent 100%
+    );
+  }
+
+  /* 上端：遮罩做不出来（同一坐标系问题，会跟着内容滚走），改用 sticky 覆盖层。
+     sticky 是相对"滚动容器的可视区"定位的，所以它稳稳钉在顶部；
+     负 margin 抵消掉自身 16px 的占位，不影响标签布局；pointer-events: none
+     让点击穿透到下面的标签。 */
+  #zen-tabs-wrapper::before {
+    content: "";
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    display: block;
+    height: 16px;
+    margin-block-end: -16px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, var(--zenwashi-bg-base), transparent);
+  }
+}
+
+/* ---------------- 9.17 Cmd+T 悬浮地址栏：按内容区居中 ---------------- */
+
+/* Zen 原生是「相对整个窗口居中」（left: 50% + translate: -50% 0%），窗口中线
+   比侧栏右侧的内容区中心偏左半个侧栏宽，所以看起来"不居中"。
+
+   这里把定位交给 js/floating-urlbar-center.uc.js：它直接量
+   gBrowser.selectedBrowser 的矩形，把内容区中心写成 --zenwashi-float-x/y。
+   纯 CSS 做不了这件事 —— #urlbar 是 popover，百分比以视口为基准，而 Zen 的
+   --zen-sidebar-width 写在 #navigator-toolbox 的内联样式上，popover 进顶层后
+   继承链断开，取到空值（calc(50% + 0px/2) 仍然等于 50%，等于没改）。
+
+   属性 zenwashi-float-positioned 只在脚本量到有效矩形、且 pref 开启时存在，
+   所以这条规则不会在禁用时误伤。 */
+:root[zenwashi-float-positioned="true"] #urlbar[open][zen-floating-urlbar="true"] {
+  left: var(--zenwashi-float-x) !important;
+  top: var(--zenwashi-float-y) !important;
+  translate: -50% -50% !important;
+}
+
+/* ---------------- 9.16 工作区指示器开关 ---------------- */
+
+/* 侧栏顶部那行「工作区名 + 折叠箭头」是 JS 生成的 .zen-current-workspace-indicator。
+   默认显示；关掉后整行（连同它占的高度）一起消失，标签列表上移。
+   注意底部的 #zen-workspaces-button 是另一组元素，不受这个开关影响。 */
+@media (-moz-pref("zenwashi.sidebar.workspace-indicator", false)) {
+  .zen-current-workspace-indicator {
+    display: none !important;
+  }
+
+  /* 指示器消失后，Essentials 和标签列表直接贴在一起；补一段呼吸间距。
+     加在 #zen-tabs-wrapper 上而不是 #zen-essentials 上 —— 后者是 Zen 用 grid
+     精确计算列宽/高度的，任何外部的 margin 或 padding 都会把它顶偏（见指南
+     §2 踩坑点 1）。用 margin 而不是 padding，免得把遮罩渐隐的区域一起撑大。 */
+  #zen-tabs-wrapper {
+    margin-block-start: var(--zenwashi-tabs-gap, 12px) !important;
+  }
 }
 
 /* ---------------- 9.2 侧边栏底部溢出/滚动条胶囊指示条 ---------------- */
@@ -1355,50 +1544,55 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   border-color: var(--zenwashi-seal-border) !important;
 }
 
-/* ---------------- 10.3 标签页关闭离场：折卷收拢 (Washi Fold) ---------------- */
+/* ---------------- 10.3 标签页关闭离场（由 Zen 的 WAAPI 接管，CSS 无法插手） ---------------- */
 
-/* ⚠️ 本节在当前 Zen(实测 1.23.2b)上不生效，保留备用：Zen 已不再给关闭标签设置
- * [closing] 属性(closing 只是普通 JS 属性，见 Tabbrowser.sys.mjs:6861 / tab.js:79)，
- * 原生 CSS 里也没有任何 [closing] 规则；关闭改由 Zen 自己的
- * gZenUIManager.animateItemClose() 接管(ZenUIManager.mjs:1167)：WAAPI 驱动，
- * opacity 1→0、scale 1→0.95、duration 0.1s，并在其 promise 结束后立即移除 DOM。
- * 因此下面这段选择器永远匹配不到，且即便匹配也会被 0.1s 的 DOM 移除截断。 */
+/* 关闭动画没有办法用选择器接管，原因在 Zen 1.23.4b 的关闭链路：
+ *
+ *   gBrowser.removeTab()
+ *     → #beginRemoveTab() 里只做 `tab.closing = true`（普通 JS 属性，不是 attribute，
+ *       见 Tabbrowser.sys.mjs:6913；CSS 的 [closing] 永远匹配不到）
+ *     → gZenVerticalTabsManager.animateItemClose(tab)（ZenVerticalTabsManager.mjs:181）
+ *        WAAPI：opacity 1→0、scale 1→0.95、非最后一项时 margin-bottom 0→-height，
+ *        duration 0.1s / easeOut
+ *     → promise 结束后 _endRemoveTab() 立即把节点移出 DOM（Tabbrowser.sys.mjs:6673）
+ *
+ * 所以「改了 [closing] 规则就能改关闭动画」是行不通的：规则匹配不到；即使匹配，
+ * 节点也会在 0.1s 后被删除，动画会被截断。
+ *
+ * 想改时间轴、曲线、让位方式（FLIP）或并发上限，只能在 JS 里 override
+ * animateItemClose()。实现见 js/tab-close.uc.js，避坑记录见 MAINTENANCE_GUIDE §5.8。 */
 
-/* 沿顶部水平轴从容折卷收拢 (0.38s)，让三维纸张折痕与纵向收拢清晰可感 */
-.tabbrowser-tab[closing] {
-  animation: zenwashiTabFold 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
-  transform-origin: center top !important;
+/* ---------------- 10.4 关闭动效的 JS 协作钩子 (js/tab-close.uc.js) ---------------- */
+
+/* 关闭中的行不再接收指针事件。Zen 的 WAAPI 不设 pointer-events，
+ * 动画持续期间点击/悬停会命中一个正在消失的行。 */
+[zenwashi-closing] {
   pointer-events: none !important;
-  overflow: clip !important;
-  will-change: transform, opacity, max-height, margin-block !important;
 }
 
-.tabbrowser-tab[closing] .tab-stack,
-.tabbrowser-tab[closing] .tab-background,
-.tabbrowser-tab[closing] .tab-content {
-  transform-origin: center top !important;
+/* 关闭触发的标签切换：跳过第 11 节的 0.42–0.58s 缩放/柔焦，直接落位。
+ * 属性由脚本在关闭的同一帧设置，早于样式重算，所以切换过渡根本不会启动；
+ * 这样「关闭」的节奏由标签行自己主导，而不是被内容区拖着走。 */
+:root[zenwashi-tab-closing] #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  transition: none !important;
+  scale: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
 }
 
-@keyframes zenwashiTabFold {
-  0% {
-    opacity: 1;
-    transform: perspective(420px) rotateX(0deg) scaleY(1) scaleX(1);
-    max-height: 36px;
-    margin-block: 1px;
-  }
-  45% {
-    opacity: 0.42;
-    transform: perspective(420px) rotateX(-20deg) scaleY(0.68) scaleX(0.96);
-  }
-  100% {
-    opacity: 0;
-    transform: perspective(420px) rotateX(-40deg) scaleY(0.08) scaleX(0.92);
-    max-height: 0px;
-    min-height: 0px;
-    padding-block: 0px;
-    margin-block: 0px;
-    border-width: 0px;
-  }
+/* 关闭导致的「新标签被选中」不是一次真实按压，不该再播一遍落笔动画。 */
+:root[zenwashi-tab-closing] .tabbrowser-tab:is([selected], [visuallyselected]) .tab-content {
+  animation: none !important;
+}
+
+/* 列表上移后指针会落到下一行；短暂抑制关闭按钮浮现，
+ * 避免「刚关掉一个，下一行的朱砂印章立刻弹到指针下」。 */
+:root[zenwashi-tab-just-closed] .tabbrowser-tab:hover .tab-close-button,
+:root[zenwashi-tab-just-closed] .tabbrowser-tab:hover .tab-reset-button {
+  opacity: 0 !important;
+  transition: none !important;
+  pointer-events: none !important;
 }
 
 
@@ -1569,6 +1763,68 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   pointer-events: auto !important;
 }
 
+/* 地址栏下圆角档位（zenwashi.urlbar.bottom-radius）。
+   未设置时两个状态各自回落到自己的上圆角，所以默认完全没有变化。 */
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "0px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 0px; }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "6px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 6px; }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "9px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 9px; }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "12px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 12px; }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "15px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 15px; }
+}
+
+/* 未展开的输入框：用长手属性只改下方两角，不碰上圆角、也不依赖玻璃胶囊那条
+   `:root:not([zen-single-toolbar="true"])` 规则 —— 单工具栏布局下那条本来就不生效，
+   这正是"选了档位却毫无变化"的原因。 */
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "0px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 0px !important;
+    border-end-end-radius: 0px !important;
+  }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "6px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 6px !important;
+    border-end-end-radius: 6px !important;
+  }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "9px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 9px !important;
+    border-end-end-radius: 9px !important;
+  }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "12px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 12px !important;
+    border-end-end-radius: 12px !important;
+  }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "15px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 15px !important;
+    border-end-end-radius: 15px !important;
+  }
+}
+
 /* 
  * 12.1.1 面板底色：Cmd+T / Cmd+L 唤出的地址栏浮层
  * -----------------------------------------------------------------------------
@@ -1584,14 +1840,20 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
  *   · 投影 = 和纸漫射纸影，靠阴影而不是描边来托起浮层
  */
 #urlbar:is([open], [breakout-extend]) {
-  border-radius: var(--zenwashi-urlbar-panel-radius, 15px) !important;
+  border-radius:
+    var(--zenwashi-urlbar-panel-radius, 15px) var(--zenwashi-urlbar-panel-radius, 15px)
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px))
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px)) !important;
 }
 
 #urlbar:is([open], [breakout-extend]) > .urlbar-background {
   background-color: var(--zenwashi-bg-urlbar) !important;
   background-image: none !important;
   border: 1px solid var(--zenwashi-border-distinct) !important;
-  border-radius: var(--zenwashi-urlbar-panel-radius, 15px) !important;
+  border-radius:
+    var(--zenwashi-urlbar-panel-radius, 15px) var(--zenwashi-urlbar-panel-radius, 15px)
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px))
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px)) !important;
   outline: none !important;
   box-shadow:
     0 20px 48px light-dark(rgba(38, 36, 33, 0.16), rgba(0, 0, 0, 0.72)),
@@ -1656,9 +1918,26 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
   --button-text-color-menu-active: var(--zenwashi-fg-primary) !important;
 }
 
+/* 结果行：圆角档位 + 选中态过渡。
+   注意这里**不能**用 transform 做动效：上面那段入场动画带 forwards 填充，
+   动画结束后的 transform 会盖掉普通声明，写在 :hover/[selected] 上的位移是无效的。
+   所以过渡全部落在 background-color 与 box-shadow 上。 */
 .urlbarView-row {
-  border-radius: 8px !important;
-  transition: background-color 0.22s var(--zenwashi-ease) !important;
+  border-radius: var(--zenwashi-urlbar-result-radius, 8px) !important;
+  transition: background-color 0.18s var(--zenwashi-ease) !important;
+}
+
+@media (-moz-pref("zenwashi.urlbar.result-radius", "0px")) {
+  :root { --zenwashi-urlbar-result-radius: 0px; }
+}
+@media (-moz-pref("zenwashi.urlbar.result-radius", "4px")) {
+  :root { --zenwashi-urlbar-result-radius: 4px; }
+}
+@media (-moz-pref("zenwashi.urlbar.result-radius", "12px")) {
+  :root { --zenwashi-urlbar-result-radius: 12px; }
+}
+@media (-moz-pref("zenwashi.urlbar.result-radius", "16px")) {
+  :root { --zenwashi-urlbar-result-radius: 16px; }
 }
 
 .urlbarView-row[selected] {
@@ -1890,56 +2169,17 @@ browser {
     background-color: var(--zen-tab-header-background, var(--zenwashi-bg-surface)) !important;
     background-clip: padding-box !important;
     overflow: hidden !important;
-    corner-shape: round !important;
+    corner-shape: var(--zenwashi-corner-shape, round) !important;
     box-sizing: border-box !important;
     isolation: isolate !important;
     z-index: 3 !important;
-    box-shadow: light-dark(
-      0 10px 28px rgba(38, 36, 33, 0.18), 0 3px 10px rgba(38, 36, 33, 0.10),
-      0 14px 40px rgba(0, 0, 0, 0.78), 0 4px 14px rgba(0, 0, 0, 0.50)
-    ) !important;
+    box-shadow: var(--zenwashi-paper-shadow) !important;
     transition:
       margin 0.24s ease,
       border-radius 0.24s ease,
       background-color var(--blended-addressbar-color-transition, 120ms ease-out),
       border-color 0.24s ease,
       box-shadow 0.24s ease !important;
-  }
-
-  @media (-moz-pref("zenwashi.content.shadow", "soft")) {
-    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
-      box-shadow: light-dark(
-        0 5px 16px rgba(38, 36, 33, 0.12), 0 2px 6px rgba(38, 36, 33, 0.06),
-        0 8px 24px rgba(0, 0, 0, 0.58), 0 2px 8px rgba(0, 0, 0, 0.35)
-      ) !important;
-    }
-  }
-
-  @media (-moz-pref("zenwashi.content.shadow", "medium")) {
-    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
-      box-shadow: light-dark(
-        0 10px 28px rgba(38, 36, 33, 0.18), 0 3px 10px rgba(38, 36, 33, 0.10),
-        0 14px 40px rgba(0, 0, 0, 0.78), 0 4px 14px rgba(0, 0, 0, 0.50)
-      ) !important;
-    }
-  }
-
-  @media (-moz-pref("zenwashi.content.shadow", "strong")) {
-    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
-      box-shadow: light-dark(
-        0 14px 38px rgba(38, 36, 33, 0.26), 0 5px 14px rgba(38, 36, 33, 0.15),
-        0 20px 54px rgba(0, 0, 0, 0.88), 0 6px 18px rgba(0, 0, 0, 0.62)
-      ) !important;
-    }
-  }
-
-  @media (-moz-pref("zenwashi.content.shadow", "deep")) {
-    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
-      box-shadow: light-dark(
-        0 18px 48px rgba(38, 36, 33, 0.36), 0 6px 18px rgba(38, 36, 33, 0.22), 0 0 12px rgba(38, 36, 33, 0.12),
-        0 26px 68px rgba(0, 0, 0, 0.96), 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 16px rgba(0, 0, 0, 0.50)
-      ) !important;
-    }
   }
 
   /* 顶部地址栏容器：透出网页动态采样色 (--zen-tab-header-background)，消除原本的和纸固定底色覆盖 */
@@ -1982,15 +2222,89 @@ browser {
     --input-color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
   }
 
-  /* 未聚焦/未展开时的地址栏背景完全透明，无缝融入顶栏；悬停微亮，点击展开时恢复和纸浮层 */
-  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-background {
-    background-color: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
+  /*
+   * 磨砂玻璃地址栏输入框（Safari 式，zenwashi.urlbar.glass，默认开）
+   * -----------------------------------------------------------------------------
+   * 先说清楚能做到什么：Firefox/Zen 的 chrome 里 backdrop-filter **采不到网页像素**
+   * （页面在独立的异步合成层里，chrome 的 backdrop 只有自己这棵层树），所以
+   * "让输入框把背后的网页糊掉"这条老路在闭合态是走不通的；能真正糊网页的只有
+   * 第 12.3/12.4 节那种把 filter: blur() 直接打在 <browser> 上的做法，那是整页糊，
+   * 不是一块玻璃。
+   *
+   * 但融合顶栏已经把网页顶部那 8px 像素糊成了一个平均色（--zen-tab-header-background），
+   * 这本身就是"被磨砂过的网页"。所以 Safari 观感真正缺的只有中间那枚玻璃胶囊：
+   *   · 填充 = 顶栏前景色 8% —— 浅色页是"墨色微沉下去"，深色页是"纸白微浮起来"，
+   *     fg 本来就是按底色调过对比度的，这一条公式在任意取色上都成立；
+   *   · 半透明是关键：胶囊底下透出来的就是取色顶栏，也就是网页的模糊色，
+   *     "隔着一层玻璃看网页"的印象由它提供，不靠 blur；
+   *   · 描边与顶部高光都走 inset box-shadow，不用 border：
+   *     不参与盒模型（地址栏高度/内边距零位移），也绝不和 styles/loadbar.css
+   *     glow 模式写死的 background-image 抢地盘；
+   *   · 悬停加深到 12%，聚焦/展开仍回到 12.1 节的和纸浮层，不另起一套底色。
+   * 关闭该项即回到旧行为：输入框完全透明，只剩文字浮在取色顶栏上。
+   */
+  :root {
+    --zenwashi-urlbar-glass-fill: color-mix(in srgb,
+      var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 8%, transparent);
+    --zenwashi-urlbar-glass-fill-hover: color-mix(in srgb,
+      var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 12%, transparent);
+    --zenwashi-urlbar-glass-hairline: color-mix(in srgb,
+      var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 14%, transparent);
+    --zenwashi-urlbar-glass-highlight: color-mix(in srgb, #FFF 12%, transparent);
   }
 
-  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover .urlbar-background {
-    background-color: color-mix(in srgb, var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 7%, transparent) !important;
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* 深色顶栏上白高光才看得见，也才是玻璃该有的那道边 */
+      --zenwashi-urlbar-glass-highlight: color-mix(in srgb, #FFF 18%, transparent);
+    }
+  }
+
+  @media not (-moz-pref("zenwashi.urlbar.glass", false)) {
+    :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-background {
+      background-color: var(--zenwashi-urlbar-glass-fill) !important;
+      border-color: transparent !important;
+      border-radius:
+        var(--zenwashi-urlbar-field-radius, 9px) var(--zenwashi-urlbar-field-radius, 9px)
+        var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-field-radius, 9px))
+        var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-field-radius, 9px)) !important;
+      box-shadow:
+        inset 0 0 0 1px var(--zenwashi-urlbar-glass-hairline),
+        inset 0 1px 0 var(--zenwashi-urlbar-glass-highlight) !important;
+      transition:
+        background-color 0.18s var(--zenwashi-ease),
+        box-shadow 0.18s var(--zenwashi-ease) !important;
+    }
+
+    :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover .urlbar-background {
+      background-color: var(--zenwashi-urlbar-glass-fill-hover) !important;
+      box-shadow:
+        inset 0 0 0 1px var(--zenwashi-urlbar-glass-hairline),
+        inset 0 1px 0 var(--zenwashi-urlbar-glass-highlight) !important;
+    }
+  }
+
+  /* 未聚焦/未展开、且关掉玻璃胶囊时的旧行为：输入框与顶栏同色，只剩文字 */
+  @media (-moz-pref("zenwashi.urlbar.glass", false)) {
+    :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-background {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+    }
+
+    :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover .urlbar-background {
+      background-color: color-mix(in srgb, var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 7%, transparent) !important;
+    }
+  }
+
+  /* 系统"降低透明度"时退回实心和纸，别在半透明上再叠半透明（关闭玻璃胶囊时不干预） */
+  @media (prefers-reduced-transparency: reduce) {
+    @media not (-moz-pref("zenwashi.urlbar.glass", false)) {
+      :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-background {
+        background-color: var(--zenwashi-bg-surface) !important;
+        box-shadow: inset 0 0 0 1px var(--zenwashi-border-subtle) !important;
+      }
+    }
   }
 
   /* 内部内容区去重：由于外框已由 #zen-appcontent-wrapper 统一包裹，非分屏状态下移除内层重复边距、边框与阴影 */
@@ -2068,4 +2382,103 @@ browser {
   :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transform: none !important;
   }
+}
+
+/* -----------------------------------------------------------------------------
+   13. Reduced Motion (系统「减弱动态效果」)
+   ----------------------------------------------------------------------------- */
+/* 这里只收掉本主题声明的「运动」，保留颜色 / 透明度反馈：
+ *   · 标签行内的悬停右移、按落下沉、Essentials 键帽位移；
+ *   · 标签切换的缩放 / 柔焦过渡（直接落到终态）。
+ * Zen 自己的 WAAPI 动效（开关标签、工作区切换等）由 window.gReduceMotion 守卫，
+ * 不需要在这里重复处理；加载转圈（.tab-throbber::before）保持原样。 */
+@media (prefers-reduced-motion: reduce) {
+  #tabbrowser-tabs .tabbrowser-tab .tab-content,
+  #tabbrowser-tabs .tabbrowser-tab .tab-label-container,
+  #tabbrowser-tabs .tabbrowser-tab .tab-icon-image,
+  #tabbrowser-tabs .tabbrowser-tab .tab-icon-stack > * {
+    translate: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: none !important;
+    scale: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   14. Tab Ink Indicator (标签切换瞬态墨痕)
+   -----------------------------------------------------------------------------
+   由 js/tab-indicator.uc.js 驱动，偏好 zenwashi.tab.indicator（默认关，opt-in）。
+
+   这里刻意不画常驻的左侧指示线（第 6 节已把它删掉），只画切换途中那 320ms：
+     · 前缘 0–60% 走完，后缘 35% 才出发 —— 运动逻辑来自 FlClash；
+     · 4px 实心圆头，不做两端渐隐：渐隐会让圆头看起来发虚、发细；
+     · 超长距离只在目标标签处画一小段向上/向下的局部墨痕（脚本内）；
+     · 抵达时脚本把 opacity 归零，静止态不留任何东西；
+     · 颜色/粗细全部走主题 token，深色与四套 palette 自动跟随。
+   元素由脚本按需创建；脚本未启用时这些规则不会命中任何节点。
+   ----------------------------------------------------------------------------- */
+#zenwashi-tab-ink-layer {
+  position: fixed;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2147483000;
+  contain: strict;
+}
+
+#zenwashi-tab-ink {
+  position: absolute;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--zenwashi-accent);
+  opacity: 0;
+  will-change: top, height, opacity;
+}
+
+/* 系统「减弱动态效果」时连节点都不显示；脚本侧也有同样的判断。 */
+@media (prefers-reduced-motion: reduce) {
+  #zenwashi-tab-ink {
+    display: none !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   15. Compact Mode (简洁模式 / Zen Compact Mode)
+   -----------------------------------------------------------------------------
+   紧凑模式的侧栏是悬浮的 #navigator-toolbox（position:fixed + translate），
+   圆角/投影由 Zen 自己的 .zen-toolbar-background 负责。
+   主题第 4 节给 #navigator-toolbox / #TabsToolbar / #tabbrowser-tabs 上了
+   var(--zenwashi-bg-base) !important，普通模式没问题；紧凑模式会把悬浮面板
+   盖成一张方角实心纸板，遮掉原生的圆角与漫射阴影。
+   这里只对 compact 作用域放行：
+     · 面板各层透明，让 .zen-toolbar-background 的圆角/阴影露出来；
+     · 纸色仍由 .zen-toolbar-background 承担，避免窗口底色漏出；
+     · 网页内容区四周统一为 zenwashi.compact.content.margin（默认 8px）。
+   ----------------------------------------------------------------------------- */
+:root[zen-compact-mode="true"] #navigator-toolbox,
+:root[zen-compact-mode="true"] #TabsToolbar,
+:root[zen-compact-mode="true"] #TabsToolbar-customization-target,
+:root[zen-compact-mode="true"] #tabbrowser-tabs,
+:root[zen-compact-mode="true"] #vertical-pinned-tabs-container,
+:root[zen-compact-mode="true"] #pinned-tabs-container {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* 悬浮面板的纸色与圆角交给原生层；这里只把颜色钉到主题基底。 */
+:root[zen-compact-mode="true"] .zen-toolbar-background {
+  background-color: var(--zenwashi-bg-base) !important;
+  background-image: none !important;
+}
+
+/* 紧凑模式下网页不再贴着侧栏让位，四周用同一个用户可控值。 */
+:root[zen-compact-mode="true"]:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+  margin: var(--zenwashi-compact-content-margin, 8px) !important;
 }

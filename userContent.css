@@ -4,6 +4,12 @@
    Scrollbar styling matching traditional ink & paper aesthetics.
    ============================================================================= */
 
+/* --- PDF viewer (resource://pdf.js/web/viewer.html) ------------------------
+   阅读器正常情况下是 chrome 特权文档，规则由 userChrome.css 生效；这里再 import
+   一次是给「viewer 跑在内容进程」的构建兜底，重复应用无副作用。 */
+@import "styles/pdf-viewer.css";
+@import "styles/settings.css";
+
 /* --- Hide page main scrollbar --------------------------------------------- */
 @media (-moz-pref("zenwashi.scrollbar", "hide")) {
   :root,

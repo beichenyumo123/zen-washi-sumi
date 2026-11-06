@@ -3,15 +3,36 @@
   "name": "Zen Washi & Sumi (和纸与松烟墨)",
   "description": "A tranquil, eye-friendly East Asian ink & paper aesthetic for Zen Browser. Soft Torinoko washi paper tones for light mode, deep pine-soot ink for dark mode, paired with organic mineral accents and optional Blended Addressbar integration.",
   "author": "db",
-  "version": "1.2.1",
+  "version": "1.6.0",
   "createdAt": "2026-10-13",
-  "updatedAt": "2026-10-22",
+  "updatedAt": "2026-11-05",
   "style": {
     "chrome": "userChrome.css",
     "content": "userContent.css"
   },
   "scripts": {
     "blended-bar.uc.js": {
+      "include": [
+        "chrome://browser/content/browser.xhtml"
+      ]
+    },
+    "js/tab-close.uc.js": {
+      "name": "Washi tab close animation",
+      "description": "WAAPI close timeline, margin-based space collapse, batch guard and close-triggered switch downgrade.",
+      "include": [
+        "chrome://browser/content/browser.xhtml"
+      ]
+    },
+    "js/tab-indicator.uc.js": {
+      "name": "Washi tab ink indicator",
+      "description": "Transient lead/trail ink stroke during vertical tab switches (opt-in, zenwashi.tab.indicator).",
+      "include": [
+        "chrome://browser/content/browser.xhtml"
+      ]
+    },
+    "js/floating-urlbar-center.uc.js": {
+      "name": "Washi floating URL bar centering",
+      "description": "Centers the Cmd+T / Cmd+L floating URL bar on the content area (right of the sidebar) instead of the whole window.",
       "include": [
         "chrome://browser/content/browser.xhtml"
       ]

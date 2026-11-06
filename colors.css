@@ -29,7 +29,7 @@
     --zenwashi-bg-urlbar: light-dark(#FFFFFF, #1F2126) !important;
     --zenwashi-tab-selected-bg: light-dark(#FFFFFF, rgba(255, 255, 255, 0.16)) !important;
     --zenwashi-tab-selected-border: light-dark(rgba(60, 52, 42, 0.12), rgba(245, 242, 235, 0.14)) !important;
-    --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(60, 52, 42, 0.08), 0 2px 6px rgba(0, 0, 0, 0.35)) !important;
+    --zenwashi-tab-selected-shadow: 0 2px 6px light-dark(rgba(60, 52, 42, 0.08), rgba(0, 0, 0, 0.35)) !important;
     --zenwashi-tab-hover-bg: light-dark(rgba(60, 52, 42, 0.05), rgba(245, 242, 235, 0.06)) !important;
     --zenwashi-border-subtle: light-dark(rgba(60, 52, 42, 0.10), rgba(245, 242, 235, 0.09)) !important;
     --zenwashi-border-distinct: light-dark(rgba(60, 52, 42, 0.18), rgba(245, 242, 235, 0.15)) !important;
@@ -42,10 +42,9 @@
     --zenwashi-essentials-card-hover-bg: light-dark(#FAF8F3, #24272E) !important;
     --zenwashi-essentials-card-selected-bg: light-dark(#FCFBF7, #272A32) !important;
     --zenwashi-essentials-card-border: light-dark(rgba(60, 52, 42, 0.15), rgba(245, 242, 235, 0.14)) !important;
-    --zenwashi-essentials-card-shadow: light-dark(
-      0 1.5px 0 rgba(60, 52, 42, 0.10), 0 1px 3px rgba(60, 52, 42, 0.04),
-      0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
-    ) !important;
+    --zenwashi-essentials-card-shadow:
+      0 1.5px 0 light-dark(rgba(60, 52, 42, 0.10), rgba(0, 0, 0, 0.50)),
+      0 2px 5px light-dark(rgba(60, 52, 42, 0.04), rgba(0, 0, 0, 0.30)) !important;
   }
 }
 
@@ -58,7 +57,7 @@
     --zenwashi-bg-urlbar: light-dark(#FFFDFB, #1F1D2E) !important;
     --zenwashi-tab-selected-bg: light-dark(#FFFDFB, #26233A) !important;
     --zenwashi-tab-selected-border: light-dark(rgba(87, 82, 121, 0.14), rgba(224, 222, 244, 0.14)) !important;
-    --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(87, 82, 121, 0.08), 0 2px 6px rgba(0, 0, 0, 0.40)) !important;
+    --zenwashi-tab-selected-shadow: 0 2px 6px light-dark(rgba(87, 82, 121, 0.08), rgba(0, 0, 0, 0.40)) !important;
     --zenwashi-tab-hover-bg: light-dark(rgba(87, 82, 121, 0.06), rgba(224, 222, 244, 0.07)) !important;
     --zenwashi-border-subtle: light-dark(rgba(87, 82, 121, 0.12), rgba(224, 222, 244, 0.10)) !important;
     --zenwashi-border-distinct: light-dark(rgba(87, 82, 121, 0.18), rgba(224, 222, 244, 0.16)) !important;
@@ -73,10 +72,9 @@
     --zenwashi-essentials-card-hover-bg: light-dark(#FFFDFB, #26233A) !important;
     --zenwashi-essentials-card-selected-bg: light-dark(#FFFDFB, #26233A) !important;
     --zenwashi-essentials-card-border: light-dark(rgba(87, 82, 121, 0.14), rgba(224, 222, 244, 0.14)) !important;
-    --zenwashi-essentials-card-shadow: light-dark(
-      0 1.5px 0 rgba(87, 82, 121, 0.12), 0 1px 3px rgba(87, 82, 121, 0.05),
-      0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
-    ) !important;
+    --zenwashi-essentials-card-shadow:
+      0 1.5px 0 light-dark(rgba(87, 82, 121, 0.12), rgba(0, 0, 0, 0.50)),
+      0 2px 5px light-dark(rgba(87, 82, 121, 0.05), rgba(0, 0, 0, 0.30)) !important;
   }
 }
 
@@ -91,7 +89,7 @@
     --zenwashi-bg-urlbar: light-dark(#FFFFFF, #24273A) !important;
     --zenwashi-tab-selected-bg: light-dark(#FFFFFF, #363A4F) !important;
     --zenwashi-tab-selected-border: light-dark(rgba(76, 79, 105, 0.14), rgba(202, 211, 245, 0.14)) !important;
-    --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(76, 79, 105, 0.08), 0 2px 6px rgba(0, 0, 0, 0.45)) !important;
+    --zenwashi-tab-selected-shadow: 0 2px 6px light-dark(rgba(76, 79, 105, 0.08), rgba(0, 0, 0, 0.45)) !important;
     --zenwashi-tab-hover-bg: light-dark(rgba(76, 79, 105, 0.06), rgba(202, 211, 245, 0.07)) !important;
     --zenwashi-border-subtle: light-dark(rgba(76, 79, 105, 0.12), rgba(202, 211, 245, 0.10)) !important;
     --zenwashi-border-distinct: light-dark(rgba(76, 79, 105, 0.18), rgba(202, 211, 245, 0.16)) !important;
@@ -106,10 +104,9 @@
     --zenwashi-essentials-card-hover-bg: light-dark(#FFFFFF, #363A4F) !important;
     --zenwashi-essentials-card-selected-bg: light-dark(#FFFFFF, #363A4F) !important;
     --zenwashi-essentials-card-border: light-dark(rgba(76, 79, 105, 0.14), rgba(202, 211, 245, 0.14)) !important;
-    --zenwashi-essentials-card-shadow: light-dark(
-      0 1.5px 0 rgba(76, 79, 105, 0.12), 0 1px 3px rgba(76, 79, 105, 0.05),
-      0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
-    ) !important;
+    --zenwashi-essentials-card-shadow:
+      0 1.5px 0 light-dark(rgba(76, 79, 105, 0.12), rgba(0, 0, 0, 0.50)),
+      0 2px 5px light-dark(rgba(76, 79, 105, 0.05), rgba(0, 0, 0, 0.30)) !important;
   }
 }
 
@@ -122,7 +119,7 @@
     --zenwashi-bg-urlbar: light-dark(#FFFFFF, #2E3440) !important;
     --zenwashi-tab-selected-bg: light-dark(#FFFFFF, #3B4252) !important;
     --zenwashi-tab-selected-border: light-dark(rgba(46, 52, 64, 0.14), rgba(236, 239, 244, 0.14)) !important;
-    --zenwashi-tab-selected-shadow: light-dark(0 1px 3px rgba(46, 52, 64, 0.08), 0 2px 6px rgba(0, 0, 0, 0.45)) !important;
+    --zenwashi-tab-selected-shadow: 0 2px 6px light-dark(rgba(46, 52, 64, 0.08), rgba(0, 0, 0, 0.45)) !important;
     --zenwashi-tab-hover-bg: light-dark(rgba(46, 52, 64, 0.06), rgba(236, 239, 244, 0.07)) !important;
     --zenwashi-border-subtle: light-dark(rgba(46, 52, 64, 0.12), rgba(236, 239, 244, 0.10)) !important;
     --zenwashi-border-distinct: light-dark(rgba(46, 52, 64, 0.18), rgba(236, 239, 244, 0.16)) !important;
@@ -137,10 +134,9 @@
     --zenwashi-essentials-card-hover-bg: light-dark(#FFFFFF, #3B4252) !important;
     --zenwashi-essentials-card-selected-bg: light-dark(#FFFFFF, #3B4252) !important;
     --zenwashi-essentials-card-border: light-dark(rgba(46, 52, 64, 0.14), rgba(236, 239, 244, 0.14)) !important;
-    --zenwashi-essentials-card-shadow: light-dark(
-      0 1.5px 0 rgba(46, 52, 64, 0.12), 0 1px 3px rgba(46, 52, 64, 0.05),
-      0 1.5px 0 rgba(0, 0, 0, 0.50), 0 2px 5px rgba(0, 0, 0, 0.30)
-    ) !important;
+    --zenwashi-essentials-card-shadow:
+      0 1.5px 0 light-dark(rgba(46, 52, 64, 0.12), rgba(0, 0, 0, 0.50)),
+      0 2px 5px light-dark(rgba(46, 52, 64, 0.05), rgba(0, 0, 0, 0.30)) !important;
   }
 }
 

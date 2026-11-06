@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+._*
+# Finder 生成的 "Icon\r" 元数据垃圾文件（文件名里带 CR）
+Icon?
+
+# 本地备份 / 参考实现 / 设计草稿（不入库）
+backups/
+Arc-2.0/
+proposals/
+
+# 开发期预览稿：只保留 loading-veil.html 这个调试工具
+preview/*
+!preview/loading-veil.html
+
+# 临时产物
+*.tar.gz
+*.log
+*.tmp
+
+# 编辑器 / 工具
+.vscode/
+.idea/
+node_modules/

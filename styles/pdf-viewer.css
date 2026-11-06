@@ -1,0 +1,583 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — PDF 阅读器 (pdf.js viewer)
+   -----------------------------------------------------------------------------
+   ★ 投 放（delivery）★
+
+   阅读器是 out-of-process 文档（实测 contentDocument 为 null、principal 是
+   resource://pdf.js/web/viewer.html、documentURI 却是那份 PDF 的 file:// 地址），
+   所以挂在父进程的 USER_SHEET（Sine 的 chrome.css）进不去；Sine 那套
+   JSWindowActor + chrome://sine/content/content.css 的 content 注入实测也没到。
+
+   唯一确定可用的是 Gecko 原生通道：
+   <profile>/chrome/userContent.css —— 每个内容进程启动时自己从磁盘读，
+   不经过任何 chrome 包注册，也不需要 actor。
+   install.sh 会在该文件顶部维护一段托管块：
+
+       @import "sine-mods/zen-washi-sumi/userContent.css";
+
+   再由主题的 userContent.css 转进本文件。
+
+   ★ 守 卫（guard）★
+
+   userContent.css 对「所有内容文档」生效，网页也会被波及，所以必须有守卫。
+   可用的判据只有一个：viewer.html 的 <head> 里那张自有样式表
+
+       <link rel="stylesheet" href="resource://pdf.js/web/viewer.css">
+
+   于是根选择器用 :root:has(link[href^="resource://pdf.js"]) ——
+   网页不可能出现这种链接，命中即阅读器。
+
+   试过但**不要**再用的方案：
+   · @-moz-document url-prefix("resource://pdf.js/")
+     —— PdfStreamConverter 执行 channel.originalURI = 原 PDF 的 URI，
+        document.URL 是 PDF 自己的地址，永远不命中。
+   · :root[mozdisallowselectionprint]
+     —— 该属性在源码里有、在实测的 DOM 里时有时无，不可靠。
+   · #outerContainer 作为作用域根
+     —— 依赖在阅读器文档上下文里取 DOM，而 Browser Toolbox 对跨进程文档的
+        document 代理行为不一致（getElementById 能命中、querySelector 返回 null），
+        据此得出的结论不可信。
+
+   另外两个约束：
+   · 跨文档 CSS 变量不继承 —— colors.css 的 --zenwashi-* 传不进来，配色必须按
+     四套方案在这里重声明一遍。
+   · user sheet 的普通声明优先级低于 author sheet（viewer.css 就是 author），
+     覆盖它已有属性一律 !important。
+   · 个别变量被 pdf.js 声明在更近的元素上，必须在该元素覆盖：
+     .pdfViewer —— --page-bg-color（被重置成 unset）
+     .sidebar   —— --sidebar-*（即 #viewsManager，就地声明）
+     .treeView  —— --treeitem-*（就地声明）
+   ============================================================================= */
+
+@media not (-moz-pref("zenwashi.pdf.enabled", false)) {
+  /* ---------------------------------------------------------------------------
+     1. 调色板：与 colors.css 的四套基底方案对齐
+     --------------------------------------------------------------------------- */
+
+  /* [方案 A] 和纸与松烟墨 (Zen Washi & Sumi) · 默认 */
+  :root:has(link[href^="resource://pdf.js"]) {
+    /* 页面外的"桌面"底色 */
+    --zenwashi-pdf-canvas: light-dark(#E8E3D9, #101113);
+    /* 纸张本身（只在加载瞬间/透明区域可见，正文是 canvas 画的） */
+    --zenwashi-pdf-page: light-dark(#FCFBF7, #1B1D21);
+    /* 工具栏与侧栏面板 */
+    --zenwashi-pdf-chrome: light-dark(#F7F6F2, #16181B);
+    /* 输入框、下拉、悬停底 */
+    --zenwashi-pdf-chrome-alt: light-dark(#EFEBE2, #1F2126);
+
+    --zenwashi-pdf-fg: light-dark(#262421, #E8E5DC);
+    --zenwashi-pdf-fg-dim: light-dark(#6E685F, #928D84);
+    --zenwashi-pdf-line: light-dark(rgba(60, 52, 42, 0.13), rgba(245, 242, 235, 0.10));
+    /* 页间分隔线，比普通描边略重一档 */
+    --zenwashi-pdf-sep: light-dark(rgba(60, 52, 42, 0.30), rgba(245, 242, 235, 0.18));
+    --zenwashi-pdf-shadow: light-dark(rgba(60, 52, 42, 0.12), rgba(0, 0, 0, 0.45));
+
+    --zenwashi-pdf-accent: light-dark(#376850, #4E8B6E);
+    --zenwashi-pdf-accent-tint: light-dark(rgba(55, 104, 80, 0.18), rgba(78, 139, 110, 0.26));
+
+    --zenwashi-pdf-page-radius: 6px;
+    --zenwashi-pdf-gap: 22px;
+  }
+
+  /* ---- 纸页圆角档位 (zenwashi.pdf.page-radius) -------------------------- */
+  /* CSS 读不到任意数值的 pref，所以用离散档位 + 等值媒体查询实现可配置。 */
+  @media (-moz-pref("zenwashi.pdf.page-radius", "0px")) {
+    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-page-radius: 0px; }
+  }
+  @media (-moz-pref("zenwashi.pdf.page-radius", "4px")) {
+    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-page-radius: 4px; }
+  }
+  @media (-moz-pref("zenwashi.pdf.page-radius", "10px")) {
+    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-page-radius: 10px; }
+  }
+  @media (-moz-pref("zenwashi.pdf.page-radius", "14px")) {
+    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-page-radius: 14px; }
+  }
+
+  /* ---- 纸页投影档位 (zenwashi.pdf.page-shadow) -------------------------- */
+  /* 页间只有 20 来像素的间隙，投影给太淡等于没有；这里 medium 就是"明显可见"的
+     基准档，soft 比它再弱一档。颜色用 light-dark() 一次定义，避免 4 档 × 2 种
+     配色方案写出 8 个媒体查询。 */
+  :root:has(link[href^="resource://pdf.js"]) {
+    --zenwashi-pdf-shadow-near: light-dark(rgba(38, 36, 33, 0.20), rgba(0, 0, 0, 0.55));
+    --zenwashi-pdf-shadow-far: light-dark(rgba(38, 36, 33, 0.12), rgba(0, 0, 0, 0.38));
+    --zenwashi-pdf-page-shadow:
+      0 6px 18px var(--zenwashi-pdf-shadow-near),
+      0 2px 6px var(--zenwashi-pdf-shadow-far);
+  }
+
+  @media (-moz-pref("zenwashi.pdf.page-shadow", "off")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      /* 零尺寸透明阴影占位，保证 box-shadow 列表始终合法 */
+      --zenwashi-pdf-page-shadow: 0 0 0 0 transparent;
+    }
+  }
+
+  @media (-moz-pref("zenwashi.pdf.page-shadow", "soft")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-page-shadow:
+        0 2px 8px var(--zenwashi-pdf-shadow-far),
+        0 1px 3px var(--zenwashi-pdf-shadow-far);
+    }
+  }
+
+  @media (-moz-pref("zenwashi.pdf.page-shadow", "strong")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-page-shadow:
+        0 12px 32px var(--zenwashi-pdf-shadow-near),
+        0 4px 12px var(--zenwashi-pdf-shadow-far);
+    }
+  }
+
+  @media (-moz-pref("zenwashi.pdf.page-shadow", "deep")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-page-shadow:
+        0 18px 48px var(--zenwashi-pdf-shadow-near),
+        0 6px 18px var(--zenwashi-pdf-shadow-far),
+        0 0 12px var(--zenwashi-pdf-shadow-far);
+    }
+  }
+
+  /* 取景框底色：pdf.js 的 body 用的是它自己的 --body-bg-color，够不到；
+     #outerContainer 是 100%×100% 的 #mainContainer 祖先，直接画在它身上即可。 */
+  :root:has(link[href^="resource://pdf.js"]) #outerContainer {
+    background-color: var(--zenwashi-pdf-canvas) !important;
+  }
+
+  /* [方案 B] Rosé Pine · Dawn / Main */
+  @media (-moz-pref("zenwashi.palette", "rose-pine")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-canvas: light-dark(#F2E9E1, #15131F);
+      --zenwashi-pdf-page: light-dark(#FFFDFB, #1F1D2E);
+      --zenwashi-pdf-chrome: light-dark(#FAF4ED, #1F1D2E);
+      --zenwashi-pdf-chrome-alt: light-dark(#F2E9E1, #26233A);
+      --zenwashi-pdf-fg: light-dark(#575279, #E0DEF4);
+      --zenwashi-pdf-fg-dim: light-dark(#797593, #908CAA);
+      --zenwashi-pdf-line: light-dark(rgba(87, 82, 121, 0.13), rgba(224, 222, 244, 0.10));
+      --zenwashi-pdf-sep: light-dark(rgba(87, 82, 121, 0.30), rgba(224, 222, 244, 0.18));
+      --zenwashi-pdf-shadow: light-dark(rgba(87, 82, 121, 0.12), rgba(0, 0, 0, 0.45));
+      --zenwashi-pdf-accent: light-dark(#B4637A, #EB6F92);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(180, 99, 122, 0.18), rgba(235, 111, 146, 0.26));
+    }
+  }
+
+  /* [方案 C] Catppuccin · Latte / Macchiato */
+  @media (-moz-pref("zenwashi.palette", "catppuccin")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-canvas: light-dark(#E6E9EF, #1E2030);
+      --zenwashi-pdf-page: light-dark(#FFFFFF, #24273A);
+      --zenwashi-pdf-chrome: light-dark(#EFF1F5, #24273A);
+      --zenwashi-pdf-chrome-alt: light-dark(#E6E9EF, #363A4F);
+      --zenwashi-pdf-fg: light-dark(#4C4F69, #CAD3F5);
+      --zenwashi-pdf-fg-dim: light-dark(#6C6F85, #A5ADCB);
+      --zenwashi-pdf-line: light-dark(rgba(76, 79, 105, 0.13), rgba(202, 211, 245, 0.10));
+      --zenwashi-pdf-sep: light-dark(rgba(76, 79, 105, 0.30), rgba(202, 211, 245, 0.18));
+      --zenwashi-pdf-shadow: light-dark(rgba(76, 79, 105, 0.12), rgba(0, 0, 0, 0.45));
+      --zenwashi-pdf-accent: light-dark(#EA76CB, #F5BDE6);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(234, 118, 203, 0.18), rgba(245, 189, 230, 0.26));
+    }
+  }
+
+  /* [方案 D] Nord · Snow Storm / Polar Night */
+  @media (-moz-pref("zenwashi.palette", "nord")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-canvas: light-dark(#E5E9F0, #242933);
+      --zenwashi-pdf-page: light-dark(#FFFFFF, #2E3440);
+      --zenwashi-pdf-chrome: light-dark(#ECEFF4, #2E3440);
+      --zenwashi-pdf-chrome-alt: light-dark(#E5E9F0, #3B4252);
+      --zenwashi-pdf-fg: light-dark(#2E3440, #ECEFF4);
+      --zenwashi-pdf-fg-dim: light-dark(#4C566A, #D8DEE9);
+      --zenwashi-pdf-line: light-dark(rgba(46, 52, 64, 0.13), rgba(236, 239, 244, 0.10));
+      --zenwashi-pdf-sep: light-dark(rgba(46, 52, 64, 0.30), rgba(236, 239, 244, 0.18));
+      --zenwashi-pdf-shadow: light-dark(rgba(46, 52, 64, 0.12), rgba(0, 0, 0, 0.45));
+      --zenwashi-pdf-accent: light-dark(#5E81AC, #88C0D0);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(94, 129, 172, 0.18), rgba(136, 192, 208, 0.26));
+    }
+  }
+
+  /* --- 矿物强调色：覆盖上面的调色板默认值（必须排在四套方案之后） -------- */
+  @media (-moz-pref("zenwashi.accent", "umber")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#78563D, #D49852);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(120, 86, 61, 0.18), rgba(212, 152, 82, 0.26));
+    }
+  }
+  @media (-moz-pref("zenwashi.accent", "cinnabar")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#B53D30, #C95B4E);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(181, 61, 48, 0.18), rgba(201, 91, 78, 0.26));
+    }
+  }
+  @media (-moz-pref("zenwashi.accent", "indigo")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#2B5079, #4F7EA8);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(43, 80, 121, 0.18), rgba(79, 126, 168, 0.26));
+    }
+  }
+  @media (-moz-pref("zenwashi.accent", "yamabuki")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#B87C24, #E2A73B);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(184, 124, 36, 0.18), rgba(226, 167, 59, 0.26));
+    }
+  }
+  @media (-moz-pref("zenwashi.accent", "asagi")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#2C7A7B, #4FD1C5);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(44, 122, 123, 0.18), rgba(79, 209, 197, 0.26));
+    }
+  }
+  @media (-moz-pref("zenwashi.accent", "ayame")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#6B46C1, #9F7AEA);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(107, 70, 193, 0.18), rgba(159, 122, 234, 0.26));
+    }
+  }
+  @media (-moz-pref("zenwashi.accent", "sumi-mono")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#4A4641, #A8A29E);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(74, 70, 65, 0.18), rgba(168, 162, 158, 0.26));
+    }
+  }
+  @media (-moz-pref("zenwashi.accent", "rose-pine-dawn")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#B4637A, #EB6F92);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(180, 99, 122, 0.18), rgba(235, 111, 146, 0.26));
+    }
+  }
+  @media (-moz-pref("zenwashi.accent", "catppuccin-latte")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#EA76CB, #F5BDE6);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(234, 118, 203, 0.18), rgba(245, 189, 230, 0.26));
+    }
+  }
+
+  /* ---------------------------------------------------------------------------
+     2. 映射到 pdf.js 官方变量
+     --------------------------------------------------------------------------- */
+  :root:has(link[href^="resource://pdf.js"]) {
+    /* 布局：比经典的 32px 略高一点，指尖落点更从容 */
+    --toolbar-height: 34px !important;
+    --toolbar-horizontal-padding: 2px !important;
+    --toolbar-icon-opacity: 0.72 !important;
+
+    /* 取景框与工具栏 */
+    --main-color: var(--zenwashi-pdf-fg) !important;
+    --toolbar-bg-color: var(--zenwashi-pdf-chrome) !important;
+    --toolbar-icon-bg-color: var(--zenwashi-pdf-fg) !important;
+    --toolbar-border-color: transparent !important;
+    --toolbar-box-shadow: none !important;
+    --toolbar-border-bottom: 1px solid var(--zenwashi-pdf-line) !important;
+    --sidebar-toolbar-bg-color: var(--zenwashi-pdf-chrome) !important;
+    --sidebar-narrow-bg-color: var(--zenwashi-pdf-chrome) !important;
+
+    /* 控件状态 */
+    --button-hover-color: color-mix(in srgb, var(--zenwashi-pdf-fg) 9%, transparent) !important;
+    --toggled-btn-color: var(--zenwashi-pdf-fg) !important;
+    --toggled-btn-text-color: var(--zenwashi-pdf-fg) !important;
+    --toggled-btn-bg-color: var(--zenwashi-pdf-accent-tint) !important;
+    --toggled-hover-active-btn-color: color-mix(in srgb, var(--zenwashi-pdf-fg) 16%, transparent) !important;
+    --dropdown-btn-bg-color: var(--zenwashi-pdf-chrome-alt) !important;
+    --separator-color: var(--zenwashi-pdf-line) !important;
+
+    /* 输入框 / 下拉 */
+    --field-color: var(--zenwashi-pdf-fg) !important;
+    --field-bg-color: var(--zenwashi-pdf-chrome-alt) !important;
+    --field-border-color: var(--zenwashi-pdf-line) !important;
+
+    /* 弹层（二级工具栏、菜单、错误浮层） */
+    --doorhanger-bg-color: var(--zenwashi-pdf-chrome) !important;
+    --doorhanger-border-color: var(--zenwashi-pdf-line) !important;
+    --doorhanger-hover-color: var(--zenwashi-pdf-fg) !important;
+    --doorhanger-separator-color: var(--zenwashi-pdf-line) !important;
+
+    /* 进度条 */
+    --progressBar-color: var(--zenwashi-pdf-accent) !important;
+    --progressBar-bg-color: color-mix(in srgb, var(--zenwashi-pdf-fg) 8%, transparent) !important;
+    --progressBar-blend-color: var(--zenwashi-pdf-accent-tint) !important;
+
+    /* 滚动条：只染拇指，轨道留空 */
+    --scrollbar-color: light-dark(rgba(60, 52, 42, 0.24), rgba(245, 242, 235, 0.18)) !important;
+    --scrollbar-bg-color: transparent !important;
+
+    /* 页间距与焦点环 */
+    --page-margin: calc(var(--zenwashi-pdf-gap) / 2) auto !important;
+    --page-border: 0 solid transparent !important;
+    --focus-ring-color: var(--zenwashi-pdf-accent) !important;
+  }
+
+  /* 纸张底色：pdf.js 在 .pdfViewer 上把 --page-bg-color 重置成 unset，
+     所以只能在这一层覆盖，写 :root 是无效的。 */
+  :root:has(link[href^="resource://pdf.js"]) .pdfViewer {
+    --page-bg-color: var(--zenwashi-pdf-page) !important;
+  }
+
+  /* 侧栏面板（缩略图 / 大纲 / 附件 / 图层）：pdf.js 把 --sidebar-* 直接
+     声明在 .sidebar 上，:root 的赋值会被就地声明盖掉。 */
+  :root:has(link[href^="resource://pdf.js"]) .sidebar {
+    --sidebar-bg-color: var(--zenwashi-pdf-chrome) !important;
+    --sidebar-border-color: var(--zenwashi-pdf-line) !important;
+    --sidebar-border-radius: 12px !important;
+    --sidebar-padding: 6px !important;
+    --sidebar-backdrop-filter: none !important;
+    --sidebar-box-shadow:
+      0 1px 2px var(--zenwashi-pdf-shadow),
+      0 6px 18px var(--zenwashi-pdf-shadow) !important;
+  }
+
+  /* 大纲/缩略图树 */
+  :root:has(link[href^="resource://pdf.js"]) .treeView {
+    --treeitem-color: var(--zenwashi-pdf-fg-dim) !important;
+    --treeitem-bg-color: color-mix(in srgb, var(--zenwashi-pdf-fg) 7%, transparent) !important;
+    --treeitem-hover-color: var(--zenwashi-pdf-fg) !important;
+    --treeitem-selected-color: var(--zenwashi-pdf-fg) !important;
+    --treeitem-selected-bg-color: var(--zenwashi-pdf-accent-tint) !important;
+  }
+
+  /* 查找栏：经典主题里是直角贴顶，这里收成悬浮小卡 */
+  :root:has(link[href^="resource://pdf.js"]) #findbar {
+    border: 1px solid var(--zenwashi-pdf-line) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 14px var(--zenwashi-pdf-shadow) !important;
+  }
+
+  /* 工具按钮：pdf.js 只给了 2px 圆角，放进圆角工具栏里像一块方砖。
+     悬停/选中的底色就画在 .toolbarButton 自身，所以圆它一个就够。 */
+  :root:has(link[href^="resource://pdf.js"]) .toolbarButton {
+    border-radius: 9px !important;
+    transition: background-color 0.15s ease;
+  }
+
+  /* ---------------------------------------------------------------------------
+     3. 纸页：圆角 + 极淡投影
+     --------------------------------------------------------------------------- */
+  :root:has(link[href^="resource://pdf.js"]) .pdfViewer .page {
+    border-radius: var(--zenwashi-pdf-page-radius) !important;
+    box-shadow: var(--zenwashi-pdf-page-shadow) !important;
+  }
+
+  /* 纸页发丝描边（zenwashi.pdf.page-border，默认开）。
+     浅色纸面上没有它，圆角几乎看不出来；不想要就关掉。
+     必须排在基础投影规则之后，同优先级下后者胜。 */
+  @media not (-moz-pref("zenwashi.pdf.page-border", false)) {
+    :root:has(link[href^="resource://pdf.js"]) .pdfViewer .page {
+      box-shadow:
+        0 0 0 1px var(--zenwashi-pdf-line),
+        var(--zenwashi-pdf-page-shadow) !important;
+    }
+  }
+
+  /* canvas 是方角的，不裁一下会盖住 .page 的圆角。
+     .canvasWrapper 自带 overflow: hidden，所以给圆角即可裁切。 */
+  /* 光给 .page 圆角不够：canvas 是方角的，正好盖在纸面上，四角仍然是直角。
+     必须在 .canvasWrapper 上做真正的裁切 —— clip-path 比 overflow+border-radius
+     更可靠（后者在带 contain 的 canvas 上偶发不裁）。 */
+  :root:has(link[href^="resource://pdf.js"]) .pdfViewer .canvasWrapper {
+    border-radius: var(--zenwashi-pdf-page-radius);
+    overflow: hidden;
+    clip-path: inset(0 round var(--zenwashi-pdf-page-radius));
+  }
+
+  /* 高对比度模式下把 pdf.js 原生的页面描边还回去（上面统一把
+     --page-border 压成了 0，会连带抹掉 HCM 的 CanvasText 边框）。 */
+  @media (forced-colors: active) {
+    :root:has(link[href^="resource://pdf.js"]) .pdfViewer .page {
+      border: 1px solid CanvasText !important;
+    }
+  }
+
+
+  /* ---------------------------------------------------------------------------
+     7. 工具栏图标：换成和纸主题自己的一套 16px / 1.5px 描边图标
+        pdf.js 原生图标是另一套网格，线宽更细，放进圆角工具栏里粗细不齐。
+        为什么内联 data: 而不是引用 icons/*.svg：阅读器的 CSP 只放行
+        resource: / blob: / data:，而我们的图标在 profile 的 file:// 路径下；
+        mask 只看 alpha 通道，所以描边直接用纯黑，不依赖 context-fill。
+        只覆盖主工具栏 + 查找栏；二级工具栏（旋转/单双页/文档属性等）仍是原生。
+     --------------------------------------------------------------------------- */
+  :root:has(link[href^="resource://pdf.js"]) {
+    --toolbarButton-pageUp-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNNC41IDkuNzUgOCA2LjI1bDMuNSAzLjUnIHN0cm9rZT0nIzAwMCcgc3Ryb2tlLXdpZHRoPScxLjUnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcgZmlsbD0nbm9uZScvPjwvc3ZnPg==") !important;
+    --toolbarButton-pageDown-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNNC41IDYuMjUgOCA5Ljc1bDMuNS0zLjUnIHN0cm9rZT0nIzAwMCcgc3Ryb2tlLXdpZHRoPScxLjUnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcgZmlsbD0nbm9uZScvPjwvc3ZnPg==") !important;
+    --toolbarButton-zoomOut-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNNCA4aDgnIHN0cm9rZT0nIzAwMCcgc3Ryb2tlLXdpZHRoPScxLjUnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcgZmlsbD0nbm9uZScvPjwvc3ZnPg==") !important;
+    --toolbarButton-zoomIn-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNOCA0djhNNCA4aDgnIHN0cm9rZT0nIzAwMCcgc3Ryb2tlLXdpZHRoPScxLjUnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcgZmlsbD0nbm9uZScvPjwvc3ZnPg==") !important;
+    --toolbarButton-print-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNNS4yNSA2VjMuNzVoNS41VjYnIHN0cm9rZT0nIzAwMCcgc3Ryb2tlLXdpZHRoPScxLjUnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcgZmlsbD0nbm9uZScvPjxwYXRoIGQ9J001LjI1IDExLjc1SDMuNVY2Ljc1aDl2NWgtMS43NScgc3Ryb2tlPScjMDAwJyBzdHJva2Utd2lkdGg9JzEuNScgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJyBmaWxsPSdub25lJy8+PHBhdGggZD0nTTUuMjUgOS43NWg1LjV2My41aC01LjV6JyBzdHJva2U9JyMwMDAnIHN0cm9rZS13aWR0aD0nMS41JyBzdHJva2UtbGluZWNhcD0ncm91bmQnIHN0cm9rZS1saW5lam9pbj0ncm91bmQnIGZpbGw9J25vbmUnLz48L3N2Zz4=") !important;
+    --toolbarButton-download-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNOCAzLjI1djYuNU01LjI1IDdsMi43NSAyLjc1TDEwLjc1IDcnIHN0cm9rZT0nIzAwMCcgc3Ryb2tlLXdpZHRoPScxLjUnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcgZmlsbD0nbm9uZScvPjxwYXRoIGQ9J00zLjc1IDEyLjc1aDguNScgc3Ryb2tlPScjMDAwJyBzdHJva2Utd2lkdGg9JzEuNScgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJyBmaWxsPSdub25lJy8+PC9zdmc+") !important;
+    --toolbarButton-viewsManagerToggle-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cmVjdCB4PScyLjc1JyB5PSc0JyB3aWR0aD0nMTAuNScgaGVpZ2h0PSc4JyByeD0nMS41JyBzdHJva2U9JyMwMDAnIHN0cm9rZS13aWR0aD0nMS41JyBzdHJva2UtbGluZWNhcD0ncm91bmQnIHN0cm9rZS1saW5lam9pbj0ncm91bmQnIGZpbGw9J25vbmUnLz48cGF0aCBkPSdNNi41IDR2OCcgc3Ryb2tlPScjMDAwJyBzdHJva2Utd2lkdGg9JzEuNScgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJyBmaWxsPSdub25lJy8+PC9zdmc+") !important;
+    --toolbarButton-secondaryToolbarToggle-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNMyA1LjI1aDEwTTMgOGgxME0zIDEwLjc1aDEwJyBzdHJva2U9JyMwMDAnIHN0cm9rZS13aWR0aD0nMS41JyBzdHJva2UtbGluZWNhcD0ncm91bmQnIHN0cm9rZS1saW5lam9pbj0ncm91bmQnIGZpbGw9J25vbmUnLz48L3N2Zz4=") !important;
+    --toolbarButton-presentationMode-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cmVjdCB4PScyLjc1JyB5PSczLjc1JyB3aWR0aD0nMTAuNScgaGVpZ2h0PSc4LjUnIHJ4PScxLjUnIHN0cm9rZT0nIzAwMCcgc3Ryb2tlLXdpZHRoPScxLjUnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcgZmlsbD0nbm9uZScvPjxwYXRoIGQ9J002Ljc1IDYuMzUgOS42IDhsLTIuODUgMS42NXonIGZpbGw9JyMwMDAnIHN0cm9rZT0nbm9uZScvPjwvc3ZnPg==") !important;
+    --toolbarButton-menuArrow-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNNi4yNSA2LjUgOC41IDguNzUgMTAuNzUgNi41JyBzdHJva2U9JyMwMDAnIHN0cm9rZS13aWR0aD0nMS41JyBzdHJva2UtbGluZWNhcD0ncm91bmQnIHN0cm9rZS1saW5lam9pbj0ncm91bmQnIGZpbGw9J25vbmUnLz48L3N2Zz4=") !important;
+    --findbarButton-previous-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNOS41IDQuNSA2IDhsMy41IDMuNScgc3Ryb2tlPScjMDAwJyBzdHJva2Utd2lkdGg9JzEuNScgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJyBmaWxsPSdub25lJy8+PC9zdmc+") !important;
+    --findbarButton-next-icon: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNicgdmlld0JveD0nMCAwIDE2IDE2Jz48cGF0aCBkPSdNNi41IDQuNSAxMCA4bC0zLjUgMy41JyBzdHJva2U9JyMwMDAnIHN0cm9rZS13aWR0aD0nMS41JyBzdHJva2UtbGluZWNhcD0ncm91bmQnIHN0cm9rZS1saW5lam9pbj0ncm91bmQnIGZpbGw9J25vbmUnLz48L3N2Zz4=") !important;
+  }
+
+  /* ---------------------------------------------------------------------------
+     4. 页与页之间的连接方式 (zenwashi.pdf.page-gap)
+        默认 gap：只留间距，不画线。
+        ::before 在 pdf.js 里没有被占用（.page 只用 .loadingIcon::after 画
+        加载圈），所以拿来做分隔线是安全的。
+     --------------------------------------------------------------------------- */
+  :root:has(link[href^="resource://pdf.js"]) .pdfViewer .page::before {
+    content: none;
+  }
+
+  /* ---------------------------------------------------------------------------
+     5. 悬浮胶囊工具栏 (zenwashi.pdf.floating-toolbar)
+        把工具栏从文档流里抽出来，纸页顶到窗口边缘、从胶囊后面穿过。
+        思路来自 Arc 2.0 的 betterpdf.css，但去掉了它的玻璃背景、z-index 黑魔法
+        和 #mainContainer::before 底衬（我们的胶囊是不透明的，不需要垫底）。
+     --------------------------------------------------------------------------- */
+  @media not (-moz-pref("zenwashi.pdf.floating-toolbar", false)) {
+    /* 纸页顶到窗口边缘 */
+    :root:has(link[href^="resource://pdf.js"]) #viewerContainer {
+      inset: 0 !important;
+    }
+
+    :root:has(link[href^="resource://pdf.js"]) #toolbarContainer {
+      /* fixed 而不是 absolute：侧栏开合会改动 #viewerContainer 的
+         inset-inline-start，absolute 的工具栏会跟着祖先的布局变化一起上下漂；
+         以视口为参照系，纵向就锁死在窗口顶边，跟任何祖先布局脱钩。 */
+      position: fixed !important;
+      top: 0 !important;
+      left: 50% !important;
+      transform: translateX(-50%);
+      width: calc(100% - 16px) !important;
+      max-width: min(var(--zenwashi-pdf-toolbar-max, 860px), calc(100% - 16px)) !important;
+      border: 1px solid var(--zenwashi-pdf-line) !important;
+      border-top: none !important;
+      /* 只圆下缘：贴着窗口顶边，上面再圆会露出纸页 */
+      border-radius: 0 0 12px 12px !important;
+      box-shadow: var(--zenwashi-pdf-page-shadow) !important;
+      z-index: 3;
+      animation: zenwashi-pdf-toolbar-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    /* 首屏给胶囊让位。用 margin 而不是 padding：margins 会跟着缩放/适配宽度重算，
+       而且不影响 #viewerContainer 的滚动区域原点。 */
+    :root:has(link[href^="resource://pdf.js"]) .pdfViewer .page:first-of-type,
+    :root:has(link[href^="resource://pdf.js"]) .pdfViewer .spread:first-of-type .page {
+      margin-top: calc(var(--toolbar-height) + 10px) !important;
+    }
+
+    /* 进度条贴到胶囊下沿（pdf.js 原本把它顶在工具栏高度处） */
+    :root:has(link[href^="resource://pdf.js"]) #toolbarContainer #loadingBar {
+      top: 100% !important;
+    }
+  }
+
+  /* 工具栏入场：从上方 6px 落定 + 淡入 */
+  @keyframes zenwashi-pdf-toolbar-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -6px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  /* ---------------------------------------------------------------------------
+     6. 侧栏面板
+        四个问题一次解决：
+          ① 不再推开内容 —— pdf.js 打开面板时会把 #viewerContainer 的
+             inset-inline-start 设成面板宽度，于是整页横向"划"一下；面板本质是
+             浮在纸页上的门帘，这里直接钉死，页面不动。
+          ② 入场方向统一 —— pdf.js 靠 inset-inline-start 从画外滑入，和工具栏的
+             纵向落定不是一个节奏；这里把位置钉在 8px，只做淡入 + 轻微下落。
+          ③ 高度兜住 —— pdf.js 的 max-height 按 --viewer-container-height 算，
+             而我们清掉了 viewerContainer 的 inset，面板底部会正好顶到窗口下沿，
+             圆角被切；改用视口高度并预留 16px。
+          ④ 面板靠 [hidden]（display: none）切换，普通 transition 跑不起来，
+             进入动画要用 @starting-style。
+     --------------------------------------------------------------------------- */
+  :root:has(link[href^="resource://pdf.js"]) #outerContainer.viewsManagerOpen #viewerContainer:not(.pdfPresentationMode) {
+    inset-inline-start: 0 !important;
+    transition-property: none !important;
+  }
+
+  :root:has(link[href^="resource://pdf.js"]) #viewsManager {
+    inset-inline-start: 8px !important;
+    bottom: auto !important;
+    max-height: calc(100vh - var(--toolbar-height) - var(--doorhanger-height) - 16px) !important;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  @starting-style {
+    :root:has(link[href^="resource://pdf.js"]) #viewsManager {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root:has(link[href^="resource://pdf.js"]) #toolbarContainer {
+      animation: none !important;
+    }
+
+    :root:has(link[href^="resource://pdf.js"]) #viewsManager {
+      opacity: 1;
+      transform: none;
+      transition: none !important;
+    }
+  }
+
+  /* 工具栏宽度档位 (zenwashi.pdf.toolbar-width) */
+  @media (-moz-pref("zenwashi.pdf.toolbar-width", "100%")) {
+    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-toolbar-max: 100%; }
+  }
+  @media (-moz-pref("zenwashi.pdf.toolbar-width", "1080px")) {
+    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-toolbar-max: 1080px; }
+  }
+  @media (-moz-pref("zenwashi.pdf.toolbar-width", "720px")) {
+    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-toolbar-max: 720px; }
+  }
+  @media (-moz-pref("zenwashi.pdf.toolbar-width", "560px")) {
+    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-toolbar-max: 560px; }
+  }
+
+  @media (-moz-pref("zenwashi.pdf.page-gap", "dashed")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-gap: 26px;
+    }
+
+    :root:has(link[href^="resource://pdf.js"]) .pdfViewer .page::before {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      bottom: calc(var(--zenwashi-pdf-gap) * -0.5 - 0.5px);
+      border-top: 1px dashed var(--zenwashi-pdf-sep);
+      pointer-events: none;
+    }
+  }
+
+  @media (-moz-pref("zenwashi.pdf.page-gap", "dotted")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-gap: 26px;
+    }
+
+    :root:has(link[href^="resource://pdf.js"]) .pdfViewer .page::before {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      bottom: calc(var(--zenwashi-pdf-gap) * -0.5 - 0.5px);
+      border-top: 1px dotted var(--zenwashi-pdf-sep);
+      pointer-events: none;
+    }
+  }
+
+  /* 无缝连排：去掉间距、圆角与投影，页页相接成一整卷 */
+  @media (-moz-pref("zenwashi.pdf.page-gap", "none")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-gap: 0px;
+      --zenwashi-pdf-page-radius: 0px;
+    }
+
+    :root:has(link[href^="resource://pdf.js"]) .pdfViewer .page {
+      box-shadow: none !important;
+    }
+  }
+}

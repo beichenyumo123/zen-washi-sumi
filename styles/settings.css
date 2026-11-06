@@ -1,0 +1,181 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — about:preferences
+   -----------------------------------------------------------------------------
+   设置页跑在内容进程，所以走 <profile>/chrome/userContent.css 这条原生通道
+   （和 styles/pdf-viewer.css 一样）。
+
+   不做逐元素重绘，而是覆盖 Firefox 的**设计令牌**（--background-color-*、
+   --text-color、--page-nav-button-* 等）。理由：
+     · 设置页用了 moz-page-nav / groupbox / .subcategory 一堆自定义元素，
+       内部结构随版本漂移，改内件很容易失效；
+     · 这些令牌是 Firefox 自己用来上色的，覆盖它们等于换掉整页的"颜料"。
+   调色板数值从 colors.css 生成，改色时以 colors.css 为准。
+   ============================================================================= */
+
+@-moz-document url-prefix("about:preferences") {
+  @media not (-moz-pref("zenwashi.settings.skin", false)) {
+    /* ---- 1. 调色板：由 colors.css 派生 ---------------------------------- */
+    :root {
+    --zwset-bg: light-dark(#F7F6F2, #141517);
+    --zwset-card: light-dark(#FFFFFF, #1F2126);
+    --zwset-fg: light-dark(#262421, #E8E5DC);
+    --zwset-fg-dim: light-dark(#6E685F, #928D84);
+    --zwset-line: light-dark(rgba(60, 52, 42, 0.10), rgba(245, 242, 235, 0.09));
+    --zwset-accent: light-dark(#376850, #4E8B6E);
+    --zwset-accent-tint: light-dark(rgba(55, 104, 80, 0.15), rgba(78, 139, 110, 0.22));
+    }
+    @media (-moz-pref("zenwashi.palette", "rose-pine")) {
+      :root {
+        --zwset-bg: light-dark(#FAF4ED, #191724);
+        --zwset-card: light-dark(#FFFDFB, #1F1D2E);
+        --zwset-fg: light-dark(#575279, #E0DEF4);
+        --zwset-fg-dim: light-dark(#797593, #908CAA);
+        --zwset-line: light-dark(rgba(87, 82, 121, 0.12), rgba(224, 222, 244, 0.10));
+        --zwset-accent: light-dark(#B4637A, #EB6F92);
+        --zwset-accent-tint: light-dark(rgba(180, 99, 122, 0.16), rgba(235, 111, 146, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.palette", "catppuccin")) {
+      :root {
+        --zwset-bg: light-dark(#EFF1F5, #1E2030);
+        --zwset-card: light-dark(#FFFFFF, #24273A);
+        --zwset-fg: light-dark(#4C4F69, #CAD3F5);
+        --zwset-fg-dim: light-dark(#6C6F85, #A5ADCB);
+        --zwset-line: light-dark(rgba(76, 79, 105, 0.12), rgba(202, 211, 245, 0.10));
+        --zwset-accent: light-dark(#EA76CB, #F5BDE6);
+        --zwset-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 189, 230, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.palette", "nord")) {
+      :root {
+        --zwset-bg: light-dark(#ECEFF4, #242933);
+        --zwset-card: light-dark(#FFFFFF, #2E3440);
+        --zwset-fg: light-dark(#2E3440, #ECEFF4);
+        --zwset-fg-dim: light-dark(#4C566A, #D8DEE9);
+        --zwset-line: light-dark(rgba(46, 52, 64, 0.12), rgba(236, 239, 244, 0.10));
+        --zwset-accent: light-dark(#5E81AC, #88C0D0);
+        --zwset-accent-tint: light-dark(rgba(94, 129, 172, 0.16), rgba(136, 192, 208, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "umber")) {
+      :root {
+      --zwset-accent: light-dark(#78563D, #D49852);
+      --zwset-accent-tint: light-dark(rgba(120, 86, 61, 0.15), rgba(212, 152, 82, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "cinnabar")) {
+      :root {
+      --zwset-accent: light-dark(#B53D30, #C95B4E);
+      --zwset-accent-tint: light-dark(rgba(181, 61, 48, 0.15), rgba(201, 91, 78, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "indigo")) {
+      :root {
+      --zwset-accent: light-dark(#2B5079, #4F7EA8);
+      --zwset-accent-tint: light-dark(rgba(43, 80, 121, 0.15), rgba(79, 126, 168, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "yamabuki")) {
+      :root {
+      --zwset-accent: light-dark(#B87C24, #E2A73B);
+      --zwset-accent-tint: light-dark(rgba(184, 124, 36, 0.15), rgba(226, 167, 59, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "asagi")) {
+      :root {
+      --zwset-accent: light-dark(#2C7A7B, #4FD1C5);
+      --zwset-accent-tint: light-dark(rgba(44, 122, 123, 0.15), rgba(79, 209, 197, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "ayame")) {
+      :root {
+      --zwset-accent: light-dark(#6B46C1, #9F7AEA);
+      --zwset-accent-tint: light-dark(rgba(107, 70, 193, 0.15), rgba(159, 122, 234, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "sumi-mono")) {
+      :root {
+      --zwset-accent: light-dark(#4A4641, #A8A29E);
+      --zwset-accent-tint: light-dark(rgba(74, 70, 65, 0.15), rgba(168, 162, 158, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "rose-pine-dawn")) {
+      :root {
+      --zwset-accent: light-dark(#B4637A, #EB6F92);
+      --zwset-accent-tint: light-dark(rgba(180, 99, 122, 0.16), rgba(235, 111, 146, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "catppuccin-latte")) {
+      :root {
+      --zwset-accent: light-dark(#EA76CB, #F5BDE6);
+      --zwset-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 189, 230, 0.22));
+      }
+    }
+
+    /* ---- 2. 覆盖 Firefox 设计令牌 --------------------------------------- */
+    #preferences-root {
+      --background-color-canvas: var(--zwset-bg) !important;
+      --background-color-box: var(--zwset-card) !important;
+      --background-color-box-info: var(--zwset-card) !important;
+      --background-color-canvas-light: var(--zwset-bg) !important;
+      --text-color: var(--zwset-fg) !important;
+      --text-color-deemphasized: var(--zwset-fg-dim) !important;
+      --border-color: var(--zwset-line) !important;
+      --border-color-deemphasized: var(--zwset-line) !important;
+      --link-color: var(--zwset-accent) !important;
+      --link-color-hover: var(--zwset-accent) !important;
+      --button-background-color: var(--zwset-card) !important;
+      --button-background-color-hover: var(--zwset-accent-tint) !important;
+      --button-background-color-active: var(--zwset-accent-tint) !important;
+      --button-text-color: var(--zwset-fg) !important;
+      --border-color-selected: var(--zwset-accent) !important;
+      --page-nav-button-background-color-hover: var(--zwset-accent-tint) !important;
+      --page-nav-button-background-color-selected: var(--zwset-accent-tint) !important;
+      --page-nav-button-text-color-selected: var(--zwset-fg) !important;
+      --page-nav-button-indicator-background-color: var(--zwset-accent) !important;
+
+      /* 复选框、链接、焦点环、进度条……全站强调色都由它派生 */
+      --color-accent-primary: var(--zwset-accent) !important;
+      --color-accent-primary-hover: var(--zwset-accent) !important;
+      --focus-outline-color: var(--zwset-accent) !important;
+    }
+
+    /* 左侧导航：Firefox 在 moz-page-nav-button 的 shadow 里用 :host 声明了
+       --page-nav-button-*，祖先上的覆盖传不进去（继承值打不过元素自身的声明），
+       必须在按钮元素上直接写。 */
+    #categories {
+      --page-nav-border-color: transparent !important;
+      background-color: transparent !important;
+    }
+
+    #categories moz-page-nav-button {
+      --page-nav-button-background-color-selected: var(--zwset-accent-tint) !important;
+      --page-nav-button-text-color-selected: var(--zwset-fg) !important;
+      --page-nav-button-indicator-background-color: var(--zwset-accent) !important;
+      --page-nav-button-background-color-hover: var(--zwset-accent-tint) !important;
+      --page-nav-button-border-color-hover: transparent !important;
+      --page-nav-button-border-color-active: transparent !important;
+    }
+
+    /* ---- 3. 几处形状细节 ------------------------------------------------ */
+    #preferences-root {
+      background-color: var(--zwset-bg) !important;
+    }
+
+    /* 卡片：原生是直角 + 硬描边，收成和纸卡片 */
+    groupbox,
+    groupbox[data-category],
+    setting-group {
+      border: 1px solid var(--zwset-line) !important;
+      border-radius: 12px !important;
+      background-color: var(--zwset-card) !important;
+      overflow: hidden;
+    }
+
+    /* 搜索框与下拉收圆 */
+    #searchInput,
+    #preferences-root menulist {
+      border-radius: 8px !important;
+    }
+  }
+}

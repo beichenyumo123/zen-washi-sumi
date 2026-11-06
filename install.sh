@@ -143,6 +143,37 @@ print(f"→ 校验通过：version={saved_entry.get('version')} "
       f"origin={saved_entry.get('origin')} scripts={list(saved_scripts)}")
 PY
 
+# ---------------------------------------------------------------------------
+# 原生 userContent 通道（PDF 阅读器等多个 out-of-process 文档唯一可靠的入口）
+#   Sine 的 content.css 是由 JSWindowActor 注入 chrome://sine/content/content.css，
+#   实测到不了 PDF 阅读器这类 out-of-process 文档（子进程里 chrome:// 包解析不到）。
+#   Gecko 自己会在每个内容进程启动时加载 <profile>/chrome/userContent.css，
+#   所以这里额外维护一段 @import 作为兜底；主题的 userContent.css 再转进
+#   styles/pdf-viewer.css。块内 @import 必须位于文件最前面，因此整块前插。
+# ---------------------------------------------------------------------------
+python3 - "$DST" <<'PY'
+import pathlib, re, sys
+
+sine_mods = pathlib.Path(sys.argv[1])
+target = sine_mods.parent / "userContent.css"
+rel = f"{sine_mods.name}/zen-washi-sumi/userContent.css"
+
+BEGIN = "/* >>> zen-washi-sumi managed import (do not edit) >>> */"
+END = "/* <<< zen-washi-sumi managed import <<< */"
+block = f'{BEGIN}\n@import "{rel}";\n{END}\n'
+
+text = target.read_text(encoding="utf-8") if target.exists() else ""
+text = re.sub(
+    re.escape(BEGIN) + r".*?" + re.escape(END) + r"\n?",
+    "",
+    text,
+    flags=re.S,
+)
+target.parent.mkdir(parents=True, exist_ok=True)
+target.write_text(block + text, encoding="utf-8")
+print(f"→ 已维护 {target.name} 的 userContent @import（{rel}）")
+PY
+
 # 自动清理 Zen 的 startupCache，确保启动后最新 .uc.js 脚本立即被编译加载
 for cache_dir in "$HOME/Library/Caches/zen/Profiles"/*/startupCache; do
   if [ -d "$cache_dir" ]; then

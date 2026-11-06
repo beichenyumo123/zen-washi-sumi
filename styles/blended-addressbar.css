@@ -27,6 +27,16 @@
     --blended-addressbar-color-transition: 120ms ease-out;
 }
 
+/* 静止态的颜色变化（切标签 / 加载完成 / 系统深浅切换）也柔和过渡。
+ * 加载中用上面那条更短的 120ms，让顶栏能跟上快速采样；
+ * reduced-motion 区块会用 !important 把这里压回 0ms。
+ * 可在 Sine 设置里用 "Smooth color transition" 关闭。 */
+@media not (-moz-pref("zenwashi.urlbar.color-transition", false)) {
+    :root {
+        --blended-addressbar-color-transition: 160ms var(--zenwashi-ease, cubic-bezier(0.22, 1, 0.36, 1));
+    }
+}
+
 :root[data-blended-addressbar-frame-shadow="minimal"] {
     --blended-addressbar-frame-shadow: var(--blended-addressbar-frame-shadow-minimal);
     --blended-addressbar-pane-inner-highlight: inset 0 0 0 0.5pt rgba(255, 255, 255, 0.15);
@@ -506,6 +516,9 @@ menupopup[placespopup="true"] :is(menu, menuitem, .bookmark-item):is([disabled],
         --toolbox-textcolor: var(--zen-tab-header-foreground, currentColor);
         --toolbarbutton-icon-fill: currentColor !important;
         --toolbar-color: var(--zen-tab-header-foreground, currentColor);
+        /* 书签栏是独立元素，必须自己声明过渡，否则顶栏渐变时它会瞬变 */
+        transition: background-color var(--blended-addressbar-color-transition),
+                    color var(--blended-addressbar-color-transition);
     }
 
     @media not (-moz-bool-pref: "uc.blended-addressbar.addressbar-bookmarks-separator.disabled") {
@@ -931,7 +944,11 @@ menupopup[placespopup="true"] :is(menu, menuitem, .bookmark-item):is([disabled],
     box-shadow: none !important;
 }
 
-:root[data-blended-split-editor="true"] #urlbar {
+:root[data-blended-split-editor="true"] #urlbar:not([zen-floating-urlbar="true"]) {
+    /* 必须排除悬浮地址栏（Cmd+T / Cmd+L 那种）。
+       下面这套 position: fixed + left/top 是给"分屏地址栏"用的：把原生编辑器
+       对齐到主题自己画的那条地址栏字段上。悬浮地址栏由 Zen 自己居中定位，
+       一旦被这套规则接管，就会被钉到那条字段的坐标上 —— 视觉上就是偏左、不居中。 */
     &:is([focused], [breakout-extend], [open], :focus-within) {
         font: var(--blended-addressbar-native-font, inherit) !important;
     }
