@@ -2514,6 +2514,8 @@ browser {
 :root {
   --zenwashi-glass-window: 100%;
   --zenwashi-glass-sidebar: 100%;
+  /* 标题栏那一条的纸色；设成 transparent 就回到"有缝"的透明版 */
+  --zenwashi-glass-cap: var(--zenwashi-bg-base);
 }
 
 @media (-moz-pref("zenwashi.glass", "frosted")) {
@@ -2649,34 +2651,34 @@ browser {
 }
 
 /*
- * 灰带收尾：那条带子不是我们画的，是 macOS **原生标题栏**的 vibrancy 材质和内容区
- * 不是同一块（窗口标题栏区域由系统单独模糊，颜色更深），所以只要玻璃是半透明的，
- * 这条交界就必然露出来。探针实测：缝的位置 == #zen-sidebar-top-buttons 的下沿
- * == --zen-toolbar-height，正好是系统标题栏高度。
+ * 标题栏那一条：做实心和纸，而不是假装玻璃
+ * -----------------------------------------------------------------------------
+ * 结论先说：macOS **原生标题栏那一层不参与窗口 vibrancy**。
+ * 证据链：
+ *   · 探针实测，缝的位置 == #zen-sidebar-top-buttons 下沿 == --zen-toolbar-height
+ *     == 系统标题栏高度；而该元素自己 background: transparent，chrome 里没有元素在画它；
+ *   · 关掉 body::after / #titlebar 的 -moz-window-titlebar 外观 → 无效；
+ *   · widget.macos.titlebar-blend-mode.behind-window = true → 实测无效。
+ * 也就是说：标题栏背后永远是系统给的那层底，壁纸透不上来。半透明玻璃做在这块上，
+ * 只能得到"一块没有纹理的平色"——比实心纸更像 bug。
  *
- * CSS 改不动系统那层材质，能做的只有"盖"：在标题栏那一条上铺一层纸色渐变，
- * 顶到 92% 纸、到底淡出到 0，淡出的终点正好是那条缝 —— 硬边就变成一层柔和的顶部渐隐。
- * 嫌盖得太实的，把 --zenwashi-glass-cap 调小（0% = 完全不管，回到有缝的状态）。
+ * 所以这一条**故意做成实心和纸**（和 `off` 档的观感一致），底部压一条发丝线当分隔，
+ * 读起来是"画卷的天头"，而不是"玻璃没铺到"。下面才是玻璃本体。
+ * 想要彻底不要这条，把 --zenwashi-glass-cap 设为 transparent（会回到有缝的状态）。
  */
 @media (-moz-pref("zenwashi.glass", "frosted")) {
   :root:not([zen-compact-mode="true"]) #zen-sidebar-top-buttons {
-    background: linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-cap, 92%), transparent) 0%,
-      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-cap, 92%), transparent) 45%,
-      transparent 100%
-    ) !important;
+    background-color: var(--zenwashi-glass-cap, var(--zenwashi-bg-base)) !important;
+    background-image: none !important;
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--zenwashi-fg-primary) 8%, transparent) !important;
   }
 }
 
 @media (-moz-pref("zenwashi.glass", "clear")) {
   :root:not([zen-compact-mode="true"]) #zen-sidebar-top-buttons {
-    background: linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-cap, 92%), transparent) 0%,
-      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-cap, 92%), transparent) 45%,
-      transparent 100%
-    ) !important;
+    background-color: var(--zenwashi-glass-cap, var(--zenwashi-bg-base)) !important;
+    background-image: none !important;
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--zenwashi-fg-primary) 8%, transparent) !important;
   }
 }
 

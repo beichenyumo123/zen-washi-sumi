@@ -307,8 +307,14 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
   `#zen-sidebar-top-buttons` 的下沿 —— 而它自己 `background: transparent`、高度等于
   `--zen-toolbar-height`。也就是说缝不在任何 chrome 元素上，而是 **macOS 原生标题栏的
   vibrancy 材质与内容区不是同一块**（系统给标题栏单独做模糊，颜色更深）。
-  → 只要侧栏是半透明的，这条交界必然显形。CSS 能做的只有在标题栏那一条上铺一层
-  纸色渐变（`--zenwashi-glass-cap`，默认 92%，到底淡出到 0），把硬边变成顶部渐隐。
+  → 只要侧栏是半透明的，这条交界必然显形。
+  - 后续试过 `widget.macos.titlebar-blend-mode.behind-window = true`（Gecko 给标题栏
+    "与背后融合"准备的 pref），**实测同样无效**。
+  - **最终方案（`userChrome.css §16`）**：标题栏那一条不做玻璃，直接给
+    `#zen-sidebar-top-buttons` 实心和纸 + 底部一条 8% 发丝线，读起来是"画卷的天头"；
+    玻璃从它下面开始。想退货就 `--zenwashi-glass-cap: transparent`。
+  - **判断标准**：这块区域**永远**不会出现壁纸纹理，任何"半透明"都只会得到一块
+    没有纹理的平色，比实心纸更像 bug。以后别再往这里调 alpha。
 
 ---
 
