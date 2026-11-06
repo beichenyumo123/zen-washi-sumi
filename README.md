@@ -5,6 +5,9 @@
 白昼如**手工和纸（鳥の子色）**般温润护眼、无刺眼反光；入夜如**松烟老墨（濡羽色）**般深邃沉静、无高光死黑。结合东方矿物传统色（竹青、焦茶、朱砂、琉璃、山吹）作为点睛印章色，专为追求内敛克制、长时阅读与心流专注的用户设计。
 
 ---
+## 预览
+<img width="3328" height="1876" alt="图片" src="https://github.com/user-attachments/assets/4d684043-5fee-4fe8-ada0-1e52ed540aa9" />
+<img width="3328" height="1876" alt="图片" src="https://github.com/user-attachments/assets/e5870586-194a-451e-85c2-d8a16c52bdb6" />
 
 ## 🎨 色彩与设计哲学
 
