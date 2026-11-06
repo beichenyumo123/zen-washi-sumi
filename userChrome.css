@@ -2630,6 +2630,49 @@ browser {
   }
 }
 
+/* 顺带把标题栏容器本身的原生外观也关掉：如果那条灰带是 #titlebar 自己的
+   -moz-window-titlebar 外观画的，上面那条 body::after 是治不到的。 */
+@media (-moz-pref("zenwashi.glass", "frosted")) {
+  :root:not([zen-compact-mode="true"]) #titlebar {
+    -moz-default-appearance: none !important;
+    appearance: none !important;
+    background: transparent !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root:not([zen-compact-mode="true"]) #titlebar {
+    -moz-default-appearance: none !important;
+    appearance: none !important;
+    background: transparent !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   16.2 灰带定位探针（zenwashi.diagnostics.glass）
+   -----------------------------------------------------------------------------
+   三个候选各描一圈颜色，看谁的**下边缘**正好压在灰带下沿：
+     红 = #titlebar          （macOS 标题栏容器）
+     蓝 = #zen-sidebar-top-buttons（红绿灯 + 收起按钮那一行）
+     橙 = #TabsToolbar       （垂直标签栏）
+   下沿对齐谁，灰带就是谁画的；三个都不对齐 → 那条带在窗口层（OS），CSS 够不到。
+   平时保持关闭。
+   ----------------------------------------------------------------------------- */
+@media (-moz-bool-pref: "zenwashi.diagnostics.glass") {
+  :root:not([zen-compact-mode="true"]) #titlebar {
+    outline: 2px solid #ff0000 !important;
+    outline-offset: -2px !important;
+  }
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-top-buttons {
+    outline: 2px solid #0000ff !important;
+    outline-offset: -2px !important;
+  }
+  :root:not([zen-compact-mode="true"]) #TabsToolbar {
+    outline: 2px solid #ff8800 !important;
+    outline-offset: -2px !important;
+  }
+}
+
 /* clear 档的侧栏是一张独立玻璃纸，需要一条发丝线把边缘带出来；
    frosted 档整窗同一张纸，不能有线。 */
 @media (-moz-pref("zenwashi.glass", "clear")) {
