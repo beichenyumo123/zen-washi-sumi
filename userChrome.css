@@ -2604,21 +2604,27 @@ browser {
 }
 
 /*
- * 顶部灰带：Firefox 的 browser-shared.css 在 macOS 上给 #navigator-toolbox::after
- * 挂了 `-moz-default-appearance: -moz-window-titlebar`，画的是**原生标题栏底色**。
- * 它 z-index: -1 压在侧栏后面，平时被实心纸盖住看不见；一旦侧栏做成半透明，
- * 它就从顶上透出来，把侧栏顶部切出一条不透明的硬边（玻璃到标题栏高度就断了）。
- * 玻璃模式下直接把这个原生外观关掉，整条侧栏才是连续的一张玻璃。
+ * 顶部灰带：Firefox 的 browser-shared.css 在 macOS 上给 **body::after** 挂了
+ *   `-moz-default-appearance: -moz-window-titlebar`（appearance: auto），
+ * 画的是**原生标题栏底色**，位置 inset: 0 / z-index: -1，只在标题栏高度那一条可见。
+ * 浏览器窗口的 <html:body> 包住整个 UI（browser.xhtml:159-7747），平时这层被实心纸
+ * 盖得严严实实；侧栏一做半透明，它就从顶上露出来，把侧栏切成"上面灰带 + 下面玻璃"。
+ *
+ * ⚠️ 别找错元素：我们第一版写成了 #navigator-toolbox::after，那是想当然——
+ *    Firefox 挂的是 body::after（pageInfo/organizer 那两个是别的文档，不影响主窗口）。
+ *
+ * 关掉之后这块区域会露出下面的 #zen-browser-background（也就是同一张 60% 玻璃），
+ * 整条侧栏才是一张连续的玻璃。
  */
 @media (-moz-pref("zenwashi.glass", "frosted")) {
-  :root:not([zen-compact-mode="true"]) #navigator-toolbox::after {
+  :root:not([zen-compact-mode="true"]) body::after {
     -moz-default-appearance: none !important;
     appearance: none !important;
   }
 }
 
 @media (-moz-pref("zenwashi.glass", "clear")) {
-  :root:not([zen-compact-mode="true"]) #navigator-toolbox::after {
+  :root:not([zen-compact-mode="true"]) body::after {
     -moz-default-appearance: none !important;
     appearance: none !important;
   }
