@@ -2603,6 +2603,27 @@ browser {
   background-color: color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-sidebar), transparent) !important;
 }
 
+/*
+ * 顶部灰带：Firefox 的 browser-shared.css 在 macOS 上给 #navigator-toolbox::after
+ * 挂了 `-moz-default-appearance: -moz-window-titlebar`，画的是**原生标题栏底色**。
+ * 它 z-index: -1 压在侧栏后面，平时被实心纸盖住看不见；一旦侧栏做成半透明，
+ * 它就从顶上透出来，把侧栏顶部切出一条不透明的硬边（玻璃到标题栏高度就断了）。
+ * 玻璃模式下直接把这个原生外观关掉，整条侧栏才是连续的一张玻璃。
+ */
+@media (-moz-pref("zenwashi.glass", "frosted")) {
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox::after {
+    -moz-default-appearance: none !important;
+    appearance: none !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox::after {
+    -moz-default-appearance: none !important;
+    appearance: none !important;
+  }
+}
+
 /* clear 档的侧栏是一张独立玻璃纸，需要一条发丝线把边缘带出来；
    frosted 档整窗同一张纸，不能有线。 */
 @media (-moz-pref("zenwashi.glass", "clear")) {
