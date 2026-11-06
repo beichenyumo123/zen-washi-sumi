@@ -6,8 +6,12 @@
 
 ---
 ## 预览
-<img width="3328" height="1876" alt="图片" src="https://github.com/user-attachments/assets/4d684043-5fee-4fe8-ada0-1e52ed540aa9" />
-<img width="3328" height="1876" alt="图片" src="https://github.com/user-attachments/assets/e5870586-194a-451e-85c2-d8a16c52bdb6" />
+<img width="3328" height="1876" alt="图片" src="https://github.com/user-attachments/assets/1f021a29-b571-4216-8f5d-b24b497ce3b1" />
+
+---
+
+<img width="3328" height="1876" alt="图片" src="https://github.com/user-attachments/assets/49d1bfb4-0938-4659-9b20-f789ff6353cf" />
+
 
 ## 🎨 色彩与设计哲学
 
