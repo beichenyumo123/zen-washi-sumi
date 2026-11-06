@@ -2547,13 +2547,19 @@ browser {
 
 /*
  * 第一步：让最底层的"窗口画布"让空。
- * 第 4 节把 :root / #main-window / #browser 以及 .zen-browser-generic-background
- * 元素自身都涂成了实心纸色；它们在最底层，不透明就永远是"纸盖纸"。
+ * 第 4 节把 :root / #main-window / #browser / #zen-browser-background 都涂成了实心纸色；
+ * 它们在最底层，不透明就永远是"纸盖纸"，上面调多少 alpha 都看不出来。
+ *
+ * ⚠️ 这里必须写 id：#zen-browser-background。第 4 节同一条规则里用的是 id 选择器
+ * （1,0,0），只写 .zen-browser-generic-background（0,3,0）是**压不过 id 的**——
+ * 之前那版就是这么翻车的：伪元素 60% 生效了、诊断绿色也生效了，但元素自身仍是实心纸。
  * off 档时上层伪元素仍是 100% 纸色（inset:0 全覆盖），观感与改之前一致。
  */
 :root:not([zen-compact-mode="true"]),
 :root:not([zen-compact-mode="true"]) #main-window,
 :root:not([zen-compact-mode="true"]) #browser,
+:root:not([zen-compact-mode="true"]) #zen-browser-background,
+:root:not([zen-compact-mode="true"]) #zen-toolbar-background,
 :root:not([zen-compact-mode="true"]) .zen-browser-generic-background {
   background-color: transparent !important;
 }
@@ -2608,54 +2614,5 @@ browser {
 @media (-moz-pref("zenwashi.glass", "clear")) and (prefers-reduced-transparency: reduce) {
   :root:not([zen-compact-mode="true"]) #navigator-toolbox {
     box-shadow: none !important;
-  }
-}
-
-
-/* 档位探针（临时）：直接证明 `-moz-pref(..., "<档位>")` 到底有没有命中。
-   侧栏出现 4px 洋红描边 = frosted 命中；4px 亮绿 = clear 命中；都没有 = 档位没命中。 */
-@media (-moz-pref("zenwashi.glass", "frosted")) {
-  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
-    outline: 4px solid #ff00ff !important;
-    outline-offset: -4px !important;
-  }
-}
-
-@media (-moz-pref("zenwashi.glass", "clear")) {
-  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
-    outline: 4px solid #00ff00 !important;
-    outline-offset: -4px !important;
-  }
-}
-
-/* 探针二：系统"降低透明度"到底有没有被判成 reduce。侧栏内圈出现 4px 橙色 = 判成了 reduce
-   （那说明 alpha 会被强制拉回 100%，这正是"开了也像没开"的另一种可能）。 */
-@media (prefers-reduced-transparency: reduce) {
-  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
-    outline: 4px solid #ff8800 !important;
-    outline-offset: -9px !important;
-  }
-}
-
-/* -----------------------------------------------------------------------------
-   16.1 玻璃诊断（zenwashi.diagnostics.glass）
-   -----------------------------------------------------------------------------
-   排查"开关没区别"用：打开后侧栏会变成洋红/青条纹，整窗纸层会变成纯绿。
-     · 看到条纹 + 绿色 → §16 的规则确实生效，问题在"窗口本身不透"（OS 层）
-     · 什么都看不到   → §16 根本没被应用（选择器/媒体查询/层叠），继续往上查
-   纯诊断用，平时保持关闭。
-   ----------------------------------------------------------------------------- */
-@media (-moz-bool-pref: "zenwashi.diagnostics.glass") {
-  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
-    background-image: repeating-linear-gradient(
-      45deg,
-      #ff00ff 0 12px,
-      #00ffff 12px 24px
-    ) !important;
-  }
-
-  :root:not([zen-compact-mode="true"]) #zen-browser-background::before,
-  :root:not([zen-compact-mode="true"]) #zen-browser-background::after {
-    background: #00ff00 !important;
   }
 }
