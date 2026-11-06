@@ -2530,67 +2530,83 @@ browser {
   }
 }
 
-/* 系统开了"降低透明度"就整块不生效，避免把 UI 变成一片糊 */
-@media not (prefers-reduced-transparency: reduce) {
-  /*
-   * 真正的拦路虎：第 4 节把 :root / #main-window / #browser 这三个「窗口画布」本身
-   * 涂成了实心纸色，连同 .zen-browser-generic-background 元素自己的底色。
-   * 它们在最底层，只要不透明，上面再怎么调 alpha 都是「纸盖纸」——
-   * 现象就是开关怎么切都一模一样。必须先把这一层让空，桌面才有机会透上来。
-   * off 档时上层伪元素仍是 100% 纸色（inset:0 全覆盖），所以观感与改之前一致。
-   */
-  :root:not([zen-compact-mode="true"]),
-  :root:not([zen-compact-mode="true"]) #main-window,
-  :root:not([zen-compact-mode="true"]) #browser,
-  :root:not([zen-compact-mode="true"]) .zen-browser-generic-background {
-    background-color: transparent !important;
-  }
+/* 应用层
+   -----------------------------------------------------------------------------
+   注意：这里**不写** `@media not (prefers-reduced-transparency: reduce)`。
+   Gecko 对「not + 条件」这种 MQ4 写法在部分版本里会整条丢弃，一旦被丢弃，
+   下面所有规则都会静默失效，现象就是"开关怎么切都没区别"——上一版就是这么翻的车。
+   改成：规则无条件生效，系统开了"降低透明度"时只把两档 alpha 拉回 100%，
+   视觉上等于退回实心纸（因为纸层仍是 inset:0 全覆盖）。 */
 
-  :root:not([zen-compact-mode="true"]) #zen-browser-background::before,
-  :root:not([zen-compact-mode="true"]) #zen-browser-background::after {
-    background:
-      linear-gradient(
-        var(--blended-addressbar-window-tint-background, transparent),
-        var(--blended-addressbar-window-tint-background, transparent)
-      ),
-      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-window), transparent) !important;
-  }
-
-  /* 工具层让位：只留整窗纸层一层纸，避免 60% 叠 60% 变成 84% */
-  :root:not([zen-compact-mode="true"]) #zen-toolbar-background::before,
-  :root:not([zen-compact-mode="true"]) #zen-toolbar-background::after {
-    background: transparent !important;
-  }
-
-  /* 侧栏各层原本都钉着实心纸色，玻璃模式下先全部让开 */
-  :root:not([zen-compact-mode="true"]) #navigator-toolbox,
-  :root:not([zen-compact-mode="true"]) #sidebar-box,
-  :root:not([zen-compact-mode="true"]) #TabsToolbar,
-  :root:not([zen-compact-mode="true"]) #TabsToolbar-customization-target,
-  :root:not([zen-compact-mode="true"]) #vertical-pinned-tabs-container,
-  :root:not([zen-compact-mode="true"]) #pinned-tabs-container,
-  :root:not([zen-compact-mode="true"]) #tabbrowser-tabs,
-  :root:not([zen-compact-mode="true"]) #zen-sidebar-bottom-buttons,
-  :root:not([zen-compact-mode="true"]) #zen-sidebar-icons-wrapper,
-  :root:not([zen-compact-mode="true"]) #zen-workspaces-button,
-  :root:not([zen-compact-mode="true"]) #zen-workspaces-button-wrapper,
-  :root:not([zen-compact-mode="true"]) .zen-workspaces-button {
-    background-color: transparent !important;
-    background-image: none !important;
-  }
-
-  /* 再由侧栏列自己铺一层：frosted 档是 0% → 透出整窗纸；clear 档是 52% → 独立玻璃纸 */
-  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
-    background-color: color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-sidebar), transparent) !important;
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --zenwashi-glass-window: 100% !important;
+    --zenwashi-glass-sidebar: 100% !important;
   }
 }
 
-/* clear 档的侧栏是一张独立玻璃纸，边缘需要一条发丝线把它和案台分开；
+/*
+ * 第一步：让最底层的"窗口画布"让空。
+ * 第 4 节把 :root / #main-window / #browser 以及 .zen-browser-generic-background
+ * 元素自身都涂成了实心纸色；它们在最底层，不透明就永远是"纸盖纸"。
+ * off 档时上层伪元素仍是 100% 纸色（inset:0 全覆盖），观感与改之前一致。
+ */
+:root:not([zen-compact-mode="true"]),
+:root:not([zen-compact-mode="true"]) #main-window,
+:root:not([zen-compact-mode="true"]) #browser,
+:root:not([zen-compact-mode="true"]) .zen-browser-generic-background {
+  background-color: transparent !important;
+}
+
+/* 第二步：整窗纸层只留这一层，alpha 来自档位 */
+:root:not([zen-compact-mode="true"]) #zen-browser-background::before,
+:root:not([zen-compact-mode="true"]) #zen-browser-background::after {
+  background:
+    linear-gradient(
+      var(--blended-addressbar-window-tint-background, transparent),
+      var(--blended-addressbar-window-tint-background, transparent)
+    ),
+    color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-window), transparent) !important;
+}
+
+/* 第三步：工具背景层让位，否则 60% 叠 60% 会变成 84%，颜色发死 */
+:root:not([zen-compact-mode="true"]) #zen-toolbar-background::before,
+:root:not([zen-compact-mode="true"]) #zen-toolbar-background::after {
+  background: transparent !important;
+}
+
+/* 第四步：侧栏各层原本钉着实心纸色，先全部让开，再由 #navigator-toolbox 单独铺一层 */
+:root:not([zen-compact-mode="true"]) #navigator-toolbox,
+:root:not([zen-compact-mode="true"]) #sidebar-box,
+:root:not([zen-compact-mode="true"]) #TabsToolbar,
+:root:not([zen-compact-mode="true"]) #TabsToolbar-customization-target,
+:root:not([zen-compact-mode="true"]) #vertical-pinned-tabs-container,
+:root:not([zen-compact-mode="true"]) #pinned-tabs-container,
+:root:not([zen-compact-mode="true"]) #tabbrowser-tabs,
+:root:not([zen-compact-mode="true"]) #zen-sidebar-bottom-buttons,
+:root:not([zen-compact-mode="true"]) #zen-sidebar-icons-wrapper,
+:root:not([zen-compact-mode="true"]) #zen-workspaces-button,
+:root:not([zen-compact-mode="true"]) #zen-workspaces-button-wrapper,
+:root:not([zen-compact-mode="true"]) .zen-workspaces-button {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* frosted 档是 0% → 透出整窗纸；clear 档是 52% → 独立玻璃纸 */
+:root:not([zen-compact-mode="true"]) #navigator-toolbox {
+  background-color: color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-sidebar), transparent) !important;
+}
+
+/* clear 档的侧栏是一张独立玻璃纸，需要一条发丝线把边缘带出来；
    frosted 档整窗同一张纸，不能有线。 */
 @media (-moz-pref("zenwashi.glass", "clear")) {
-  @media not (prefers-reduced-transparency: reduce) {
-    :root:not([zen-compact-mode="true"]) #navigator-toolbox {
-      box-shadow: inset -1px 0 0 color-mix(in srgb, var(--zenwashi-fg-primary) 10%, transparent) !important;
-    }
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    box-shadow: inset -1px 0 0 color-mix(in srgb, var(--zenwashi-fg-primary) 10%, transparent) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) and (prefers-reduced-transparency: reduce) {
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    box-shadow: none !important;
   }
 }
