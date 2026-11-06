@@ -258,6 +258,34 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
 
 ---
 
+#### 5.12 玻璃质感为什么不能靠 `backdrop-filter`，只能靠 alpha + 系统 vibrancy
+
+- **想做的**：侧栏 / 案台像磨砂玻璃，透出背后的东西。
+- **做不到的那一半**：`backdrop-filter` 采样的是**同一个 chrome 文档的背板**，采样不到网页。
+  网页跑在独立 content 进程、独立合成器层树里（和 §5.10 地址栏玻璃是同一个限制）；
+  而且 Zen 的侧栏是一列独立容器，本来也不压在网页上面。
+  → 所以"侧栏糊掉背后的网页"这条路在 Gecko 里没有解，别浪费时间试 `backdrop-filter`。
+- **能做到的那一半**：macOS 的窗口本身就是一块 `NSVisualEffectView`（Zen 原生
+  `zen.widget.macos.window-vibrancy`，默认开），桌面壁纸**已经被系统糊过**。
+  只要把 chrome 的纸层调成半透明，糊过的桌面就会从纸底下渗上来 —— 这才是真玻璃。
+  `backdrop-filter` 在这里反而没有意义：侧栏的背板是那层纯色纸，糊纯色 = 什么都没发生，
+  却白付一个合成层的代价。
+- **实现要点**（`userChrome.css §16`）：
+  - 纸色只留**一层**：`#zen-toolbar-background` 的 `::before/::after` 让成透明，
+    只让 `#zen-browser-background` 承担 alpha，否则 60% 叠 60% 会变成 84%，颜色发死；
+  - 侧栏各层（`#TabsToolbar` / `#tabbrowser-tabs` / …）原本都钉着实心纸色，
+    玻璃模式下必须先全部让开，再由 `#navigator-toolbox` 单独铺一张；
+  - 整块包在 `@media not (prefers-reduced-transparency: reduce)` 里，
+    系统开"降低透明度"时自动退回实心纸；
+  - 用 `:not([zen-compact-mode="true"])` 排除紧凑模式：那里的悬浮面板有自己的
+    `.zen-toolbar-background`、圆角和阴影（§15），混进来会把原生观感打穿。
+- **档位语义**：alpha 都是"纸色占多少"，100% = 和改之前逐像素一致，
+  所以 `off` 档即使整块规则命中也不会有任何变化（这是刻意的安全兜底）。
+- **非 macOS**：没有 vibrancy 时半透明透出的是窗口自身底色，观感退化成"更薄的纸"，
+  不会出错，但也谈不上磨砂。
+
+---
+
 ## 3. 日常维护与调试检查清单 (Checklist)
 
 修改 CSS 或追加新功能后，请按以下步骤逐项核验：

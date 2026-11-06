@@ -232,6 +232,31 @@
   },
   {
     "type": "separator",
+    "label": "Glass 磨砂玻璃（透出 macOS 桌面）",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.glass",
+    "label": "Glass 玻璃质感 (靠 macOS 窗口 vibrancy 透出桌面；系统开“降低透明度”时自动失效)",
+    "defaultValue": "off",
+    "options": [
+      {
+        "value": "off",
+        "label": "Off 实心和纸 (默认)"
+      },
+      {
+        "value": "frosted",
+        "label": "Frosted 整窗磨砂 (侧栏与案台同一张半透明和纸，最克制)"
+      },
+      {
+        "value": "clear",
+        "label": "Clear 玻璃侧栏 (案台透出桌面，侧栏是一张浮在壁纸上的玻璃纸)"
+      }
+    ]
+  },
+  {
+    "type": "separator",
     "label": "Blended Addressbar 融合式一体顶栏",
     "margin": "14px 0 10px 0"
   },

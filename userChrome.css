@@ -2482,3 +2482,101 @@ browser {
 :root[zen-compact-mode="true"]:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
   margin: var(--zenwashi-compact-content-margin, 8px) !important;
 }
+
+/* -----------------------------------------------------------------------------
+   16. Glass 磨砂玻璃（zenwashi.glass）
+   -----------------------------------------------------------------------------
+   先把边界讲清楚（和第 12.2 节地址栏玻璃是同一个物理限制）：
+
+   · **做不到**：让侧栏"糊掉它背后的网页"。网页在独立的 content 进程 / 合成器层树里，
+     chrome 的 backdrop-filter 采样不到它；而且侧栏本来也不压在网页上面。
+   · **能做到**：把窗口纸层和侧栏**放成半透明**，让 macOS 的窗口 vibrancy
+     （系统级 NSVisualEffectView，Zen 原生 zen.widget.macos.window-vibrancy 默认开）
+     从纸底下透上来 —— 桌面壁纸已经被系统糊过，这才是"真玻璃"。
+   · 所以这里**不用 backdrop-filter**：侧栏的 backdrop 是窗口纸层，糊一层纯色没有意义，
+     白付一个合成层的代价。真正起作用的是 alpha。
+
+   图层顺序（自下而上）：
+     #zen-browser-background  ← 整窗纸层，玻璃模式下这里是唯一的纸色来源
+     #zen-toolbar-background  ← 整窗工具层，玻璃模式下让位（否则会叠两层纸，颜色发死）
+     #navigator-toolbox       ← 侧栏列，clear 档在这里单独铺一张玻璃纸
+     #zen-appcontent-wrapper  ← 画卷卡片，保持不透明
+
+   档位：
+     off      两档 alpha 都是 100% = 和改之前逐像素一致
+     frosted  整窗 60% 和纸：侧栏与案台是同一张磨砂纸（最克制，推荐先试这个）
+     clear    整窗 0% + 侧栏 52% 玻璃纸：案台直接透出桌面，侧栏是一张浮在壁纸上的玻璃
+
+   紧凑模式的悬浮面板有自己的 .zen-toolbar-background 与圆角阴影（第 15 节），
+   整个块用 :not([zen-compact-mode="true"]) 排除，不碰。
+   ----------------------------------------------------------------------------- */
+
+:root {
+  --zenwashi-glass-window: 100%;
+  --zenwashi-glass-sidebar: 100%;
+}
+
+@media (-moz-pref("zenwashi.glass", "frosted")) {
+  :root {
+    --zenwashi-glass-window: 60%;
+    --zenwashi-glass-sidebar: 0%;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root {
+    --zenwashi-glass-window: 0%;
+    --zenwashi-glass-sidebar: 52%;
+  }
+}
+
+/* 系统开了"降低透明度"就整块不生效，避免把 UI 变成一片糊 */
+@media not (prefers-reduced-transparency: reduce) {
+  :root:not([zen-compact-mode="true"]) #zen-browser-background::before,
+  :root:not([zen-compact-mode="true"]) #zen-browser-background::after {
+    background:
+      linear-gradient(
+        var(--blended-addressbar-window-tint-background, transparent),
+        var(--blended-addressbar-window-tint-background, transparent)
+      ),
+      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-window), transparent) !important;
+  }
+
+  /* 工具层让位：只留整窗纸层一层纸，避免 60% 叠 60% 变成 84% */
+  :root:not([zen-compact-mode="true"]) #zen-toolbar-background::before,
+  :root:not([zen-compact-mode="true"]) #zen-toolbar-background::after {
+    background: transparent !important;
+  }
+
+  /* 侧栏各层原本都钉着实心纸色，玻璃模式下先全部让开 */
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox,
+  :root:not([zen-compact-mode="true"]) #sidebar-box,
+  :root:not([zen-compact-mode="true"]) #TabsToolbar,
+  :root:not([zen-compact-mode="true"]) #TabsToolbar-customization-target,
+  :root:not([zen-compact-mode="true"]) #vertical-pinned-tabs-container,
+  :root:not([zen-compact-mode="true"]) #pinned-tabs-container,
+  :root:not([zen-compact-mode="true"]) #tabbrowser-tabs,
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-bottom-buttons,
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-icons-wrapper,
+  :root:not([zen-compact-mode="true"]) #zen-workspaces-button,
+  :root:not([zen-compact-mode="true"]) #zen-workspaces-button-wrapper,
+  :root:not([zen-compact-mode="true"]) .zen-workspaces-button {
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  /* 再由侧栏列自己铺一层：frosted 档是 0% → 透出整窗纸；clear 档是 52% → 独立玻璃纸 */
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    background-color: color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-sidebar), transparent) !important;
+  }
+}
+
+/* clear 档的侧栏是一张独立玻璃纸，边缘需要一条发丝线把它和案台分开；
+   frosted 档整窗同一张纸，不能有线。 */
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  @media not (prefers-reduced-transparency: reduce) {
+    :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+      box-shadow: inset -1px 0 0 color-mix(in srgb, var(--zenwashi-fg-primary) 10%, transparent) !important;
+    }
+  }
+}
