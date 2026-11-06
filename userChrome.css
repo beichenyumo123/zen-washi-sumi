@@ -2611,6 +2611,32 @@ browser {
   }
 }
 
+
+/* 档位探针（临时）：直接证明 `-moz-pref(..., "<档位>")` 到底有没有命中。
+   侧栏出现 4px 洋红描边 = frosted 命中；4px 亮绿 = clear 命中；都没有 = 档位没命中。 */
+@media (-moz-pref("zenwashi.glass", "frosted")) {
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    outline: 4px solid #ff00ff !important;
+    outline-offset: -4px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    outline: 4px solid #00ff00 !important;
+    outline-offset: -4px !important;
+  }
+}
+
+/* 探针二：系统"降低透明度"到底有没有被判成 reduce。侧栏内圈出现 4px 橙色 = 判成了 reduce
+   （那说明 alpha 会被强制拉回 100%，这正是"开了也像没开"的另一种可能）。 */
+@media (prefers-reduced-transparency: reduce) {
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    outline: 4px solid #ff8800 !important;
+    outline-offset: -9px !important;
+  }
+}
+
 /* -----------------------------------------------------------------------------
    16.1 玻璃诊断（zenwashi.diagnostics.glass）
    -----------------------------------------------------------------------------
@@ -2619,7 +2645,7 @@ browser {
      · 什么都看不到   → §16 根本没被应用（选择器/媒体查询/层叠），继续往上查
    纯诊断用，平时保持关闭。
    ----------------------------------------------------------------------------- */
-@media -moz-bool-pref: "zenwashi.diagnostics.glass" {
+@media (-moz-bool-pref: "zenwashi.diagnostics.glass") {
   :root:not([zen-compact-mode="true"]) #navigator-toolbox {
     background-image: repeating-linear-gradient(
       45deg,
