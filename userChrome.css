@@ -2648,6 +2648,38 @@ browser {
   }
 }
 
+/*
+ * 灰带收尾：那条带子不是我们画的，是 macOS **原生标题栏**的 vibrancy 材质和内容区
+ * 不是同一块（窗口标题栏区域由系统单独模糊，颜色更深），所以只要玻璃是半透明的，
+ * 这条交界就必然露出来。探针实测：缝的位置 == #zen-sidebar-top-buttons 的下沿
+ * == --zen-toolbar-height，正好是系统标题栏高度。
+ *
+ * CSS 改不动系统那层材质，能做的只有"盖"：在标题栏那一条上铺一层纸色渐变，
+ * 顶到 92% 纸、到底淡出到 0，淡出的终点正好是那条缝 —— 硬边就变成一层柔和的顶部渐隐。
+ * 嫌盖得太实的，把 --zenwashi-glass-cap 调小（0% = 完全不管，回到有缝的状态）。
+ */
+@media (-moz-pref("zenwashi.glass", "frosted")) {
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-top-buttons {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-cap, 92%), transparent) 0%,
+      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-cap, 92%), transparent) 45%,
+      transparent 100%
+    ) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-top-buttons {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-cap, 92%), transparent) 0%,
+      color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-cap, 92%), transparent) 45%,
+      transparent 100%
+    ) !important;
+  }
+}
+
 /* -----------------------------------------------------------------------------
    16.2 灰带定位探针（zenwashi.diagnostics.glass）
    -----------------------------------------------------------------------------
