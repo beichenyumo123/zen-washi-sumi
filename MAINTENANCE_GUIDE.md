@@ -209,6 +209,18 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
 - **不能过渡的地方**：窗口色调 `--blended-addressbar-window-tint-background` 被塞进 `#zen-browser-background::before/::after` 的 `linear-gradient(...)` 里，渐变图像不可插值——改这个变量不会渐变。若以后要做色调过渡，必须换成"纯色层 + opacity"结构，不能靠 `transition: background`。
 - **为什么默认值不是 0 也不是 240ms**：0ms 是"取色精确"的原教旨；240ms 在切标签时会明显滞后于已经渲染好的网页。160ms 是折中：能看清是渐变，又不会觉得顶栏还在"追"上一页的颜色。想回到原样就把 Sine 里的 "Smooth color transition" 关掉。
 
+#### 5.9.1 取色防抖：视频/动图为什么不能靠"检测视频"，只能靠"连续 N 次一致"
+
+- **现象**：`Live sampling` 选 Relaxed（每 2s 抓一帧）后，播视频 / 逛动图多的站点时顶栏会**持续变色**，严重破坏沉浸感；但直接关掉采样又丢了"随页面滚动变色"的能力。
+- **为什么不做"视频检测"**：Gecko 的 `browser.videoPlaybackActive` 在 Zen 这个构建里拿不到（字符串都不在二进制里），`audioPlaybackActive` 只能覆盖带声音的视频；靠检测 `<video>` 又需要跨进程访问页面 DOM。**别往这个方向做。**
+- **实际判据（`blended-bar.uc.js` 的 `shouldDeferContinuousTheme()`）**：
+  1. 只作用于**连续采样**这条路径（`persistent-frame` / `sampler` / `sampler-fallback`）；导航、切标签、加载完成这些**事件型更新照旧立即生效**，保证"该变的时候立刻变"；
+  2. **死区**：和当前已上色的颜色差 ≤ `threshold`（逐通道取最大值）→ 直接丢掉；
+  3. **连续确认**：新颜色要连续 `confirmations` 次采样都落在同一个颜色附近（±`threshold`）才上色。视频那种逐帧跳变永远攒不满 → **自动冻结**；真换页/滚到深色区块时采样值稳定 → 攒满后正常跟上。
+- **档位**（`zenwashi.urlbar.color-stability`）：`off` / `subtle`(3,2) / `balanced`(8,2，默认) / `strong`(14,3)。
+- **代价**：2s 采样 + balanced 时，一次真实变色最多滞后 ~4s；`eager`(0.5s) 下是 ~1s。想更跟手就选 `subtle`。
+- **坑**：判据依赖 `lastAppliedTheme` 作为"当前已上色"的基准；如果哪天把 `applyThemeCandidateNow` 里的 `lastAppliedTheme = theme` 去掉，死区会失效（永远拿不到基准，等于退回 off）。
+
 #### 5.10 磨砂玻璃输入框为什么不是真的 `backdrop-filter`（以及 Safari 观感怎么来）
 - **硬约束**：Firefox/Zen 的 chrome 文档里，`backdrop-filter` 只能看到**同一棵 chrome 层树**里在它背后的内容。网页跑在独立的异步合成层（out-of-process），chrome 的 backdrop 根本拿不到那些像素——所以「给输入框加 `backdrop-filter: blur()` 把背后的网页糊掉」在闭合态**永远不会生效**，写了也只是白白多一层合成。
   - 真正能糊网页的只有把 `filter: blur()` 直接打在 `<browser>` 上（本主题 §12.3/12.4 的「宣纸微敛 / 画卷退景」就是这么做的，配合 `#urlbar[open]`），代价是**整页**糊，做不出一块局部玻璃。
@@ -559,10 +571,71 @@ CSS 读不到任意数值的 pref，所以圆角用**离散档位 + 等值媒体
 - **不要**照搬 Arc 的 `#mainContainer::before { z-index: -10000 }` 底衬：那是给它半透明玻璃背景垫底的，我们的工具栏不透明，不需要。
 - Arc 的工具栏是 `backdrop-filter: blur()` 玻璃，这里刻意不用。
 
+### 7.6.1 自动隐藏工具栏（纯 CSS 的极限）
+
+`zenwashi.pdf.auto-hide-toolbar` 把工具栏收成顶部一条 8px 的隐形停靠区，指针进入才展开。
+
+```css
+#toolbarContainer { height: 8px; background: transparent; transition: height .22s; }
+#toolbarContainer > #toolbarViewer {
+  height: calc(var(--toolbar-height) - 6px);
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+#toolbarContainer:is(:hover, :focus-within) { height: var(--toolbar-height); background: …; }
+#toolbarContainer:is(:hover, :focus-within) > #toolbarViewer { transform: none; pointer-events: auto; }
+```
+
+四个要点：
+
+- **不是"滚动后收起"**：那需要监听 scroll，而阅读器里没有可用 JS（§7.9），CSS 只能做 hover / focus 触发；
+- `#toolbarViewer` 的高度要写死成 `calc(var(--toolbar-height) - 6px)`（＝ 34 − 2×2 padding − 2 border）。否则容器缩到 8px 时，`height: 100%` 的按钮组会被一起压扁；
+- 收起时给 `pointer-events: none`，否则那条不可见的 28px 工具条会拦住页面点击；
+- `:focus-within` 与 `:hover` 并列，键盘操作时不会因为指针移开而消失。
+
+**收起延迟**：指针离开后不是立刻收，而是先保持 0.5s。实现方式是在"默认态"的 `transition` 里写死 delay、再在 `:hover` 态把 `transition-delay` 归零——这样展开和收起可以是两个不同的时序：
+
+```css
+#toolbarContainer { transition: height .22s ease .5s, background-color .22s ease .5s, …; }
+#toolbarContainer:is(:hover, :focus-within) { transition-delay: 0s; }
+```
+
+要点：**所有会变的外观属性都要带上同样的 delay**（height / background-color / border-color / box-shadow）。只给 height 加 delay 的话，背景会先变透明而高度还在，出现"半透明残影"。
+
+**大纲面板跟随**：面板 `#viewsManager` 是工具栏的后代，指针停在面板上时 `#toolbarContainer` 依然处于 `:hover`，所以展开状态不会被误判。收起时让它同步隐藏：
+
+```css
+#toolbarContainer:not(:hover):not(:focus-within) #viewsManager {
+  opacity: 0 !important;
+  transform: translateY(-6px) !important;
+  pointer-events: none !important;
+  transition-delay: .5s !important;
+}
+```
+
+`!important` 是必须的——面板的可见性由 `#outerContainer.viewsManagerOpen #viewsManager` 那条规则控制，不加重要声明压不过它。这样面板和工具栏同进同退，指针回到顶部时一起回来（`viewsManagerOpen` 状态没变，只是被临时隐藏）。
+
+局限：收起状态下顶部仍有 8px 的停靠区会接管点击（宽度是工具栏宽度）；且只在悬浮工具栏模式（`zenwashi.pdf.floating-toolbar`）下有意义。
+
 ### 7.7 入场与侧栏动画
 
 - 工具栏：`@keyframes zenwashi-pdf-toolbar-in`，`translate(-50%, -6px)` → `translate(-50%, 0)` + 淡入，0.28s `cubic-bezier(0.22, 1, 0.36, 1)`。
-- 侧栏面板：**靠 `hidden` 属性（`[hidden] { display: none !important }`）显隐**，所以普通 transition 跑不起来，进入动画必须写 `@starting-style`；关闭仍是瞬时的（要动画退出得 `transition-behavior: allow-discrete`，收益不大）。
+- 侧栏面板：**靠 `hidden` 属性（`[hidden] { display: none !important }`）显隐**，所以普通 transition 跑不起来。进入动画用 `@starting-style` 给初值；退出动画靠 `transition-behavior: allow-discrete`：
+
+```css
+#viewsManager {
+  opacity: 1;
+  transition: opacity .18s ease, transform .18s ease, display .18s;
+  transition-behavior: allow-discrete;      /* display 的变化延后到过渡结束 */
+}
+#viewsManager[hidden] {                     /* 关闭态的"目标值"，没有它就没有可过渡的目标 */
+  opacity: 0;
+  transform: translateY(-4px);
+}
+@starting-style { #viewsManager { opacity: 0; transform: translateY(-4px); } }
+```
+
+两个关键点：① 只写 `allow-discrete` 不够，必须给 `[hidden]` 一个明确的淡出目标值，否则 opacity 一直是 1，没有过渡；② `allow-discrete` 需要 Firefox 129+，不支持时自动退化成瞬时关闭，不会坏。
 - 侧栏打开时 **不要**让 `#viewerContainer` 改变 `inset-inline-start`：pdf.js 原本会按面板宽度推开内容，整页横向"划"一下，和工具栏的纵向落定完全不搭。本模块把它钉死在 0，面板改成浮在纸页上的门帘。
 - 面板的 `max-height` 也不能沿用 pdf.js 的 `--viewer-container-height` 算法（我们清掉了 viewerContainer 的 inset），否则底部会顶到窗口下沿、圆角被切；改成按 `100vh` 预留 16px。
 - 两者都在 `prefers-reduced-motion: reduce` 下关闭。

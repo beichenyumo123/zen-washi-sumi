@@ -319,6 +319,30 @@
   },
   {
     "type": "dropdown",
+    "property": "zenwashi.urlbar.color-stability",
+    "label": "Color stability 取色防抖（视频/动图/滚动时不再一直变色；事件型更新不受影响）",
+    "defaultValue": "balanced",
+    "options": [
+      {
+        "value": "off",
+        "label": "Off 关（每次采样都直接上色，最跟手但视频会闪）"
+      },
+      {
+        "value": "subtle",
+        "label": "Subtle 轻度（死区 3，连续 2 次一致才换）"
+      },
+      {
+        "value": "balanced",
+        "label": "Balanced 均衡（死区 8，连续 2 次一致才换，推荐）"
+      },
+      {
+        "value": "strong",
+        "label": "Strong 强（死区 14，连续 3 次一致才换，视频几乎不动）"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
     "property": "uc.loadbar.mode",
     "label": "Loading indicator 顶栏加载流光样式",
     "defaultValue": "glow",
@@ -721,6 +745,12 @@
     "property": "zenwashi.pdf.floating-toolbar",
     "label": "Floating toolbar 悬浮胶囊工具栏（纸页顶到窗口边，工具栏浮在其上）",
     "defaultValue": true
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.pdf.auto-hide-toolbar",
+    "label": "Auto-hide toolbar 自动隐藏 PDF 工具栏（收起为顶部 8px 停靠区，指针移上去才展开）",
+    "defaultValue": false
   },
   {
     "type": "dropdown",

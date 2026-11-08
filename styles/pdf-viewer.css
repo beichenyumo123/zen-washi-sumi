@@ -461,6 +461,82 @@
     :root:has(link[href^="resource://pdf.js"]) #toolbarContainer #loadingBar {
       top: 100% !important;
     }
+
+    /* -----------------------------------------------------------------------
+       5.1 自动隐藏 (zenwashi.pdf.auto-hide-toolbar)
+           阅读器里没有任何可用的 JS 通道（见指南 §7.9），所以只能用纯 CSS：
+           把工具栏收成顶部一条 8px 的隐形停靠区，指针进入才展开。
+           不是"滚动后自动收起"——那需要监听 scroll，CSS 做不到。
+       ----------------------------------------------------------------------- */
+    @media (-moz-pref("zenwashi.pdf.auto-hide-toolbar")) {
+      /* 收起方向的延迟：指针离开后先保持 0.5s 再收，展开方向没有延迟。
+         实现方式是给"默认态"的 transition 加 delay，再在 hover 态里把
+         transition-delay 归零 —— 这样两个方向可以有不同的时序。
+         所有会变的外观属性都要带上同样的 delay，否则背景会先变透明、
+         高度还留着，出现"半透明残影"。 */
+      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer {
+        height: 8px !important;
+        background-color: transparent !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        transition:
+          height 0.22s ease 0.5s,
+          background-color 0.22s ease 0.5s,
+          border-color 0.22s ease 0.5s,
+          box-shadow 0.22s ease 0.5s;
+      }
+
+      /* 收起时把工具条整体上移出可视区。
+         高度写死成 calc(--toolbar-height - 6px)：容器展开时的内容高度是
+         34 - 2×2(padding) - 2(border) = 28px，写死才能避免收起瞬间被压扁。 */
+      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer > #toolbarViewer {
+        height: calc(var(--toolbar-height) - 6px) !important;
+        transform: translateY(-100%);
+        pointer-events: none;
+        transition: transform 0.22s ease 0.5s;
+      }
+
+      /* :focus-within 一起算：键盘操作时工具栏不会因为鼠标移开而消失 */
+      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:is(:hover, :focus-within) {
+        height: var(--toolbar-height) !important;
+        background-color: var(--zenwashi-pdf-chrome) !important;
+        border-color: var(--zenwashi-pdf-line) !important;
+        box-shadow: var(--zenwashi-pdf-page-shadow) !important;
+        transition-delay: 0s;
+      }
+
+      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:is(:hover, :focus-within)
+        > #toolbarViewer {
+        transform: none;
+        pointer-events: auto;
+        transition-delay: 0s;
+      }
+
+      /* 大纲面板跟着工具栏一起进退：面板是工具栏的后代，指针停在面板上时
+         #toolbarContainer 仍然处于 :hover，所以展开状态不会被误判。
+         收起时用与工具栏相同的 0.5s 延迟，两者同步消失、同步回来。 */
+      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:not(:hover):not(:focus-within) #viewsManager {
+        opacity: 0 !important;
+        transform: translateY(-6px) !important;
+        pointer-events: none !important;
+        transition-delay: 0.5s !important;
+      }
+
+      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:is(:hover, :focus-within) #viewsManager {
+        transition-delay: 0s !important;
+      }
+
+      /* 进度条跟着一起藏，否则会孤零零地浮在 8px 停靠区下面 */
+      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer #loadingBar {
+        opacity: 0;
+        transition: opacity 0.15s ease 0.5s;
+      }
+
+      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:is(:hover, :focus-within) #loadingBar {
+        opacity: 1;
+        transition-delay: 0s;
+      }
+    }
   }
 
   /* 工具栏入场：从上方 6px 落定 + 淡入 */
@@ -487,8 +563,11 @@
           ③ 高度兜住 —— pdf.js 的 max-height 按 --viewer-container-height 算，
              而我们清掉了 viewerContainer 的 inset，面板底部会正好顶到窗口下沿，
              圆角被切；改用视口高度并预留 16px。
-          ④ 面板靠 [hidden]（display: none）切换，普通 transition 跑不起来，
-             进入动画要用 @starting-style。
+          ④ 面板靠 [hidden]（display: none !important）切换，所以：
+             · 进入动画用 @starting-style 给初值；
+             · 退出动画靠 transition-behavior: allow-discrete —— 它能让 display
+               的变化延后到过渡结束，于是"淡出 → 再 display:none"能成立
+               （Firefox 129+；不支持时退化为瞬时关闭，不会坏）。
      --------------------------------------------------------------------------- */
   :root:has(link[href^="resource://pdf.js"]) #outerContainer.viewsManagerOpen #viewerContainer:not(.pdfPresentationMode) {
     inset-inline-start: 0 !important;
@@ -503,7 +582,17 @@
     transform: none;
     transition:
       opacity 0.18s ease,
-      transform 0.18s ease;
+      transform 0.18s ease,
+      display 0.18s;
+    /* 让 display 也参与过渡：关闭时先跑完淡出，再真正切成 none */
+    transition-behavior: allow-discrete;
+  }
+
+  /* 关闭态的"起点值"：不写这条的话，[hidden] 生效瞬间 opacity 仍是 1，
+     没有可过渡的目标值，退出动画就不会发生。 */
+  :root:has(link[href^="resource://pdf.js"]) #viewsManager[hidden] {
+    opacity: 0;
+    transform: translateY(-4px);
   }
 
   @starting-style {

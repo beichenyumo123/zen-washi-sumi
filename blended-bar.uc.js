@@ -39,6 +39,29 @@
     relaxed: 2000,
     eager: 500
   });
+  /*
+   * 取色防抖（zenwashi.urlbar.color-stability）
+   * ---------------------------------------------------------------------------
+   * 采样是"隔一段时间抓一帧、算个主色"，视频/动图/滚动这类连续变化的页面
+   * 每次抓到的颜色都不一样，于是顶栏会一直换色。这里不做"视频检测"（Gecko 的
+   * videoPlaybackActive 属性在 Zen 里不可靠），而是用一个更普适的判据：
+   *   连续 N 次采样都落在同一个颜色附近，才认为"页面真的变成这个色了"。
+   * 视频那种逐帧跳变永远攒不满 N 次，于是自动冻结；真换页/换主题时采样值稳定，
+   * 攒满 N 次后正常跟上——正好满足"既防抖、又保留随网页变化"。
+   * 另外还有一条死区：和目标色差距小于 threshold 的采样直接丢掉，避免小幅抖动。
+   */
+  const colorStabilityPref = 'zenwashi.urlbar.color-stability';
+  const colorStabilityProfiles = Object.freeze({
+    off: { threshold: 0, confirmations: 0 },
+    subtle: { threshold: 3, confirmations: 2 },
+    balanced: { threshold: 8, confirmations: 2 },
+    strong: { threshold: 14, confirmations: 3 }
+  });
+  const continuousThemeReasons = Object.freeze(new Set([
+    'persistent-frame',
+    'sampler',
+    'sampler-fallback'
+  ]));
   const pageThemeCacheMaxEntries = 500;
   const scheduleSafetyMs = 100;
   const loadbarPrefBranch = 'uc.loadbar.';
@@ -86,6 +109,7 @@
   let servicesModule = null;
   let lastThemeKey = null;
   let lastAppliedTheme = null;
+  let stableColorCandidate = null;
   let nativeZenThemeOriginals = null;
   const themeApplyState = {
     href: '',
@@ -1784,6 +1808,54 @@
     }, remaining);
   }
 
+  function readColorStabilityProfile() {
+    const raw = String(readStringPref(colorStabilityPref, 'balanced')).trim().toLowerCase();
+    return colorStabilityProfiles[raw] || colorStabilityProfiles.balanced;
+  }
+
+  function colorChannelDelta(a, b) {
+    if (!a || !b) return 255;
+    return Math.max(Math.abs(a.r - b.r), Math.abs(a.g - b.g), Math.abs(a.b - b.b));
+  }
+
+  /*
+   * 返回 true = 这次采样先别上色。
+   * 只对"连续采样"这条路径生效（persistent-frame / sampler / sampler-fallback）；
+   * 导航、切标签、加载完成这些事件型更新不受影响，保证该变的时候立刻变。
+   */
+  function shouldDeferContinuousTheme(theme, browser, reason) {
+    if (!continuousThemeReasons.has(reason)) return false;
+
+    const profile = readColorStabilityProfile();
+    if (!profile.threshold || !profile.confirmations) return false;
+
+    const rgb = parseCssRgb(theme?.bg);
+    if (!rgb) return false;
+
+    const href = getBrowserHref(browser);
+    if (stableColorCandidate && stableColorCandidate.href !== href) stableColorCandidate = null;
+
+    const appliedRgb = parseCssRgb(lastAppliedTheme?.bg);
+    if (appliedRgb && colorChannelDelta(appliedRgb, rgb) <= profile.threshold) {
+      // 和当前已经上色的颜色几乎一样：死区，直接丢掉
+      stableColorCandidate = null;
+      return true;
+    }
+
+    const sameCandidate = !!stableColorCandidate
+      && colorChannelDelta(stableColorCandidate.rgb, rgb) <= profile.threshold;
+    stableColorCandidate = sameCandidate
+      ? { count: stableColorCandidate.count + 1, href, rgb }
+      : { count: 1, href, rgb };
+
+    if (stableColorCandidate.count >= profile.confirmations) {
+      stableColorCandidate = null;
+      return false;
+    }
+
+    return true;
+  }
+
   function applyResolvedTheme(browser, theme, reason, expectedHref = null, options = {}) {
     if (!theme?.bg || !browser || browser !== gBrowser?.selectedBrowser) return false;
     if (expectedHref && getBrowserHref(browser) !== expectedHref) return false;
@@ -1796,6 +1868,8 @@
 
     const href = getBrowserHref(browser);
     ensureThemeArbitrationHref(href);
+
+    if (shouldDeferContinuousTheme(visibleTheme, browser, reason)) return false;
 
     const resolveContext = createResolveContext(browser, options);
     const decision = shouldApplyThemeCandidate(visibleTheme, resolveContext);
