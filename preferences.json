@@ -814,5 +814,123 @@
     "property": "zenwashi.icons.enabled",
     "label": "New Icons 使用 New Icons 图标集（工具栏 / 地址栏 / 面板 / 右键菜单；关闭则用 Zen 原生图标）",
     "defaultValue": true
+  },
+  {
+    "type": "separator",
+    "label": "Typography 界面字体",
+    "margin": "14px 0 10px 0"
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.font.family",
+    "label": "UI font 界面字体（只改浏览器界面，不动网页内容；System Default 等于关闭）",
+    "defaultValue": "system",
+    "options": [
+      {
+        "value": "system",
+        "label": "System Default 系统默认"
+      },
+      {
+        "value": "inter",
+        "label": "Inter"
+      },
+      {
+        "value": "misans",
+        "label": "MiSans 小米兰亭（需已安装）"
+      },
+      {
+        "value": "lxgw",
+        "label": "LXGW WenKai 霞鹜文楷（需已安装）"
+      },
+      {
+        "value": "jetbrains",
+        "label": "JetBrains Mono"
+      },
+      {
+        "value": "fira",
+        "label": "Fira Code"
+      },
+      {
+        "value": "roboto",
+        "label": "Roboto"
+      },
+      {
+        "value": "poppins",
+        "label": "Poppins"
+      },
+      {
+        "value": "custom",
+        "label": "Custom… 自定义字体栈"
+      }
+    ]
+  },
+  {
+    "type": "string",
+    "property": "zenwashi.font.custom",
+    "label": "Custom font stack 自定义字体栈（字体族选 Custom… 时生效，末尾记得留中文回退）",
+    "defaultValue": "-apple-system, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+    "placeholder": "e.g. \"SF Pro Display\", \"PingFang SC\", sans-serif"
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.font.size.enabled",
+    "label": "Override UI font size 覆盖界面文字字号（标签 / 地址栏 / 菜单 / 面板）",
+    "defaultValue": false
+  },
+  {
+    "type": "string",
+    "property": "zenwashi.font.size",
+    "label": "UI font size 界面文字字号",
+    "defaultValue": "14px",
+    "placeholder": "14px"
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.font.sidebar-size.enabled",
+    "label": "Override sidebar font size 单独覆盖侧栏字号（标签 / 工作区指示器 / 侧栏面板）",
+    "defaultValue": false
+  },
+  {
+    "type": "string",
+    "property": "zenwashi.font.sidebar-size",
+    "label": "Sidebar font size 侧栏字号",
+    "defaultValue": "13px",
+    "placeholder": "13px"
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.font.weight.enabled",
+    "label": "Override UI font weight 覆盖界面字重（选中标签的加粗仍由 Zen 控制）",
+    "defaultValue": false
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.font.weight",
+    "processAs": "var",
+    "label": "UI font weight 界面字重",
+    "value": "number",
+    "defaultValue": 400,
+    "options": [
+      {
+        "value": 300,
+        "label": "Light (300)"
+      },
+      {
+        "value": 400,
+        "label": "Regular (400)"
+      },
+      {
+        "value": 500,
+        "label": "Medium (500)"
+      },
+      {
+        "value": 600,
+        "label": "Semi-bold (600)"
+      },
+      {
+        "value": 700,
+        "label": "Bold (700)"
+      }
+    ]
   }
 ]

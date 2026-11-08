@@ -344,6 +344,12 @@ $list
     Write-Step "正在同步到: $ModDir"
     Sync-ModTree -Source $SourcePath -Destination $ModDir
 
+    # 独立的「UI Font」Mod 与主题的 typography 层是同一套 font-family !important，
+    # 两个都开着会互相覆盖；这里只提示，不替用户删别人的 Mod。
+    if (Test-Path -LiteralPath (Join-Path $SineMods 'ui-font')) {
+        Write-Host '⚠ 检测到独立的 UI Font Mod（sine-mods\ui-font）：字体能力已并入本主题，请在 Sine 里关掉或删除它。'
+    }
+
     # 清理旧版安装脚本遗留的 fx-autoconfig 兜底副本（Sine 与它双通道会重复注入脚本）。
     $legacyJs = Join-Path (Split-Path -Parent $SineMods) 'JS\zen-washi-sumi-blended-bar.uc.js'
     if (Test-Path -LiteralPath $legacyJs) {

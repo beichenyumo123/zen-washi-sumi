@@ -13,6 +13,7 @@
   - `userChrome.css`：浏览器界面核心样式。
   - `preferences.json`：Sine Mods 动态配置项（强调色、视口圆角、边距、阴影档位等）。
   - `install.sh` / `install.ps1`：自动将主题注册并同步至 Zen Profile 的部署脚本（macOS/Linux / Windows，行为一致）。
+  - `styles/typography.css`：界面字体层（字体族 / 字号 / 侧栏字号 / 字重），设置项在 Sine → **Typography 界面字体**。
 
 ---
 
@@ -909,3 +910,66 @@ border-radius:
 
 排错心法：**先找"谁在铺色"，再找"谁在上面盖着"**。光看截图里那条浅色是判断不出来的——那层可能整窗铺开，只是下半截被页面挡住了。
 
+---
+
+## 11. 界面字体层 (`styles/typography.css`)
+
+把原来独立的「UI Font」Mod 并进主题：字体族、字号、侧栏字号、字重都走 Sine 设置面板，只作用于 chrome。
+
+### 11.1 Sine 的偏好 → CSS 通道
+
+Sine（`chrome/JS/services/stylesheets.sys.mjs`）把 `preferences.json` 的每一项翻成三种东西：
+
+| 偏好类型 | 注入形式 | 主题里怎么用 |
+| :-- | :-- | :-- |
+| `dropdown` | 挂到 `#theme-<mod-id>` 元素的属性（点换横线），**不进 `:root`** | 没用到，主题统一走 `-moz-pref()` |
+| `dropdown` + `"processAs": "var"` | 额外生成 `:root { --<属性名>: <值> }` | `zenwashi.font.weight` → `var(--zenwashi-font-weight)` |
+| `checkbox` | 只存在于 about:config（默认 true 的才会被 Sine 预先建出来） | `@media (-moz-pref("…enabled", true))`，缺失即关 |
+| `string` | **总是**生成 `:root { --<属性名>: <值> }` | `zenwashi.font.size` → `var(--zenwashi-font-size)`；`zenwashi.font.custom` → `var(--zenwashi-font-custom)` |
+
+这些变量是 Sine 用 `adoptedStyleSheets` 推进文档的，**排在作者样式表之后**，所以：
+
+- `:root` 里写的默认值（`--zenwashi-font-size` 之类）只是兜底，Sine 注入了就覆盖；
+- 但默认值不能省——新装/升级后 pref 还没创建时，`var("--x")` 没有回退会让整条 `font-family` 失效。
+
+### 11.2 五个坑
+
+1. **字体族的「总开关」用白名单，不要用 `not`**。Media Queries 里 `not` 只能修饰整条条件，`@media not (-moz-pref("font.enabled", false)) and (-moz-pref("family", "inter"))` 会被整条丢弃；也不建议嵌套 `@media`（本仓库其它样式表一律单层）。更麻烦的是**缺 pref**：旧安装升级后，`zenwashi.font.family` 要等用户第一次打开 Sine 设置才会被写进 prefs，这期间 `not (-moz-pref(..., "system"))` 会把「不存在」判成「不是 system」，把系统字体栈也铺上去。所以这里反过来写已知值的白名单：
+
+   ```css
+   @media (-moz-pref("zenwashi.font.family", "inter")),
+          (-moz-pref("zenwashi.font.family", "misans")),
+          … {
+     /* 铺 font-family */
+   }
+   ```
+
+   pref 缺失时一条都不匹配 → 默认外观与 Zen 原生字体完全一致；`System Default` 档同理。**新增字体档位时，解析块和这处白名单要一起加。**
+
+2. **默认 `false` 的开关要用 `(-moz-pref("x", true))`，不能用 `not (-moz-pref("x", false))`**。Sine 只在 `defaultValue` 为真时才替你把 bool pref 建出来（`core/preferences.sys.mjs:223`：`if (pref.defaultValue && !ctx.prefExists) setBoolPref(...)`），默认 false 的开关在用户点过之前**根本不存在**；而 `not (-moz-pref("x", false))` 对不存在的 pref 求值结果是 true，等于"默认开启"。写成 `(..., true)` 就天然是「缺失即关」。Zen 自己的 `zen-icons/icons.css` 也是用 `-moz-pref("…", false)` 做布尔比较，语法两侧都支持。
+
+3. **字号不要压 `:root`**。`font-size` 会被所有 `em` 尺寸的控件继承，压 `:root` 等于整窗缩放，Zen 的紧凑标签条与地址栏会挤爆。只压真正承载文字的元素（`.tab-label`、`#urlbar-input`、菜单、面板…）。
+
+4. **字重不要压 `.tab-label`**。Zen 用 `font-weight` 表达「当前标签」，压掉之后选中态与普通标签一样粗，标签层级直接消失。现在只压 `:root` 与少数自带字重的元素，选中标签的加粗仍归 Zen 管。
+
+5. **中文回退必须显式拼**。Inter / JetBrains / Fira 都没有汉字字形，`font-family: "Inter", sans-serif` 遇到中文会掉回默认衬线。每套字体后面统一接 `var(--zenwashi-font-cjk)`（苹方 → 微软雅黑 → 思源黑体）。
+
+### 11.3 图标不受影响
+
+内置 New Icons 是 `list-style-image` / `content: url("chrome://…svg")` 的 SVG，不是图标字体，所以大面积 `font-family !important` 不会把图标变成豆腐块——这是可以放心铺字体的前提。若哪天换成图标字体，这条规则必须收窄。
+
+### 11.4 覆盖范围
+
+- 只覆盖 chrome：`userChrome.css` 顶部 `@import "styles/typography.css"`；`userContent.css` 不引，所以 `about:preferences` 与 PDF 阅读器仍是系统字体。
+- 想连网页 / 内容页字体一起换是另一件事（要动 `userContent.css` 与每个内容进程），当前不做。
+
+### 11.5 和旧「UI Font」Mod 的关系
+
+旧的 `sine-mods/ui-font` 用 `uifont.*` 前缀，同样是 `font-family !important` 铺一遍；两套同时启用时谁后加载谁赢，结果随机。装主题后请在 Sine 里关掉 / 删除那个 Mod，再把偏好抄到新位置：
+
+| 旧 `uifont.*` | 新 `zenwashi.font.*` |
+| :-- | :-- |
+| `uifont.family` + `uifont.family.custom` | `zenwashi.font.family`（选 Custom…）+ `zenwashi.font.custom` |
+| `uifont.size.enabled` / `uifont.size` | `zenwashi.font.size.enabled` / `zenwashi.font.size` |
+| `uifont.sidebar-size.enabled` / `uifont.sidebar-size` | `zenwashi.font.sidebar-size.enabled` / `zenwashi.font.sidebar-size` |
+| `uifont.weight.enabled` / `uifont.weight` | `zenwashi.font.weight.enabled` / `zenwashi.font.weight` |

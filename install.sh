@@ -73,6 +73,12 @@ else
     | tar -C "$DST/$MOD_ID" -xf -
 fi
 
+# 旧的独立「UI Font」Mod 与主题的 typography 层是同一套 font-family !important，
+# 两个都开着会互相覆盖；这里只提示，不替用户删别人的 Mod。
+if [ -d "$DST/ui-font" ]; then
+  echo "⚠ 检测到独立的 UI Font Mod（$DST/ui-font）：字体能力已并入本主题，请在 Sine 里关掉或删除它。" >&2
+fi
+
 # 清理旧版安装脚本遗留的 fx-autoconfig 兜底副本：Sine 注册正常时双通道会把
 # 同一个脚本注入两遍，导致事件监听/观察器重复。现在只保留 Sine 一条通道。
 LEGACY_JS="$(dirname "$DST")/JS/zen-washi-sumi-blended-bar.uc.js"

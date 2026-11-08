@@ -1,0 +1,234 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Typography 界面字体
+   -----------------------------------------------------------------------------
+   只改浏览器界面（chrome），不碰网页内容。自旧版独立 Mod「UI Font」并入，
+   设置项在 Sine 设置 → Typography 界面字体。
+
+   Sine 的偏好 → CSS 通道（见 MAINTENANCE_GUIDE.md §11）：
+     · dropdown  → @media (-moz-pref("属性名", "值"))      —— 字体族 / 字重档位
+     · checkbox  → @media (-moz-pref("属性名", true))     —— 「开启」开关（缺 pref 即视为关）
+     · string    → :root 上的 --属性名（点换横线）          —— 自定义字体栈 / 字号
+
+   关键取舍：
+     1. 字体族默认 system，并且**只有非 system 时**才向界面下 !important，
+        所以默认状态下与 Zen 原生字体完全一致，不装不改也看不出差别。
+     2. 字号 / 侧栏字号只在各自开关打开时生效；侧栏规则写在通用规则之后，
+        两者同时开启时侧栏以侧栏字号为准。
+     3. 字重只压 :root 与少数字元素，不动 .tab-label——Zen 用字重表达选中态，
+        压掉会把「当前标签」和普通标签压成一样粗。
+     4. 中文回退栈 --zenwashi-font-cjk 拼在每套西文字体后面：Inter / JetBrains
+        这类字体没有汉字，不接一层中文回退会落到默认衬线，正文立刻变「宋体书页」。
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   1. 字体族解析
+   ----------------------------------------------------------------------------- */
+:root {
+  /* 中文回退：macOS 苹方 → Windows 微软雅黑 → Linux / 未安装时思源黑体 */
+  --zenwashi-font-cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+  /* 兜底值（也等于 System Default 那一档） */
+  --zenwashi-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    var(--zenwashi-font-cjk);
+}
+
+@media (-moz-pref("zenwashi.font.family", "inter")) {
+  :root {
+    --zenwashi-font-family: "Inter", "Inter Variable", -apple-system, "Segoe UI",
+      var(--zenwashi-font-cjk);
+  }
+}
+
+@media (-moz-pref("zenwashi.font.family", "misans")) {
+  :root {
+    --zenwashi-font-family: "MiSans", "MiSans VF", -apple-system, "Segoe UI",
+      var(--zenwashi-font-cjk);
+  }
+}
+
+@media (-moz-pref("zenwashi.font.family", "lxgw")) {
+  :root {
+    /* 霞鹜文楷自带西文，楷体笔画与和纸气质最贴；未安装时退回系统中文字体 */
+    --zenwashi-font-family: "LXGW WenKai", "LXGW WenKai Screen", "LXGW WenKai GB",
+      "Kaiti SC", "STKaiti", "KaiTi", var(--zenwashi-font-cjk);
+  }
+}
+
+@media (-moz-pref("zenwashi.font.family", "jetbrains")) {
+  :root {
+    --zenwashi-font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo,
+      Consolas, var(--zenwashi-font-cjk);
+  }
+}
+
+@media (-moz-pref("zenwashi.font.family", "fira")) {
+  :root {
+    --zenwashi-font-family: "Fira Code", ui-monospace, "SF Mono", Menlo, Consolas,
+      var(--zenwashi-font-cjk);
+  }
+}
+
+@media (-moz-pref("zenwashi.font.family", "roboto")) {
+  :root {
+    --zenwashi-font-family: "Roboto", -apple-system, "Segoe UI",
+      var(--zenwashi-font-cjk);
+  }
+}
+
+@media (-moz-pref("zenwashi.font.family", "poppins")) {
+  :root {
+    --zenwashi-font-family: "Poppins", -apple-system, "Segoe UI",
+      var(--zenwashi-font-cjk);
+  }
+}
+
+@media (-moz-pref("zenwashi.font.family", "custom")) {
+  :root {
+    /* Sine 会把 zenwashi.font.custom 映射成 --zenwashi-font-custom */
+    --zenwashi-font-family: var(--zenwashi-font-custom, -apple-system, "Segoe UI",
+        var(--zenwashi-font-cjk));
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   2. 把字体族铺到界面
+      System Default 下整块不生效——这是「关闭」的唯一开关，不额外占一行设置。
+      刻意写成白名单而不是 `not (-moz-pref(..., "system"))`：后者在 pref 尚未创建
+      （旧主题升级后还没打开过 Sine 设置）时会把 system 也当成「非 system」，
+      默认外观被无故改写。白名单在 pref 缺失时就是一条都不下发。
+      ⚠ 新增字体档位时，这一处和上面的解析块都要加。
+   ----------------------------------------------------------------------------- */
+@media (-moz-pref("zenwashi.font.family", "inter")),
+  (-moz-pref("zenwashi.font.family", "misans")),
+  (-moz-pref("zenwashi.font.family", "lxgw")),
+  (-moz-pref("zenwashi.font.family", "jetbrains")),
+  (-moz-pref("zenwashi.font.family", "fira")),
+  (-moz-pref("zenwashi.font.family", "roboto")),
+  (-moz-pref("zenwashi.font.family", "poppins")),
+  (-moz-pref("zenwashi.font.family", "custom")) {
+  :root,
+  window,
+  #main-window,
+  #navigator-toolbox,
+  #nav-bar,
+  #PersonalToolbar,
+  #titlebar,
+  #TabsToolbar,
+  #tabbrowser-tabs,
+  .tabbrowser-tab,
+  .tab-label,
+  .tab-text,
+  .tab-secondary-label,
+  .tab-group-label,
+  #urlbar,
+  #urlbar-container,
+  #urlbar-input,
+  #urlbar-input-container,
+  .urlbarView-row,
+  .urlbarView-title,
+  .urlbarView-url,
+  .search-one-offs,
+  #searchbar,
+  #identity-box,
+  #identity-icon-labels,
+  #page-action-buttons,
+  #sidebar-box,
+  #sidebar,
+  #sidebar-header,
+  #sidebar-title,
+  #zen-sidebar-web-panel,
+  .zen-current-workspace-indicator,
+  .zen-current-workspace-indicator-name,
+  toolbarbutton,
+  .toolbarbutton-text,
+  menupopup,
+  menuitem,
+  menu,
+  menulist,
+  panel,
+  panelview,
+  .panel-header,
+  .panel-subview-body,
+  popupnotification,
+  description,
+  label,
+  tooltip,
+  #statuspanel-label,
+  #findbar,
+  .findbar-textbox,
+  .bookmark-item,
+  #appMenu-popup {
+    font-family: var(--zenwashi-font-family) !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   3. 界面文字字号（开关：zenwashi.font.size.enabled）
+      刻意不写 :root 的 font-size——那会让所有 em 尺寸的控件整体缩放，
+      Zen 的紧凑布局撑不住；这里只压真正承载文字的元素。
+   ----------------------------------------------------------------------------- */
+@media (-moz-pref("zenwashi.font.size.enabled", true)) {
+  .tab-label,
+  .tab-text,
+  .tab-secondary-label,
+  .tab-group-label,
+  #urlbar-input,
+  .urlbarView-title,
+  .urlbarView-url,
+  #searchbar,
+  .toolbarbutton-text,
+  menuitem,
+  menu,
+  menulist,
+  label,
+  description,
+  .panel-header,
+  .bookmark-item,
+  .findbar-textbox {
+    font-size: var(--zenwashi-font-size, 14px) !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   4. 侧栏字号（开关：zenwashi.font.sidebar-size.enabled）
+      写在通用字号之后：两者同开时，侧栏元素以本条为准。
+   ----------------------------------------------------------------------------- */
+@media (-moz-pref("zenwashi.font.sidebar-size.enabled", true)) {
+  #tabbrowser-tabs,
+  #TabsToolbar,
+  .tabbrowser-tab,
+  .tab-label,
+  .tab-text,
+  .tab-secondary-label,
+  .tab-group-label,
+  /* 工作区指示器 */
+  .zen-current-workspace-indicator,
+  .zen-current-workspace-indicator-name,
+  /* 侧栏网页面板 */
+  #zen-sidebar-web-panel,
+  /* 经典侧栏（书签 / 历史 / 下载） */
+  #sidebar,
+  #sidebar-box,
+  #sidebar-header,
+  #sidebar-title {
+    font-size: var(--zenwashi-font-sidebar-size, 13px) !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   5. 字重（开关：zenwashi.font.weight.enabled）
+      只压 :root 与少数自带 font-weight 的文字元素；.tab-label 留白，
+      选中标签的加粗由 Zen 自己控制。
+   ----------------------------------------------------------------------------- */
+@media (-moz-pref("zenwashi.font.weight.enabled", true)) {
+  :root,
+  #urlbar-input,
+  #searchbar,
+  .toolbarbutton-text,
+  menuitem,
+  .bookmark-item,
+  .findbar-textbox,
+  .panel-header {
+    font-weight: var(--zenwashi-font-weight, 400) !important;
+  }
+}

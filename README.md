@@ -87,6 +87,12 @@
    - 三档：`Off` 实心和纸 / `Frosted` 整窗 60% 和纸（侧栏与案台是同一张磨砂纸）/ `Clear` 案台透出桌面 + 侧栏单独一张 52% 的玻璃纸。
    - 限制说清楚：chrome 的 `backdrop-filter` 采样不到网页像素，Zen 的侧栏本来也不压在网页上方，所以**做不到"透过侧栏看见背后的网页"**；系统开「降低透明度」时自动退回实心纸。实现与取舍见 `MAINTENANCE_GUIDE.md` §5.12。
 
+12. **界面字体（Typography）**：
+   - 标签、地址栏、菜单、面板、侧栏的字体收进 Sine 设置：字体族（System / Inter / MiSans / 霞鹜文楷 / JetBrains Mono / Fira Code / Roboto / Poppins / 自定义字体栈）、统一字号、侧栏独立字号、字重，四个开关互不牵连。
+   - 每套西文字体后面都接了中文回退（苹方 → 微软雅黑 → 思源黑体），不会出现"选了 Inter，汉字掉回宋体"。
+   - 只改 chrome，不碰网页；默认 `System Default` 时一条规则都不下发，外观与 Zen 原生字体完全一致。
+   - 原先独立的「UI Font」Mod 能力已并入本主题（`styles/typography.css`）。**若你还装着那个 Mod，请先在 Sine 里关掉**——两套 `font-family !important` 会互相覆盖，谁后加载谁赢。
+
 ---
 
 ## 📂 文件结构
@@ -103,7 +109,8 @@ zen-washi-sumi/
 │   ├── header-chrome.css
 │   ├── loadbar.css
 │   ├── pdf-viewer.css # PDF 阅读器（resource://pdf.js）独立文档样式
-│   └── settings.css   # about:preferences 设计令牌覆盖
+│   ├── settings.css   # about:preferences 设计令牌覆盖
+│   └── typography.css # 界面字体（字体族 / 字号 / 字重）
 ├── icons/             # 32 个外部 SVG 图标（chrome:// 引用，支持 context-fill）
 ├── blended-bar.uc.js  # 融合顶栏采样脚本
 ├── frame.js           # 页面颜色采样注入脚本
