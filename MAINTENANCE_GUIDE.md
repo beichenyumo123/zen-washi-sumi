@@ -12,7 +12,7 @@
 - **核心文件分布**：
   - `userChrome.css`：浏览器界面核心样式。
   - `preferences.json`：Sine Mods 动态配置项（强调色、视口圆角、边距、阴影档位等）。
-  - `install.sh`：自动将主题注册并同步至 Zen Profile 的部署脚本。
+  - `install.sh` / `install.ps1`：自动将主题注册并同步至 Zen Profile 的部署脚本（macOS/Linux / Windows，行为一致）。
 
 ---
 
@@ -383,7 +383,13 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
 ```bash
 ./install.sh
 ```
+Windows 上用 PowerShell 版（无需 Python / WSL，行为与 `install.sh` 完全一致）：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
 并在 Zen 浏览器中按 `Cmd + Q` 重启，即可热载入最新样式。
+
+> 两个脚本都会先安全退出 Zen 再写 `mods.json`（Sine 会把内存缓存回写磁盘），安装完成后不要立刻点 Sine 的“重载”，否则可能覆盖本地注册。改完脚本逻辑后请两边同步修改，保持 macOS 与 Windows 行为一致。
 
 ---
 
@@ -602,16 +608,21 @@ CSS 读不到任意数值的 pref，所以圆角用**离散档位 + 等值媒体
 
 要点：**所有会变的外观属性都要带上同样的 delay**（height / background-color / border-color / box-shadow）。只给 height 加 delay 的话，背景会先变透明而高度还在，出现"半透明残影"。
 
-**大纲面板跟随**：面板 `#viewsManager` 是工具栏的后代，指针停在面板上时 `#toolbarContainer` 依然处于 `:hover`，所以展开状态不会被误判。收起时让它同步隐藏：
+**大纲面板跟随**：面板 `#viewsManager` 是工具栏的后代，指针停在面板上时 `#toolbarContainer` 依然处于 `:hover`，所以展开状态不会被误判。收起时让它跟着退场，但**比工具栏再慢一档**（延迟 0.8s、淡出 0.3s）——面板是阅读时真正在用的东西，不该指针一离开就消失：
 
 ```css
 #toolbarContainer:not(:hover):not(:focus-within) #viewsManager {
   opacity: 0 !important;
   transform: translateY(-6px) !important;
-  pointer-events: none !important;
-  transition-delay: .5s !important;
+  visibility: hidden !important;      /* 不要用 pointer-events: none */
+  transition-delay: .8s !important;
+  transition-duration: .3s !important;
 }
 ```
+
+**为什么是 `visibility` 而不是 `pointer-events: none`**：后者是**瞬时生效**的。指针一离开工具栏（哪怕只是穿过工具栏与面板之间的空隙），面板立刻失去命中测试；随后指针移到面板上也唤不回 `#toolbarContainer` 的 `:hover`，退场无法取消，面板只能按计时消失——用户表现为"鼠标还没到面板，它就已经在收了"。
+
+`visibility` 会参与过渡：淡出期间它仍是 `visible`，直到过渡**结束**才变成 `hidden`。这 1.1s 的窗口里面板一直可命中，指针落上去就能把 hover 接过去，整个退场被取消。代价是淡出结束后面板不可再命中，需要指针回到顶部停靠区才能把它唤回来。
 
 `!important` 是必须的——面板的可见性由 `#outerContainer.viewsManagerOpen #viewsManager` 那条规则控制，不加重要声明压不过它。这样面板和工具栏同进同退，指针回到顶部时一起回来（`viewsManagerOpen` 状态没变，只是被临时隐藏）。
 

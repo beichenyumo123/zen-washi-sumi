@@ -113,7 +113,8 @@ zen-washi-sumi/
 │   └── floating-urlbar-center.uc.js # Cmd+T / Cmd+L 浮层在内容区居中
 ├── scripts/           # 采样 / 配色 / 面板布局等模块化辅助脚本
 ├── preview/           # 开发期调试页（loading-veil.html）
-├── install.sh         # 一键同步到 Zen Profile 并注册脚本
+├── install.sh         # 一键同步到 Zen Profile 并注册脚本（macOS / Linux）
+├── install.ps1        # 同上，Windows PowerShell 版（无需 Python / WSL）
 ├── MAINTENANCE_GUIDE.md # 架构与踩坑复盘（改样式前先读）
 └── README.md          # 详细设计说明与指南
 ```
@@ -124,22 +125,39 @@ zen-washi-sumi/
 
 **前置条件**：[Zen Browser](https://zen-browser.app/) + 已启用 [Sine](https://github.com/zen-browser/sine) Mod 体系（主题走 Sine 的 `theme.json` / `preferences.json` 注册，不是纯 `userChrome.css` 拖放）。
 
+### macOS / Linux
+
 ```bash
 git clone https://github.com/beichenyumo123/zen-washi-sumi.git
 cd zen-washi-sumi
 ./install.sh
 ```
 
-脚本会自动扫描你本地已配置 Sine 的 Zen Profile，完成 Mod 文件同步，并在 `mods.json` 与 `chrome.css` 中注入注册配置（同时维护 PDF 阅读器需要的 `<profile>/chrome/userContent.css` 托管块）。
+### Windows
+
+仓库自带 PowerShell 版安装脚本 `install.ps1`，只需要 Windows 自带的 Windows PowerShell 5.1，**不需要 Python、Git Bash 或 WSL**：
+
+```powershell
+git clone https://github.com/beichenyumo123/zen-washi-sumi.git
+cd zen-washi-sumi
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+> 也可以右键 `install.ps1` → **使用 PowerShell 运行**；若提示「禁止运行脚本」，请用上面带 `-ExecutionPolicy Bypass` 的命令。
+
+脚本会自动扫描 `%APPDATA%\zen\Profiles\*\chrome\sine-mods`，完成 Mod 文件同步，并在 `mods.json` 与 `chrome.css` 中注入注册配置（同时维护 PDF 阅读器需要的 `<profile>/chrome/userContent.css` 托管块）。
 
 - **多 Profile / 自动扫描失败**时，手动指定 `sine-mods` 目录：
   ```bash
-  ./install.sh "/path/to/Profiles/xxxx.default/chrome/sine-mods"
+  ./install.sh "/path/to/Profiles/xxxx.default/chrome/sine-mods"          # macOS / Linux
   ```
-- 若 Zen 正在运行，脚本会先安全退出 Zen 再写入（Sine 会把内存里的旧 `mods.json` 回写磁盘，运行中安装会被覆盖）。
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\install.ps1 "C:\Users\<你>\AppData\Roaming\zen\Profiles\xxxx.default\chrome\sine-mods"
+  ```
+- 若 Zen 正在运行，脚本会先安全退出 Zen 再写入（Sine 会把内存里的旧 `mods.json` 回写磁盘，运行中安装会被覆盖）；30 秒内没退出会中止，确认任务管理器里没有 `zen.exe` 后重试，或加 `-Force` 强制结束（可能丢失未保存的会话）。
 - 安装完成后重启 Zen，前往 **Zen 设置 → Sine → Mods**，即可在 **Zen Washi & Sumi (和纸与松烟墨)** 下调整传统色强调、对比度、视口圆角与各类动效。
 
-**更新**：`git pull` 后重新执行 `./install.sh` 并重启 Zen。
+**更新**：`git pull` 后重新执行 `./install.sh`（Windows 用 `.\install.ps1`）并重启 Zen。
 
 **卸载**：在 Sine 设置里关闭 / 移除本 Mod，然后删除 `<profile>/chrome/sine-mods/zen-washi-sumi` 目录即可。
 
