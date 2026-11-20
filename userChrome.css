@@ -2486,14 +2486,16 @@ browser {
  * 原因：Zen 给的是 bottom: --zen-compact-float/2 + height: 100% - 工具栏高度，
  *       顶部在"工具栏没隐藏"时还会再叠一条 margin-top: 工具栏高度，
  *       三个值各算各的，天然不可能对称。
- * 做法：不跟它算，直接把 top / bottom 给同一个值，height: auto 让盒子自己撑满 ——
- *       上下必然等距，而且和左右留白同源（都用 --zen-compact-float/2）。
+ * 做法：不跟它算，直接把 top / bottom 给同一个值，height: auto 让盒子自己撑满。
+ *       ⚠️ top **必须从工具栏下沿起算**（--zen-toolbar-height-with-bookmarks）：
+ *       上一版直接用了窗口顶边，结果面板把窗口控制按钮（红绿灯）盖进去了，
+ *       观感很怪。从工具栏下沿起算，红绿灯还在外面，面板上下才是真正等距的。
  * 想单独调竖向留白：Sine 设置 → zenwashi.compact.panel.margin（默认 8px）。
  * 排除 [animate="true"]：那是 Zen 收起/展开动画过程中的中间帧，不能锁死几何。
  */
 :root[zen-compact-mode="true"] #navigator-toolbox:not([animate="true"]) {
-  top: var(--zenwashi-compact-panel-margin, calc(var(--zen-compact-float) / 2)) !important;
-  bottom: var(--zenwashi-compact-panel-margin, calc(var(--zen-compact-float) / 2)) !important;
+  top: calc(var(--zen-toolbar-height-with-bookmarks) + var(--zenwashi-compact-panel-margin, 8px)) !important;
+  bottom: var(--zenwashi-compact-panel-margin, 8px) !important;
   height: auto !important;
   margin-block: 0 !important;
 }

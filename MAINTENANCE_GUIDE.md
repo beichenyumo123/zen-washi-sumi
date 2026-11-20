@@ -240,14 +240,15 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
 - **做法（`userChrome.css §15`）**：不要去复刻它的算术，直接给两端同一个值，让盒子自己撑满：
   ```css
   #navigator-toolbox:not([animate='true']) {
-    top: var(--zenwashi-compact-panel-margin, calc(var(--zen-compact-float) / 2)) !important;
-    bottom: var(--zenwashi-compact-panel-margin, calc(var(--zen-compact-float) / 2)) !important;
+    top: calc(var(--zen-toolbar-height-with-bookmarks) + var(--zenwashi-compact-panel-margin, 8px)) !important;
+    bottom: var(--zenwashi-compact-panel-margin, 8px) !important;
     height: auto !important;
     margin-block: 0 !important;
   }
   ```
   **必须排除 `[animate='true']`**：那是 Zen 收起/展开动画的中间帧，锁死几何会把动画压没。
-- **副作用**：面板现在从窗口顶边起算，窗口控制按钮（红绿灯）会落在面板上，而不是单独浮在上面——这正是悬浮面板本该有的样子；不想要就把 `zenwashi.compact.panel.margin` 调大，或把 `top` 换回 `calc(var(--zen-toolbar-height-with-bookmarks) + …)`。
+- **踩过的坑**：第一版把 `top` 写成窗口顶边（`var(--zen-compact-float)/2`），面板直接盖住了窗口控制按钮（红绿灯），观感很怪。`top` 必须从 `--zen-toolbar-height-with-bookmarks` 起算，红绿灯留在外面，面板才只是"在工具栏下方上下等距"。
+- `--zen-toolbar-height-with-bookmarks` 是准的：默认等于 `--zen-toolbar-height`（macOS 42px），只有 `[zen-has-bookmarks]` 时 +30px。
 
 #### 5.10 磨砂玻璃输入框为什么不是真的 `backdrop-filter`（以及 Safari 观感怎么来）
 - **硬约束**：Firefox/Zen 的 chrome 文档里，`backdrop-filter` 只能看到**同一棵 chrome 层树**里在它背后的内容。网页跑在独立的异步合成层（out-of-process），chrome 的 backdrop 根本拿不到那些像素——所以「给输入框加 `backdrop-filter: blur()` 把背后的网页糊掉」在闭合态**永远不会生效**，写了也只是白白多一层合成。
