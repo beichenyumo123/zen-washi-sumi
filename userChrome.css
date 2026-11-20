@@ -2479,6 +2479,25 @@ browser {
   background-image: none !important;
 }
 
+/*
+ * 紧凑模式悬浮面板的"垂直居中"
+ * -----------------------------------------------------------------------------
+ * 现象：面板贴着窗口底部、顶部却留着一截，上下不对称（截图实测：上 ≈20px、下 ≈2px）。
+ * 原因：Zen 给的是 bottom: --zen-compact-float/2 + height: 100% - 工具栏高度，
+ *       顶部在"工具栏没隐藏"时还会再叠一条 margin-top: 工具栏高度，
+ *       三个值各算各的，天然不可能对称。
+ * 做法：不跟它算，直接把 top / bottom 给同一个值，height: auto 让盒子自己撑满 ——
+ *       上下必然等距，而且和左右留白同源（都用 --zen-compact-float/2）。
+ * 想单独调竖向留白：Sine 设置 → zenwashi.compact.panel.margin（默认 8px）。
+ * 排除 [animate="true"]：那是 Zen 收起/展开动画过程中的中间帧，不能锁死几何。
+ */
+:root[zen-compact-mode="true"] #navigator-toolbox:not([animate="true"]) {
+  top: var(--zenwashi-compact-panel-margin, calc(var(--zen-compact-float) / 2)) !important;
+  bottom: var(--zenwashi-compact-panel-margin, calc(var(--zen-compact-float) / 2)) !important;
+  height: auto !important;
+  margin-block: 0 !important;
+}
+
 /* 紧凑模式下网页不再贴着侧栏让位，四周用同一个用户可控值。 */
 :root[zen-compact-mode="true"]:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
   margin: var(--zenwashi-compact-content-margin, 8px) !important;

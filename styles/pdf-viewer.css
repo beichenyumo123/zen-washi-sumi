@@ -518,8 +518,18 @@
       :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:not(:hover):not(:focus-within) #viewsManager {
         opacity: 0 !important;
         transform: translateY(-6px) !important;
-        pointer-events: none !important;
-        transition-delay: 0.5s !important;
+        /* 关键：这里不能用 pointer-events: none。
+           它是瞬时生效的 —— 指针一离开工具栏（哪怕只是穿过工具栏与面板之间的
+           空隙），面板就立刻失去命中测试，随后指针移到面板上也唤不回
+           #toolbarContainer 的 :hover，于是面板按计时消失，救不回来。
+           改用 visibility：它参与过渡，会在淡出**结束**时才真正变成 hidden，
+           在此之前面板一直可命中，指针落到上面就能把 hover 接过去、
+           整个退场被取消。 */
+        visibility: hidden !important;
+        /* 比工具栏的 0.5s 再多留 0.3s、淡出放慢到 0.3s：面板是阅读时真正在用的
+           东西，不该在指针一离开就"啪"地消失。 */
+        transition-delay: 0.8s !important;
+        transition-duration: 0.3s !important;
       }
 
       :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:is(:hover, :focus-within) #viewsManager {
@@ -580,19 +590,24 @@
     max-height: calc(100vh - var(--toolbar-height) - var(--doorhanger-height) - 16px) !important;
     opacity: 1;
     transform: none;
+    visibility: visible;
     transition:
       opacity 0.18s ease,
       transform 0.18s ease,
-      display 0.18s;
-    /* 让 display 也参与过渡：关闭时先跑完淡出，再真正切成 none */
+      display 0.18s,
+      visibility 0.18s;
+    /* 让 display / visibility 也参与过渡：关闭时先跑完淡出，再真正切成 none */
     transition-behavior: allow-discrete;
   }
 
-  /* 关闭态的"起点值"：不写这条的话，[hidden] 生效瞬间 opacity 仍是 1，
-     没有可过渡的目标值，退出动画就不会发生。 */
+  /* 关闭态的"目标值"：不写这条的话，[hidden] 生效瞬间 opacity 仍是 1，
+     没有可过渡的目标值，退出动画就不会发生。
+     退出时长单独写长（0.32s）：过渡的时长取自**目标状态**的 computed style，
+     所以进入沿用基态的 0.18s，只有退出变慢。 */
   :root:has(link[href^="resource://pdf.js"]) #viewsManager[hidden] {
     opacity: 0;
     transform: translateY(-4px);
+    transition-duration: 0.32s;
   }
 
   @starting-style {

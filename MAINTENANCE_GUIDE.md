@@ -222,6 +222,33 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
 - **代价**：2s 采样 + balanced 时，一次真实变色最多滞后 ~4s；`eager`(0.5s) 下是 ~1s。想更跟手就选 `subtle`。
 - **坑**：判据依赖 `lastAppliedTheme` 作为"当前已上色"的基准；如果哪天把 `applyThemeCandidateNow` 里的 `lastAppliedTheme = theme` 去掉，死区会失效（永远拿不到基准，等于退回 off）。
 
+#### 5.9.2 紧凑模式悬浮面板为什么"贴底不居中"
+
+- **现象**：简洁模式（compact）下侧栏是一块悬浮面板，但上下留白不对称——实测上 ≈20px、下 ≈2px，视觉上贴着窗口底边。
+- **原因**：Zen 的几何是三段拼出来的（`zen-compact-mode.css`）：
+  ```css
+  #navigator-toolbox:not([animate='true']) {
+    position: fixed;
+    bottom: calc(var(--zen-compact-float) / 2);
+    height: calc(100% - var(--zen-toolbar-height-with-bookmarks));
+  }
+  @media not -moz-pref('zen.view.compact.hide-toolbar') {
+    #navigator-toolbox:not([animate='true']) { margin-top: var(--zen-toolbar-height-with-bookmarks) !important; }
+  }
+  ```
+  `bottom` / `height` / `margin-top` 各算各的，顶部还被工具栏高度顶下去一截，天然不可能对称。
+- **做法（`userChrome.css §15`）**：不要去复刻它的算术，直接给两端同一个值，让盒子自己撑满：
+  ```css
+  #navigator-toolbox:not([animate='true']) {
+    top: var(--zenwashi-compact-panel-margin, calc(var(--zen-compact-float) / 2)) !important;
+    bottom: var(--zenwashi-compact-panel-margin, calc(var(--zen-compact-float) / 2)) !important;
+    height: auto !important;
+    margin-block: 0 !important;
+  }
+  ```
+  **必须排除 `[animate='true']`**：那是 Zen 收起/展开动画的中间帧，锁死几何会把动画压没。
+- **副作用**：面板现在从窗口顶边起算，窗口控制按钮（红绿灯）会落在面板上，而不是单独浮在上面——这正是悬浮面板本该有的样子；不想要就把 `zenwashi.compact.panel.margin` 调大，或把 `top` 换回 `calc(var(--zen-toolbar-height-with-bookmarks) + …)`。
+
 #### 5.10 磨砂玻璃输入框为什么不是真的 `backdrop-filter`（以及 Safari 观感怎么来）
 - **硬约束**：Firefox/Zen 的 chrome 文档里，`backdrop-filter` 只能看到**同一棵 chrome 层树**里在它背后的内容。网页跑在独立的异步合成层（out-of-process），chrome 的 backdrop 根本拿不到那些像素——所以「给输入框加 `backdrop-filter: blur()` 把背后的网页糊掉」在闭合态**永远不会生效**，写了也只是白白多一层合成。
   - 真正能糊网页的只有把 `filter: blur()` 直接打在 `<browser>` 上（本主题 §12.3/12.4 的「宣纸微敛 / 画卷退景」就是这么做的，配合 `#urlbar[open]`），代价是**整页**糊，做不出一块局部玻璃。

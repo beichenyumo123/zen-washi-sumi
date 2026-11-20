@@ -115,6 +115,13 @@
     "placeholder": "8px"
   },
   {
+    "type": "string",
+    "property": "zenwashi.compact.panel.margin",
+    "label": "Compact panel margin 简洁模式侧栏面板的上下留白（垂直居中；留空则跟随 Zen 的浮动值）",
+    "defaultValue": "8px",
+    "placeholder": "8px"
+  },
+  {
     "type": "dropdown",
     "property": "zenwashi.content.shadow",
     "label": "Paper shadow depth 纸面悬浮阴影档位",
