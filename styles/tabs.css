@@ -86,6 +86,13 @@
   transition: translate var(--zenwashi-duration) var(--zenwashi-ease) !important;
 }
 
+/* 展开侧栏下给普通标签内部留出左右呼吸边距，避免图标和长标题紧贴大圆角卡片边缘
+   （严格限定 zen-sidebar-expanded="true"，折叠窄模式保持图标居中不受影响） */
+:root[zen-sidebar-expanded="true"] .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab) .tab-content {
+  padding-inline: 11px !important;
+  box-sizing: border-box !important;
+}
+
 .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):hover .tab-content {
   translate: 2px 0;
   transition: translate var(--zenwashi-tap) var(--zenwashi-ease) !important;

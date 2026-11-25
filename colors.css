@@ -140,6 +140,37 @@
   }
 }
 
+/* [方案 E] 蓝莓起泡酒 (Blueberry Spritz) · 清冷通透雾蓝灰 + 柔和米灰 + 豆沙烟粉 */
+@media (-moz-pref("zenwashi.palette", "blueberry-spritz")) {
+  :root {
+    /* Light: 雾蓝灰 #C4CFD8（#7A8B99 同色相提亮）+ 柔和米灰 #F2F0F1 + 深蓝墨 #232B33 + 豆沙烟粉 #A55D6A
+     * Dark : 午夜灰蓝 #1D242B + 表面 #263039 + 柔和米灰字 #E2DFE0 + 亮豆沙 #C67C89 */
+    --zenwashi-bg-base: light-dark(#C4CFD8, #1D242B) !important;
+    --zenwashi-bg-surface: light-dark(#F2F0F1, #263039) !important;
+    --zenwashi-bg-urlbar: light-dark(#F2F0F1, #263039) !important;
+    --zenwashi-tab-selected-bg: light-dark(#F2F0F1, #323F4B) !important;
+    --zenwashi-tab-selected-border: light-dark(rgba(35, 43, 51, 0.14), rgba(226, 223, 224, 0.14)) !important;
+    --zenwashi-tab-selected-shadow: 0 2px 6px light-dark(rgba(35, 43, 51, 0.10), rgba(0, 0, 0, 0.45)) !important;
+    --zenwashi-tab-hover-bg: light-dark(rgba(35, 43, 51, 0.06), rgba(226, 223, 224, 0.07)) !important;
+    --zenwashi-border-subtle: light-dark(rgba(35, 43, 51, 0.12), rgba(226, 223, 224, 0.10)) !important;
+    --zenwashi-border-distinct: light-dark(rgba(35, 43, 51, 0.20), rgba(226, 223, 224, 0.16)) !important;
+    --zenwashi-fg-primary: light-dark(#232B33, #E2DFE0) !important;
+    --zenwashi-fg-secondary: light-dark(#475563, #A7B4C0) !important;
+    --zenwashi-fg-muted: light-dark(#6B7B8A, #748494) !important;
+    --zenwashi-accent: light-dark(#A55D6A, #C67C89) !important;
+    --zenwashi-accent-tint: light-dark(rgba(165, 93, 106, 0.16), rgba(198, 124, 137, 0.24)) !important;
+
+    /* Essentials (雾蓝灰微卡片) */
+    --zenwashi-essentials-card-bg: light-dark(#D5DDE4, rgba(255, 255, 255, 0.06)) !important;
+    --zenwashi-essentials-card-hover-bg: light-dark(#F2F0F1, #323F4B) !important;
+    --zenwashi-essentials-card-selected-bg: light-dark(#F2F0F1, #323F4B) !important;
+    --zenwashi-essentials-card-border: light-dark(rgba(35, 43, 51, 0.14), rgba(226, 223, 224, 0.14)) !important;
+    --zenwashi-essentials-card-shadow:
+      0 1.5px 0 light-dark(rgba(35, 43, 51, 0.12), rgba(0, 0, 0, 0.50)),
+      0 2px 5px light-dark(rgba(35, 43, 51, 0.05), rgba(0, 0, 0, 0.30)) !important;
+  }
+}
+
 /* -----------------------------------------------------------------------------
    3. 独立矿物强调色覆盖方案 (zenwashi.accent)
    ----------------------------------------------------------------------------- */
@@ -213,5 +244,13 @@
   :root {
     --zenwashi-accent: light-dark(#EA76CB, #F5BDE6) !important;
     --zenwashi-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 189, 230, 0.22)) !important;
+  }
+}
+
+/* 豆沙烟粉 (Dusty Berry · 蓝莓起泡酒配套强调色) */
+@media (-moz-pref("zenwashi.accent", "berry-mist")) {
+  :root {
+    --zenwashi-accent: light-dark(#A55D6A, #C67C89) !important;
+    --zenwashi-accent-tint: light-dark(rgba(165, 93, 106, 0.16), rgba(198, 124, 137, 0.24)) !important;
   }
 }

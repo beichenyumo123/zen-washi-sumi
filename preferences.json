@@ -37,6 +37,10 @@
       {
         "value": "nord",
         "label": "Nord 极地幽蓝 (Snow/Polar)"
+      },
+      {
+        "value": "blueberry-spritz",
+        "label": "Blueberry Spritz 蓝莓起泡酒 (冷灰蓝/豆沙烟粉)"
       }
     ]
   },
@@ -85,6 +89,10 @@
       {
         "value": "catppuccin-latte",
         "label": "Catppuccin (Pink)"
+      },
+      {
+        "value": "berry-mist",
+        "label": "豆沙烟粉 (Dusty Berry)"
       }
     ]
   },

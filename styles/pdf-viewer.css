@@ -195,6 +195,23 @@
     }
   }
 
+  /* [方案 E] 蓝莓起泡酒 · Blueberry Spritz */
+  @media (-moz-pref("zenwashi.palette", "blueberry-spritz")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-canvas: light-dark(#BAC6D0, #161C22);
+      --zenwashi-pdf-page: light-dark(#F7F5F6, #263039);
+      --zenwashi-pdf-chrome: light-dark(#C4CFD8, #1D242B);
+      --zenwashi-pdf-chrome-alt: light-dark(#D5DDE4, #323F4B);
+      --zenwashi-pdf-fg: light-dark(#232B33, #E2DFE0);
+      --zenwashi-pdf-fg-dim: light-dark(#475563, #A7B4C0);
+      --zenwashi-pdf-line: light-dark(rgba(35, 43, 51, 0.14), rgba(226, 223, 224, 0.10));
+      --zenwashi-pdf-sep: light-dark(rgba(35, 43, 51, 0.30), rgba(226, 223, 224, 0.18));
+      --zenwashi-pdf-shadow: light-dark(rgba(35, 43, 51, 0.12), rgba(0, 0, 0, 0.45));
+      --zenwashi-pdf-accent: light-dark(#A55D6A, #C67C89);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(165, 93, 106, 0.18), rgba(198, 124, 137, 0.26));
+    }
+  }
+
   /* --- 矿物强调色：覆盖上面的调色板默认值（可用 tools/sync-palettes.py 校验/同步） --- */
   /* >>> sync-palettes:pdf-accents:start >>> */
   @media (-moz-pref("zenwashi.accent", "umber")) {
@@ -249,6 +266,12 @@
     :root:has(link[href^="resource://pdf.js"]) {
       --zenwashi-pdf-accent: light-dark(#EA76CB, #F5BDE6);
       --zenwashi-pdf-accent-tint: light-dark(rgba(234, 118, 203, 0.18), rgba(245, 189, 230, 0.26));
+    }
+  }
+  @media (-moz-pref("zenwashi.accent", "berry-mist")) {
+    :root:has(link[href^="resource://pdf.js"]) {
+      --zenwashi-pdf-accent: light-dark(#A55D6A, #C67C89);
+      --zenwashi-pdf-accent-tint: light-dark(rgba(165, 93, 106, 0.18), rgba(198, 124, 137, 0.26));
     }
   }
   /* <<< sync-palettes:pdf-accents:end <<< */

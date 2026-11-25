@@ -58,6 +58,17 @@
         --zwset-accent-tint: light-dark(rgba(94, 129, 172, 0.16), rgba(136, 192, 208, 0.22));
       }
     }
+    @media (-moz-pref("zenwashi.palette", "blueberry-spritz")) {
+      :root {
+        --zwset-bg: light-dark(#C4CFD8, #1D242B);
+        --zwset-card: light-dark(#F2F0F1, #263039);
+        --zwset-fg: light-dark(#232B33, #E2DFE0);
+        --zwset-fg-dim: light-dark(#475563, #A7B4C0);
+        --zwset-line: light-dark(rgba(35, 43, 51, 0.12), rgba(226, 223, 224, 0.10));
+        --zwset-accent: light-dark(#A55D6A, #C67C89);
+        --zwset-accent-tint: light-dark(rgba(165, 93, 106, 0.16), rgba(198, 124, 137, 0.24));
+      }
+    }
     @media (-moz-pref("zenwashi.accent", "umber")) {
       :root {
         --zwset-accent: light-dark(#78563D, #D49852);
@@ -110,6 +121,12 @@
       :root {
         --zwset-accent: light-dark(#EA76CB, #F5BDE6);
         --zwset-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 189, 230, 0.22));
+      }
+    }
+    @media (-moz-pref("zenwashi.accent", "berry-mist")) {
+      :root {
+        --zwset-accent: light-dark(#A55D6A, #C67C89);
+        --zwset-accent-tint: light-dark(rgba(165, 93, 106, 0.16), rgba(198, 124, 137, 0.24));
       }
     }
     /* <<< sync-palettes:settings:end <<< */
