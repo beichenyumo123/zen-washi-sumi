@@ -754,12 +754,6 @@
     "defaultValue": true
   },
   {
-    "type": "checkbox",
-    "property": "zenwashi.pdf.auto-hide-toolbar",
-    "label": "Auto-hide toolbar 自动隐藏 PDF 工具栏（收起为顶部 8px 停靠区，指针移上去才展开）",
-    "defaultValue": false
-  },
-  {
     "type": "dropdown",
     "property": "zenwashi.pdf.toolbar-width",
     "label": "Floating toolbar width 悬浮工具栏最大宽度",

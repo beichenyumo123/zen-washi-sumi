@@ -195,7 +195,8 @@
     }
   }
 
-  /* --- 矿物强调色：覆盖上面的调色板默认值（必须排在四套方案之后） -------- */
+  /* --- 矿物强调色：覆盖上面的调色板默认值（可用 tools/sync-palettes.py 校验/同步） --- */
+  /* >>> sync-palettes:pdf-accents:start >>> */
   @media (-moz-pref("zenwashi.accent", "umber")) {
     :root:has(link[href^="resource://pdf.js"]) {
       --zenwashi-pdf-accent: light-dark(#78563D, #D49852);
@@ -250,6 +251,7 @@
       --zenwashi-pdf-accent-tint: light-dark(rgba(234, 118, 203, 0.18), rgba(245, 189, 230, 0.26));
     }
   }
+  /* <<< sync-palettes:pdf-accents:end <<< */
 
   /* ---------------------------------------------------------------------------
      2. 映射到 pdf.js 官方变量
@@ -431,14 +433,25 @@
       inset: 0 !important;
     }
 
+    /* 彻底清除 .toolbar 与 #toolbarContainer 上可能形成 position:fixed 包含块的属性
+       （transform / translate / filter / backdrop-filter / contain / will-change），
+       确保子元素 #viewsManager 的 position:fixed 严格以视口为参照系，真正贴靠窗口最左侧。 */
+    :root:has(link[href^="resource://pdf.js"]) .toolbar,
     :root:has(link[href^="resource://pdf.js"]) #toolbarContainer {
-      /* fixed 而不是 absolute：侧栏开合会改动 #viewerContainer 的
-         inset-inline-start，absolute 的工具栏会跟着祖先的布局变化一起上下漂；
-         以视口为参照系，纵向就锁死在窗口顶边，跟任何祖先布局脱钩。 */
+      transform: none !important;
+      translate: none !important;
+      filter: none !important;
+      backdrop-filter: none !important;
+      perspective: none !important;
+      contain: none !important;
+      will-change: auto !important;
+    }
+
+    :root:has(link[href^="resource://pdf.js"]) #toolbarContainer {
       position: fixed !important;
       top: 0 !important;
-      left: 50% !important;
-      transform: translateX(-50%);
+      inset-inline: 0 !important;
+      margin-inline: auto !important;
       width: calc(100% - 16px) !important;
       max-width: min(var(--zenwashi-pdf-toolbar-max, 860px), calc(100% - 16px)) !important;
       border: 1px solid var(--zenwashi-pdf-line) !important;
@@ -447,7 +460,11 @@
       border-radius: 0 0 12px 12px !important;
       box-shadow: var(--zenwashi-pdf-page-shadow) !important;
       z-index: 3;
-      animation: zenwashi-pdf-toolbar-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    /* 入场动画挂在 #toolbarViewer 而不是 #toolbarContainer，避免动画期间产生包含块 */
+    :root:has(link[href^="resource://pdf.js"]) #toolbarContainer > #toolbarViewer {
+      animation: zenwashi-pdf-toolbar-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) backwards;
     }
 
     /* 首屏给胶囊让位。用 margin 而不是 padding：margins 会跟着缩放/适配宽度重算，
@@ -462,122 +479,28 @@
       top: 100% !important;
     }
 
-    /* -----------------------------------------------------------------------
-       5.1 自动隐藏 (zenwashi.pdf.auto-hide-toolbar)
-           阅读器里没有任何可用的 JS 通道（见指南 §7.9），所以只能用纯 CSS：
-           把工具栏收成顶部一条 8px 的隐形停靠区，指针进入才展开。
-           不是"滚动后自动收起"——那需要监听 scroll，CSS 做不到。
-       ----------------------------------------------------------------------- */
-    @media (-moz-pref("zenwashi.pdf.auto-hide-toolbar")) {
-      /* 收起方向的延迟：指针离开后先保持 0.5s 再收，展开方向没有延迟。
-         实现方式是给"默认态"的 transition 加 delay，再在 hover 态里把
-         transition-delay 归零 —— 这样两个方向可以有不同的时序。
-         所有会变的外观属性都要带上同样的 delay，否则背景会先变透明、
-         高度还留着，出现"半透明残影"。 */
-      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer {
-        height: 8px !important;
-        background-color: transparent !important;
-        border-color: transparent !important;
-        box-shadow: none !important;
-        transition:
-          height 0.22s ease 0.5s,
-          background-color 0.22s ease 0.5s,
-          border-color 0.22s ease 0.5s,
-          box-shadow 0.22s ease 0.5s;
-      }
-
-      /* 收起时把工具条整体上移出可视区。
-         高度写死成 calc(--toolbar-height - 6px)：容器展开时的内容高度是
-         34 - 2×2(padding) - 2(border) = 28px，写死才能避免收起瞬间被压扁。 */
-      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer > #toolbarViewer {
-        height: calc(var(--toolbar-height) - 6px) !important;
-        transform: translateY(-100%);
-        pointer-events: none;
-        transition: transform 0.22s ease 0.5s;
-      }
-
-      /* :focus-within 一起算：键盘操作时工具栏不会因为鼠标移开而消失 */
-      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:is(:hover, :focus-within) {
-        height: var(--toolbar-height) !important;
-        background-color: var(--zenwashi-pdf-chrome) !important;
-        border-color: var(--zenwashi-pdf-line) !important;
-        box-shadow: var(--zenwashi-pdf-page-shadow) !important;
-        transition-delay: 0s;
-      }
-
-      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:is(:hover, :focus-within)
-        > #toolbarViewer {
-        transform: none;
-        pointer-events: auto;
-        transition-delay: 0s;
-      }
-
-      /* 大纲面板跟着工具栏一起进退：面板是工具栏的后代，指针停在面板上时
-         #toolbarContainer 仍然处于 :hover，所以展开状态不会被误判。
-         收起时用与工具栏相同的 0.5s 延迟，两者同步消失、同步回来。 */
-      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:not(:hover):not(:focus-within) #viewsManager {
-        opacity: 0 !important;
-        transform: translateY(-6px) !important;
-        /* 关键：这里不能用 pointer-events: none。
-           它是瞬时生效的 —— 指针一离开工具栏（哪怕只是穿过工具栏与面板之间的
-           空隙），面板就立刻失去命中测试，随后指针移到面板上也唤不回
-           #toolbarContainer 的 :hover，于是面板按计时消失，救不回来。
-           改用 visibility：它参与过渡，会在淡出**结束**时才真正变成 hidden，
-           在此之前面板一直可命中，指针落到上面就能把 hover 接过去、
-           整个退场被取消。 */
-        visibility: hidden !important;
-        /* 比工具栏的 0.5s 再多留 0.3s、淡出放慢到 0.3s：面板是阅读时真正在用的
-           东西，不该在指针一离开就"啪"地消失。 */
-        transition-delay: 0.8s !important;
-        transition-duration: 0.3s !important;
-      }
-
-      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:is(:hover, :focus-within) #viewsManager {
-        transition-delay: 0s !important;
-      }
-
-      /* 进度条跟着一起藏，否则会孤零零地浮在 8px 停靠区下面 */
-      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer #loadingBar {
-        opacity: 0;
-        transition: opacity 0.15s ease 0.5s;
-      }
-
-      :root:has(link[href^="resource://pdf.js"]) #toolbarContainer:is(:hover, :focus-within) #loadingBar {
-        opacity: 1;
-        transition-delay: 0s;
-      }
-    }
   }
 
   /* 工具栏入场：从上方 6px 落定 + 淡入 */
   @keyframes zenwashi-pdf-toolbar-in {
     from {
       opacity: 0;
-      transform: translate(-50%, -6px);
+      transform: translateY(-6px);
     }
 
     to {
       opacity: 1;
-      transform: translate(-50%, 0);
+      transform: translateY(0);
     }
   }
 
   /* ---------------------------------------------------------------------------
-     6. 侧栏面板
-        四个问题一次解决：
-          ① 不再推开内容 —— pdf.js 打开面板时会把 #viewerContainer 的
-             inset-inline-start 设成面板宽度，于是整页横向"划"一下；面板本质是
-             浮在纸页上的门帘，这里直接钉死，页面不动。
-          ② 入场方向统一 —— pdf.js 靠 inset-inline-start 从画外滑入，和工具栏的
-             纵向落定不是一个节奏；这里把位置钉在 8px，只做淡入 + 轻微下落。
-          ③ 高度兜住 —— pdf.js 的 max-height 按 --viewer-container-height 算，
-             而我们清掉了 viewerContainer 的 inset，面板底部会正好顶到窗口下沿，
-             圆角被切；改用视口高度并预留 16px。
-          ④ 面板靠 [hidden]（display: none !important）切换，所以：
-             · 进入动画用 @starting-style 给初值；
-             · 退出动画靠 transition-behavior: allow-discrete —— 它能让 display
-               的变化延后到过渡结束，于是"淡出 → 再 display:none"能成立
-               （Firefox 129+；不支持时退化为瞬时关闭，不会坏）。
+     6. 侧栏面板（和纸浮层抽屉）
+        ① 不再推开内容 —— 页面保持静止，面板浮在视口左侧边缘；
+        ② 严格避开顶栏 —— top 固定在 --toolbar-height + 10px，任何窗口宽度下都不与顶栏重叠；
+        ③ 统一纸面质感 —— box-sizing: border-box 修正标题栏溢出，抹平纯白顶栏割裂感，
+           去掉生硬原生黑色焦点框，大纲条目加舒适行距与矿物色左侧选中标线；
+        ④ 开关过渡 —— [hidden] 进入用 @starting-style，退出用 allow-discrete。
      --------------------------------------------------------------------------- */
   :root:has(link[href^="resource://pdf.js"]) #outerContainer.viewsManagerOpen #viewerContainer:not(.pdfPresentationMode) {
     inset-inline-start: 0 !important;
@@ -585,46 +508,138 @@
   }
 
   :root:has(link[href^="resource://pdf.js"]) #viewsManager {
-    inset-inline-start: 8px !important;
-    bottom: auto !important;
-    max-height: calc(100vh - var(--toolbar-height) - var(--doorhanger-height) - 16px) !important;
-    opacity: 1;
-    transform: none;
-    visibility: visible;
+    position: fixed !important;
+    top: calc(var(--toolbar-height) + 10px) !important;
+    bottom: 12px !important;
+    inset-inline-start: 12px !important;
+    inset-inline-end: auto !important;
+    max-height: calc(100vh - var(--toolbar-height) - 22px) !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    border-radius: 14px !important;
+    border: 1px solid var(--zenwashi-pdf-line) !important;
+    background-color: var(--zenwashi-pdf-chrome) !important;
+    --sidebar-bg-color: var(--zenwashi-pdf-chrome) !important;
+    --header-bg: var(--zenwashi-pdf-chrome) !important;
+    --header-shadow: none !important;
+    /* 阴影半径收紧到 14px：自动隐藏时只需左移 28px 就能完全藏出视口，
+       无需动画 box-shadow，全程纯 GPU transform 合成、零重绘卡顿。 */
+    box-shadow:
+      0 2px 6px var(--zenwashi-pdf-shadow),
+      0 6px 14px var(--zenwashi-pdf-shadow) !important;
+    z-index: 4 !important;
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
     transition:
-      opacity 0.18s ease,
-      transform 0.18s ease,
-      display 0.18s,
-      visibility 0.18s;
-    /* 让 display / visibility 也参与过渡：关闭时先跑完淡出，再真正切成 none */
-    transition-behavior: allow-discrete;
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.22s ease,
+      display 0.28s,
+      visibility 0.28s !important;
+    /* user sheet 必须加 !important 才能压过 viewer.css 自身的 transition 声明 */
+    transition-behavior: allow-discrete !important;
   }
 
-  /* 关闭态的"目标值"：不写这条的话，[hidden] 生效瞬间 opacity 仍是 1，
-     没有可过渡的目标值，退出动画就不会发生。
-     退出时长单独写长（0.32s）：过渡的时长取自**目标状态**的 computed style，
-     所以进入沿用基态的 0.18s，只有退出变慢。 */
-  :root:has(link[href^="resource://pdf.js"]) #viewsManager[hidden] {
-    opacity: 0;
-    transform: translateY(-4px);
-    transition-duration: 0.32s;
+  /* 统一标题栏与抽屉纸色，去掉多余双线 */
+  :root:has(link[href^="resource://pdf.js"]) #viewsManagerHeader {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background-color: var(--zenwashi-pdf-chrome) !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid var(--zenwashi-pdf-line) !important;
+    border-radius: 13px 13px 0 0 !important;
+    padding: 6px 8px !important;
   }
 
-  @starting-style {
-    :root:has(link[href^="resource://pdf.js"]) #viewsManager {
+  :root:has(link[href^="resource://pdf.js"]) #viewsManagerStatus {
+    border: none !important;
+    margin: 0 !important;
+  }
+
+  :root:has(link[href^="resource://pdf.js"]) #viewsManagerTitle,
+  :root:has(link[href^="resource://pdf.js"]) #viewsManagerHeaderLabel {
+    color: var(--zenwashi-pdf-fg) !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em;
+  }
+
+  :root:has(link[href^="resource://pdf.js"]) #viewsManagerContent {
+    box-sizing: border-box !important;
+    background-color: transparent !important;
+    padding: 4px 6px 6px !important;
+    border-radius: 0 0 13px 13px !important;
+    scrollbar-width: thin;
+    scrollbar-color: light-dark(rgba(60, 52, 42, 0.22), rgba(245, 242, 235, 0.18)) transparent;
+  }
+
+  :root:has(link[href^="resource://pdf.js"]) #viewsManager .sidebarResizer {
+    background-color: transparent !important;
+  }
+
+  /* 大纲树条目：舒适行距、圆角胶囊悬停、去除刺眼黑色原生焦点框 */
+  :root:has(link[href^="resource://pdf.js"]) #viewsManager .treeView .treeItem > a {
+    border-radius: 7px !important;
+    padding: 5px 8px !important;
+    margin-block: 1px !important;
+    line-height: 1.45 !important;
+    outline: none !important;
+    transition:
+      background-color 0.14s ease,
+      color 0.14s ease !important;
+  }
+
+  :root:has(link[href^="resource://pdf.js"]) #viewsManager .treeView .treeItem > a:focus-visible {
+    outline: 1.5px solid var(--zenwashi-pdf-accent) !important;
+    outline-offset: -1.5px !important;
+  }
+
+  :root:has(link[href^="resource://pdf.js"]) #viewsManager .treeView .treeItem.selected > a {
+    font-weight: 500 !important;
+    box-shadow: inset 2.5px 0 0 var(--zenwashi-pdf-accent) !important;
+  }
+
+  /* 打开滑出：用 keyframes 驱动 :not([hidden])，比 user sheet 里的 @starting-style 稳定 */
+  @keyframes zenwashi-pdf-sidebar-in {
+    from {
       opacity: 0;
-      transform: translateY(-4px);
+      transform: translate3d(calc(-100% - 24px), 0, 0);
     }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  :root:has(link[href^="resource://pdf.js"]) #viewsManager:not([hidden]) {
+    animation: zenwashi-pdf-sidebar-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) backwards !important;
+  }
+
+  /* 收起滑入：全量 !important 压过 viewer.css，等完整滑回左侧后再切成 display:none */
+  :root:has(link[href^="resource://pdf.js"]) #viewsManager[hidden] {
+    opacity: 0 !important;
+    transform: translate3d(calc(-100% - 24px), 0, 0) !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition:
+      transform 0.24s cubic-bezier(0.4, 0, 1, 1),
+      opacity 0.2s ease,
+      display 0.24s,
+      visibility 0.24s !important;
+    transition-behavior: allow-discrete !important;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    :root:has(link[href^="resource://pdf.js"]) #toolbarContainer {
+    :root:has(link[href^="resource://pdf.js"]) #toolbarContainer > #toolbarViewer {
       animation: none !important;
     }
 
-    :root:has(link[href^="resource://pdf.js"]) #viewsManager {
-      opacity: 1;
-      transform: none;
+    :root:has(link[href^="resource://pdf.js"]) #viewsManager,
+    :root:has(link[href^="resource://pdf.js"]) #viewsManager:not([hidden]),
+    :root:has(link[href^="resource://pdf.js"]) #viewsManager[hidden] {
+      animation: none !important;
       transition: none !important;
     }
   }
