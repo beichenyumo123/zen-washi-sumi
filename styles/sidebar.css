@@ -1,0 +1,322 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Natural Folders, Hierarchy Rail & Borderless Sidebar
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   3. Natural Folders & Continuous Hierarchy Rail (参考 Arc 容器级圆角导轨)
+   ----------------------------------------------------------------------------- */
+/* 文件夹图标极简线框与实心和纸遮挡 */
+zen-folder .tab-group-folder-icon rect,
+zen-folder .tab-group-folder-icon path,
+.tab-group-folder-icon rect,
+.tab-group-folder-icon path {
+  fill: var(--zenwashi-bg-base) !important;
+  stroke: var(--zenwashi-accent) !important;
+  stroke-width: 1.5px !important;
+  transition: stroke var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+.tab-group-folder-icon,
+.tab-group-folder-icon svg,
+zen-folder .tab-group-folder-icon svg {
+  color: var(--zenwashi-accent) !important;
+  background: transparent !important;
+}
+
+/* 文件夹整行标题纯净透明，彻底杜绝文件夹标题自身前方的任何竖线 */
+zen-folder,
+zen-folder .tab-group-label-container {
+  background: transparent !important;
+  color: var(--zenwashi-fg-primary) !important;
+  position: relative !important;
+}
+
+zen-folder .tab-group-label-container::before,
+zen-folder .tab-group-label-container::after {
+  display: none !important;
+  content: none !important;
+}
+
+zen-folder:hover .tab-group-label-container {
+  color: var(--zenwashi-accent) !important;
+}
+
+/* 
+ * 核心机制（参考 zen-arc-theme 的容器级贯穿线）：
+ * 不对单个 tab 添加伪元素，而是给容纳同层子项的整体容器附加一条连续贯穿的微圆角竖线。
+ * 绝不污染外部普通标签页！
+ */
+.tab-group-container,
+zen-folder .tab-group-tabs,
+zen-folder-tabs {
+  position: relative !important;
+  margin-left: 6px !important;
+  padding-left: 12px !important;
+  box-sizing: border-box !important;
+}
+
+/* 连续微圆角竖线：从第一个子项贯穿到最后一个子项 */
+.tab-group-container::after,
+zen-folder .tab-group-tabs::after,
+zen-folder-tabs::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 4px !important;
+  bottom: 4px !important;
+  left: 4px !important;
+  width: 3.5px !important;              /* 加宽圆角竖线 */
+  border-radius: 3px !important;         /* 柔和圆角 */
+  background: var(--zenwashi-accent-tint) !important;
+  opacity: 0.85 !important;
+  pointer-events: none !important;
+  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
+              opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 当鼠标悬停在子项组上，或当前文件夹内包含激活选中的标签页时，导轨温润加深为实体强调色 */
+.tab-group-container:is(:hover, :has(.tabbrowser-tab:is([selected], [selected="true"], [visuallyselected], [visuallyselected="true"], [multiselected="true"])))::after,
+zen-folder:is(:hover, [folder-active="true"], :has(.tabbrowser-tab:is([selected], [selected="true"], [visuallyselected], [visuallyselected="true"], [multiselected="true"]))) > :is(.tab-group-tabs, .tab-group-container, zen-folder-tabs)::after,
+zen-folder .tab-group-tabs:is(:hover, :has(.tabbrowser-tab:is([selected], [selected="true"], [visuallyselected], [visuallyselected="true"], [multiselected="true"])))::after,
+zen-folder-tabs:is(:hover, :has(.tabbrowser-tab:is([selected], [selected="true"], [visuallyselected], [visuallyselected="true"], [multiselected="true"])))::after {
+  background: var(--zenwashi-accent) !important;
+  opacity: 0.95 !important;
+}
+
+/* 嵌套子文件夹：在父级导轨内保持规整向内缩进 */
+zen-folder zen-folder {
+  margin-left: 4px !important;
+}
+
+/*
+ * 【已删除】折叠文件夹内 [aria-hidden="true"] 标签的强制收拢规则
+ * -----------------------------------------------------------------------------
+ * 这里原本有一条规则，把折叠文件夹内隐藏标签的盒模型强压为 0
+ * (opacity/visibility/height/max-height/min-height/margin-block)，
+ * 目的是防止全局 margin / transform / 休眠 opacity 规则把它们撑开而叠印。
+ * 它现在必须整块删除，因为会破坏 Zen 1.23.3 的收起动画：
+ *
+ *   set collapsed()  (tabgroup.mjs) 会先 toggleAttribute("collapsed")，
+ *   再**同步**调用 #updateTabAriaHidden() 给所有子标签打上 [aria-hidden]，
+ *   然后才 dispatch "TabGroupCollapse" 触发 ZenFolders.animateCollapse()。
+ *   而 animateCollapse 的第一件事是测量收起距离：
+ *     #measureCollapsedShift() → #calculateHeightShift()
+ *       → getBoundsWithoutFlushing(tabsContainer).height
+ *   此刻子标签已经带上 [aria-hidden]，只要主题还把它们的高度压成 0，
+ *   测出的高度就是 ≈0 → 收起目标退化为 marginTop: -4px，条目动画也从 0 开始，
+ *   于是「收起没有动画」。展开方向测的是自然高度，所以不受影响——
+ *   这正是「只有展开有动画」这个不对称表现的来源。
+ *
+ * 注意：仅仅去掉 !important 不够，兜底规则本身仍会参与布局、照样污染测量。
+ * Zen 收起/展开是自己负责的：动画结束后会给容器加 hidden 并清理 inline 样式；
+ * 而主题里真正可能撑开它们的全局规则早已用 :not([aria-hidden="true"]) 排除。
+ * 若将来真出现叠印，请改成「只在动画结束后生效」的定向规则，
+ * 绝不要在收起动画测量之前插手盒模型。
+ */
+
+/* 当折叠文件夹内所有子标签页均处于 [aria-hidden="true"] 收拢态时，同步隐藏左侧贯穿导轨 */
+zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is(.tab-group-tabs, .tab-group-container, zen-folder-tabs)::after,
+.tab-group-container:not(:has(.tabbrowser-tab:not([aria-hidden="true"])))::after {
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* 
+ * 文件夹与固定标签页 [zen-pinned-changed="true"] 图标防错位保护：
+ * 当固定标签页或文件夹内的标签页发生站内跳转（如 B 站视频页自动追加参数）时，Zen 会注入 zen-pinned-changed="true"
+ * 与 --zen-original-tab-icon，并通过高优先级选择器将 .tab-icon-stack / .tab-icon-image 缩小偏移至右下角作为角标，
+ * 同时插入 .tab-reset-pin-button 与 .zen-tab-sublabel（“返回标签页”）。
+ * 若仅隐藏 .tab-reset-pin-button 而不锁定非文件夹固定标签页的 .tab-icon-stack 盒模型，
+ * 会导致脱离文档流的图标与左移的标题文字（.tab-label-container）直接重合。
+ * 此处采用 #main-window #browser #navigator-toolbox 高优先级选择器，对所有非 Essentials 标签页全面锁定 16x16 居中盒模型。
+ */
+#main-window #browser #navigator-toolbox .tabbrowser-tab .tab-reset-pin-button,
+#main-window #browser #navigator-toolbox .tabbrowser-tab .zen-tab-sublabel,
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab) .tab-icon-stack::before,
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab) .tab-icon-stack::after {
+  display: none !important;
+  content: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  margin: 0px !important;
+  padding: 0px !important;
+  background-image: none !important;
+}
+
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  flex-shrink: 0 !important;
+  margin-block: 0px !important;
+  margin-inline-start: 0px !important;
+  margin-inline-end: 8px !important;
+  padding: 0px !important;
+  transform: none !important;
+  translate: none !important;
+  scale: 1 !important;
+}
+
+/* 侧边栏折叠窄模式（仅显示图标）下恢复图标水平居中 */
+#main-window:not([zen-single-toolbar="true"]):not([zen-sidebar-expanded="true"]) #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack {
+  margin-inline: 0px !important;
+}
+
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])):not(:has(.tab-close-button:hover, .tab-reset-button:hover)) .tab-icon-stack > :is(.tab-icon-image, .tab-icon-pending) {
+  position: absolute !important;
+  inset: 0px !important;
+  top: 0px !important;
+  left: 0px !important;
+  right: 0px !important;
+  bottom: 0px !important;
+  width: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  margin: auto !important;
+  padding: 0px !important;
+  transform: none !important;
+  translate: none !important;
+  scale: 1 !important;
+}
+
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])) .tab-icon-stack > :is(.tab-icon-image, .tab-icon-pending) {
+  position: absolute !important;
+  inset: 0px !important;
+  top: 0px !important;
+  left: 0px !important;
+  right: 0px !important;
+  bottom: 0px !important;
+  width: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  margin: auto !important;
+  padding: 0px !important;
+  translate: none !important;
+  scale: 1 !important;
+}
+
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])) .tab-label-container {
+  position: relative !important;
+  inset: auto !important;
+  margin-inline-start: 0px !important;
+  padding-inline-start: 0px !important;
+  min-width: 0 !important;
+  translate: none !important;
+}
+
+#main-window #browser #navigator-toolbox .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([pinned], [zen-pinned-changed], :not([pinned])):not(:has(.tab-close-button:hover, .tab-reset-button:hover)) .tab-label-container {
+  transform: none !important;
+}
+
+/* -----------------------------------------------------------------------------
+   4. Unified Clean Canvas & Borderless Sidebar (消除多余垂直线)
+   ----------------------------------------------------------------------------- */
+:root,
+#main-window,
+#browser,
+#zen-browser-background,
+.zen-browser-generic-background,
+#zen-appcontent-navbar-container {
+  background-color: var(--zenwashi-bg-base) !important;
+  background-image: none !important;
+  color: var(--zenwashi-fg-primary) !important;
+}
+
+/* 彻底清空侧边栏容器各层级的嵌套 border，杜绝贴墙线与双重线 */
+#navigator-toolbox,
+#sidebar-box,
+#TabsToolbar,
+#TabsToolbar-customization-target,
+#vertical-pinned-tabs-container,
+#pinned-tabs-container,
+#tabbrowser-tabs {
+  background-color: var(--zenwashi-bg-base) !important;
+  background-image: none !important;
+  border: none !important;
+  border-inline: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+#sidebar-splitter,
+#zen-sidebar-splitter,
+#ai-window-splitter,
+#vertical-pinned-tabs-splitter {
+  border: none !important;
+  background: transparent !important;
+  opacity: 0 !important;
+}
+
+#zen-sidebar-bottom-buttons,
+#zen-sidebar-icons-wrapper,
+#zen-workspaces-button,
+#zen-workspaces-button-wrapper,
+.zen-workspaces-button {
+  background-color: var(--zenwashi-bg-base) !important;
+  background-image: none !important;
+  border: none !important;
+}
+
+/* 顶栏下方圆角（zenwashi.toolbar.bottom-radius）
+   -----------------------------------------------------------------------------
+   目标元素是「融合顶栏」里真正上色的那一层：#zen-appcontent-navbar-wrapper
+   （styles/blended-addressbar.css 给它铺 --zen-tab-header-background）。
+   它和页面同属 #zen-appcontent-wrapper 这张卡，所以把它的下方两角圆掉，
+   圆角处露出来的是卡片底色，视觉上顶栏就成了一根浮在页面上的圆角条。
+
+   之前试错的三个都不是它：#navigator-toolbox 与 #zen-toolbar-background 是
+   整窗背景层（position: absolute; inset: 0），#nav-bar 在主题里是透明的。
+   默认不设 → 尺寸 0 → 与改前完全一致。 */
+@media (-moz-pref("zenwashi.toolbar.bottom-radius", "8px")) {
+  #zen-appcontent-navbar-wrapper {
+    border-end-start-radius: 8px !important;
+    border-end-end-radius: 8px !important;
+  }
+}
+@media (-moz-pref("zenwashi.toolbar.bottom-radius", "12px")) {
+  #zen-appcontent-navbar-wrapper {
+    border-end-start-radius: 12px !important;
+    border-end-end-radius: 12px !important;
+  }
+}
+@media (-moz-pref("zenwashi.toolbar.bottom-radius", "16px")) {
+  #zen-appcontent-navbar-wrapper {
+    border-end-start-radius: 16px !important;
+    border-end-end-radius: 16px !important;
+  }
+}
+@media (-moz-pref("zenwashi.toolbar.bottom-radius", "20px")) {
+  #zen-appcontent-navbar-wrapper {
+    border-end-start-radius: 20px !important;
+    border-end-end-radius: 20px !important;
+  }
+}
+
+/* 顶栏与地址栏 */
+#nav-bar {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* 
+ * 地址栏底板自 Gecko 158 起由 `#urlbar-background` 改为纯 class `.urlbar-background`
+ * （见 UrlbarInputBase.#markup），所以旧 id 选择器早已静默失效。
+ * 底板与展开面板的配色统一收敛到第 12.1 节，这里不再重复声明。
+ */

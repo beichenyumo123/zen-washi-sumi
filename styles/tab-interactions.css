@@ -1,0 +1,416 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Sleeping Tabs, Separators, Edge Fade & Close Button
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   8. Sleeping Tabs (墨迹微褪 · 严格排除所有 Essentials 容器)
+   ----------------------------------------------------------------------------- */
+@media not (-moz-pref("zenwashi.tab.sleep-fade", false)) {
+  /* 休眠标签的淡化同样不能加 !important：
+   * 关闭一个休眠标签时，WAAPI 的 opacity 淡出也需要能压过它。 */
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([aria-hidden="true"]) {
+    opacity: 0.6;
+    transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+  }
+
+  /* 非休眠态恢复完全不透明。刻意不用 !important：
+   * 关闭动画（WAAPI，opacity 1→0）只有在普通声明之上才能生效；
+   * 静止态这里本来就是 1，去掉权重不影响休眠淡入淡出。 */
+  .tabbrowser-tab:not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]):not([aria-hidden="true"]) {
+    opacity: 1;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   9. Capsule Pill Separators & Indicators (圆角胶囊横条分隔线与指示器)
+   ----------------------------------------------------------------------------- */
+
+/* ---------------- 9.1 固定标签页与常规标签页之间的分隔栏 ---------------- */
+.pinned-tabs-container-separator {
+  margin-inline: 8px !important;
+  margin-block: 6px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  position: relative !important;
+  isolation: isolate !important;
+}
+
+/* 
+ * 胶囊横条主体：绝对定位铺满整行，不再被右侧按钮截短。
+ * 这样无论「清除」按钮显示与否，横线都独占一行；按钮只是浮在横线右端的一枚纸片。
+ */
+.pinned-tabs-container-separator toolbarseparator,
+.pinned-tabs-container-separator > toolbarseparator {
+  appearance: none !important;
+  border: none !important;
+  height: 3px !important;
+  min-height: 3px !important;
+  max-height: 3px !important;
+  border-radius: 9999px !important;
+  background-color: var(--zenwashi-border-distinct) !important;
+  opacity: 0.65 !important;
+  margin: 0 !important;
+  flex: none !important;
+  position: absolute !important;
+  /* 右侧留 12px 呼吸位：胶囊右端完整收圆，不再顶到侧栏滚动条下面 */
+  inset-inline: 0 12px !important;
+  top: 50% !important;
+  translate: 0 -50% !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
+              opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 悬停整行时横线微微高亮 */
+.pinned-tabs-container-separator:hover toolbarseparator {
+  background-color: var(--zenwashi-accent-tint) !important;
+  opacity: 0.9 !important;
+}
+
+/* 
+ * 右侧“清除”按钮：
+ * 1. 平时隐藏（与 Zen 原生一致），侧栏悬停或按钮获得焦点时才浮现；
+ * 2. 绝对定位浮在横线右端，不参与 flex 排布 —— 隐藏时不会截短横线，横线始终满行；
+ * 3. 不透明表面色遮住从下方穿过的横线，让纸片像压在胶囊线上；
+ * 4. 默认 pointer-events: none，避免看不见时误点清空标签。
+ */
+.pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
+#titlebar .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
+#TabsToolbar .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button {
+  appearance: none !important;
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  /* 与胶囊线右端对齐，同样留出 12px 呼吸位 */
+  inset-inline-end: 12px !important;
+  top: 50% !important;
+  translate: 0 -50% !important;
+  z-index: 2 !important;
+  flex-shrink: 0 !important;
+  border-radius: 9999px !important;
+  padding: 2px 9px !important;
+  margin: 0 !important;
+  font-size: 11px !important;
+  /* 采用实色和纸卡片表面色叠加轻微微光，确保遮蔽底层透射 */
+  background: var(--zenwashi-bg-surface) !important;
+  background-color: var(--zenwashi-bg-surface) !important;
+  box-shadow: 0 1px 3px light-dark(rgba(0,0,0,0.06), rgba(0,0,0,0.25)),
+              0 0 0 1px light-dark(rgba(60, 52, 42, 0.08), rgba(245, 242, 235, 0.12)) !important;
+  color: var(--zenwashi-fg-secondary) !important;
+  border: none !important;
+  cursor: pointer !important;
+  pointer-events: none !important;
+  transition:
+    opacity 0.16s var(--zenwashi-ease),
+    background-color var(--zenwashi-duration) var(--zenwashi-ease),
+    color var(--zenwashi-duration) var(--zenwashi-ease),
+    box-shadow var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 侧栏悬停 / 按钮聚焦时才浮现；横线是独立元素，显隐按钮都不会让横线缩短 */
+#navigator-toolbox[zen-has-implicit-hover="true"] .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
+.pinned-tabs-container-separator:hover .zen-workspace-close-unpinned-tabs-button,
+.pinned-tabs-container-separator:focus-within .zen-workspace-close-unpinned-tabs-button {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* 内部图标与“清除”文字标签强制保持常驻可见 */
+.pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button .toolbarbutton-icon,
+.pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button .toolbarbutton-text {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+
+.pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button:hover {
+  background-color: var(--zenwashi-accent-tint) !important;
+  color: var(--zenwashi-accent) !important;
+  box-shadow: 0 1px 4px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.3)),
+              0 0 0 1px var(--zenwashi-accent) !important;
+}
+
+/* ---------------- 9.15 标签条上下边缘渐隐 ---------------- */
+
+/* 标签多到溢出时，上下两端不再被硬边切断，而是化进和纸背景里。
+   注意 mask 会强制建立合成层：标签数量很多时滚动可能有极轻微的额外开销，
+   所以留了开关（zenwashi.tabs.fade-edges）。 */
+@media not (-moz-pref("zenwashi.tabs.fade-edges", false)) {
+  /* 下端：遮罩。它画在 #zen-tabs-wrapper 的滚动坐标系里，内容滚到底时正好进入
+     可视区末尾，所以能看见。 */
+  #zen-tabs-wrapper {
+    mask-image: linear-gradient(
+      to bottom,
+      #000 0,
+      #000 calc(100% - 18px),
+      transparent 100%
+    );
+  }
+
+  /* 上端：遮罩做不出来（同一坐标系问题，会跟着内容滚走），改用 sticky 覆盖层。
+     sticky 是相对"滚动容器的可视区"定位的，所以它稳稳钉在顶部；
+     负 margin 抵消掉自身 16px 的占位，不影响标签布局；pointer-events: none
+     让点击穿透到下面的标签。 */
+  #zen-tabs-wrapper::before {
+    content: "";
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    display: block;
+    height: 16px;
+    margin-block-end: -16px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, var(--zenwashi-bg-base), transparent);
+  }
+}
+
+/* ---------------- 9.17 Cmd+T 悬浮地址栏：按内容区居中 ---------------- */
+
+/* Zen 原生是「相对整个窗口居中」（left: 50% + translate: -50% 0%），窗口中线
+   比侧栏右侧的内容区中心偏左半个侧栏宽，所以看起来"不居中"。
+
+   这里把定位交给 js/floating-urlbar-center.uc.js：它直接量
+   gBrowser.selectedBrowser 的矩形，把内容区中心写成 --zenwashi-float-x/y。
+   纯 CSS 做不了这件事 —— #urlbar 是 popover，百分比以视口为基准，而 Zen 的
+   --zen-sidebar-width 写在 #navigator-toolbox 的内联样式上，popover 进顶层后
+   继承链断开，取到空值（calc(50% + 0px/2) 仍然等于 50%，等于没改）。
+
+   属性 zenwashi-float-positioned 只在脚本量到有效矩形、且 pref 开启时存在，
+   所以这条规则不会在禁用时误伤。 */
+:root[zenwashi-float-positioned="true"] #urlbar[open][zen-floating-urlbar="true"] {
+  left: var(--zenwashi-float-x) !important;
+  top: var(--zenwashi-float-y) !important;
+  translate: -50% -50% !important;
+}
+
+/* ---------------- 9.16 工作区指示器开关 ---------------- */
+
+/* 侧栏顶部那行「工作区名 + 折叠箭头」是 JS 生成的 .zen-current-workspace-indicator。
+   默认显示；关掉后整行（连同它占的高度）一起消失，标签列表上移。
+   注意底部的 #zen-workspaces-button 是另一组元素，不受这个开关影响。 */
+@media (-moz-pref("zenwashi.sidebar.workspace-indicator", false)) {
+  .zen-current-workspace-indicator {
+    display: none !important;
+  }
+
+  /* 指示器消失后，Essentials 和标签列表直接贴在一起；补一段呼吸间距。
+     加在 #zen-tabs-wrapper 上而不是 #zen-essentials 上 —— 后者是 Zen 用 grid
+     精确计算列宽/高度的，任何外部的 margin 或 padding 都会把它顶偏（见指南
+     §2 踩坑点 1）。用 margin 而不是 padding，免得把遮罩渐隐的区域一起撑大。 */
+  #zen-tabs-wrapper {
+    margin-block-start: var(--zenwashi-tabs-gap, 12px) !important;
+  }
+}
+
+/* ---------------- 9.2 侧边栏底部溢出/滚动条胶囊指示条 ---------------- */
+
+/* 隐藏原生生硬切割在底部的粗暴横线与背景渐变 */
+.workspace-arrowscrollbox[overflowing],
+#tabbrowser-arrowscrollbox[overflowing] {
+  --zen-scrollbar-overflow-background: transparent !important;
+  background: transparent !important;
+}
+
+/* 去除原生破坏视觉的生硬伪元素横线 */
+.workspace-arrowscrollbox[overflowing]::before,
+.workspace-arrowscrollbox[overflowing]::after,
+#tabbrowser-arrowscrollbox[overflowing]::before,
+#tabbrowser-arrowscrollbox[overflowing]::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* 隐藏原生在滚动盒底部的箭头按钮背景，重塑为极简圆润药丸胶囊 */
+.workspace-arrowscrollbox autorepeatbutton,
+#tabbrowser-arrowscrollbox autorepeatbutton {
+  border: none !important;
+  background: transparent !important;
+  color: var(--zenwashi-fg-muted) !important;
+  opacity: 0.6 !important;
+  transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+.workspace-arrowscrollbox autorepeatbutton:hover,
+#tabbrowser-arrowscrollbox autorepeatbutton:hover {
+  opacity: 1 !important;
+  color: var(--zenwashi-accent) !important;
+}
+
+/* 底部标签页间距垫块：避免内容直接撞上底部工具栏 */
+.workspace-arrowscrollbox .closing-tabs-spacer,
+#tabbrowser-arrowscrollbox .closing-tabs-spacer {
+  height: 8px !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+
+/* -----------------------------------------------------------------------------
+   10. Refined Tab Close Button & Closing Animation (朱砂点印关闭微交互与折卷收拢动效)
+   ----------------------------------------------------------------------------- */
+
+:root {
+  /* 朱砂点印 (Cinnabar Seal) 专属色彩 Token */
+  --zenwashi-seal-red: light-dark(#B53D30, #D96557);
+  --zenwashi-seal-bg: light-dark(rgba(181, 61, 48, 0.13), rgba(217, 101, 87, 0.20));
+  --zenwashi-seal-border: light-dark(rgba(181, 61, 48, 0.28), rgba(217, 101, 87, 0.35));
+  --zenwashi-seal-active-bg: light-dark(rgba(181, 61, 48, 0.24), rgba(217, 101, 87, 0.32));
+}
+
+/* ---------------- 10.1 朱砂点印关闭按钮与重置按钮 (Cinnabar Seal) ---------------- */
+
+/* 隐藏左侧重叠在网站图标上的 .tab-reset-pin-button，避免破坏文件夹与固定标签页的图文排版 */
+.tabbrowser-tab .tab-reset-pin-button {
+  display: none !important;
+}
+
+/* 常态下完全隐藏右侧关闭与重置按钮（含选中标签页），保持和纸侧栏纯净留白 */
+.tabbrowser-tab .tab-close-button,
+.tabbrowser-tab .tab-reset-button {
+  appearance: none !important;
+  border-radius: 4px !important; /* 微圆角方印造型 */
+  opacity: 0 !important;
+  pointer-events: none !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  padding: 3px !important;
+  margin-inline-end: 2px !important;
+  width: 18px !important;
+  height: 18px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 5 !important;
+  color: var(--zenwashi-fg-secondary) !important;
+  fill: currentColor !important;
+  transform: scale(0.90) !important;
+  transform-origin: center center !important;
+  transition: opacity 0.26s var(--zenwashi-ease),
+              transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.26s var(--zenwashi-ease),
+              box-shadow 0.26s var(--zenwashi-ease),
+              color 0.26s var(--zenwashi-ease) !important;
+}
+
+/* 仅在鼠标悬停于标签页上时，按钮温润浮现 */
+.tabbrowser-tab:hover .tab-close-button,
+.tabbrowser-tab:hover .tab-reset-button {
+  opacity: 0.58 !important;
+  pointer-events: auto !important;
+  transform: scale(1) !important;
+}
+
+/* 鼠标移入按钮自身：化作一枚朱砂方印（淡朱砂印泥底 + 细印框 + 朱砂红叉号） */
+.tabbrowser-tab .tab-close-button:hover,
+.tabbrowser-tab .tab-reset-button:hover,
+.tabbrowser-tab .tab-close-button:hover > .toolbarbutton-icon,
+.tabbrowser-tab .tab-reset-button:hover > .toolbarbutton-icon {
+  opacity: 1 !important;
+  -moz-context-properties: fill, fill-opacity !important;
+  fill: var(--zenwashi-seal-red) !important;
+  fill-opacity: 1 !important;
+  color: var(--zenwashi-seal-red) !important;
+}
+
+.tabbrowser-tab .tab-close-button:hover,
+.tabbrowser-tab .tab-reset-button:hover {
+  transform: scale(1.08) !important;
+  background-color: var(--zenwashi-seal-bg) !important;
+  box-shadow: inset 0 0 0 1px var(--zenwashi-seal-border) !important;
+}
+
+/* 点击落印反馈：微沉下压，印泥加深 */
+.tabbrowser-tab .tab-close-button:active,
+.tabbrowser-tab .tab-reset-button:active {
+  transform: scale(0.90) !important;
+  background-color: var(--zenwashi-seal-active-bg) !important;
+  box-shadow: inset 0 0 0 1px var(--zenwashi-seal-red) !important;
+  transition-duration: 0.12s !important;
+}
+
+/* 侧边栏折叠窄模式（Collapsed）下的布局修正 */
+:root:not([zen-single-toolbar="true"]):not([zen-sidebar-expanded="true"]) .tabbrowser-tab .tab-close-button {
+  margin-inline-end: 0 !important;
+}
+
+/* ---------------- 10.2 预备关闭态：墨迹微褪与朱砂微晕 ---------------- */
+
+/* 悬停关闭按钮时，标签文字与图标墨色从容微褪并轻微内敛，给予清晰预判 */
+.tabbrowser-tab .tab-label-container,
+.tabbrowser-tab .tab-icon-image {
+  transition: opacity 0.28s var(--zenwashi-ease),
+              transform 0.28s var(--zenwashi-ease) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):has(.tab-close-button:hover, .tab-reset-button:hover) .tab-label-container,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):has(.tab-close-button:hover, .tab-reset-button:hover) .tab-icon-image {
+  opacity: 0.42 !important;
+  transform: translateX(-3px) !important;
+}
+
+/* 卡片右侧泛起极淡的朱砂印泥渐变晕染 */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):has(.tab-close-button:hover, .tab-reset-button:hover) .tab-background {
+  background-image: linear-gradient(
+    to left,
+    var(--zenwashi-seal-bg) 0%,
+    transparent 48%
+  ) !important;
+  border-color: var(--zenwashi-seal-border) !important;
+}
+
+/* ---------------- 10.3 标签页关闭离场（由 Zen 的 WAAPI 接管，CSS 无法插手） ---------------- */
+
+/* 关闭动画没有办法用选择器接管，原因在 Zen 1.23.4b 的关闭链路：
+ *
+ *   gBrowser.removeTab()
+ *     → #beginRemoveTab() 里只做 `tab.closing = true`（普通 JS 属性，不是 attribute，
+ *       见 Tabbrowser.sys.mjs:6913；CSS 的 [closing] 永远匹配不到）
+ *     → gZenVerticalTabsManager.animateItemClose(tab)（ZenVerticalTabsManager.mjs:181）
+ *        WAAPI：opacity 1→0、scale 1→0.95、非最后一项时 margin-bottom 0→-height，
+ *        duration 0.1s / easeOut
+ *     → promise 结束后 _endRemoveTab() 立即把节点移出 DOM（Tabbrowser.sys.mjs:6673）
+ *
+ * 所以「改了 [closing] 规则就能改关闭动画」是行不通的：规则匹配不到；即使匹配，
+ * 节点也会在 0.1s 后被删除，动画会被截断。
+ *
+ * 想改时间轴、曲线、让位方式（FLIP）或并发上限，只能在 JS 里 override
+ * animateItemClose()。实现见 js/tab-close.uc.js，避坑记录见 MAINTENANCE_GUIDE §5.8。 */
+
+/* ---------------- 10.4 关闭动效的 JS 协作钩子 (js/tab-close.uc.js) ---------------- */
+
+/* 关闭中的行不再接收指针事件。Zen 的 WAAPI 不设 pointer-events，
+ * 动画持续期间点击/悬停会命中一个正在消失的行。 */
+[zenwashi-closing] {
+  pointer-events: none !important;
+}
+
+/* 关闭触发的标签切换：跳过第 11 节的 0.42–0.58s 缩放/柔焦，直接落位。
+ * 属性由脚本在关闭的同一帧设置，早于样式重算，所以切换过渡根本不会启动；
+ * 这样「关闭」的节奏由标签行自己主导，而不是被内容区拖着走。 */
+:root[zenwashi-tab-closing] #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  transition: none !important;
+  scale: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* 关闭导致的「新标签被选中」不是一次真实按压，不该再播一遍落笔动画。 */
+:root[zenwashi-tab-closing] .tabbrowser-tab:is([selected], [visuallyselected]) .tab-content {
+  animation: none !important;
+}
+
+/* 列表上移后指针会落到下一行；短暂抑制关闭按钮浮现，
+ * 避免「刚关掉一个，下一行的朱砂印章立刻弹到指针下」。 */
+:root[zenwashi-tab-just-closed] .tabbrowser-tab:hover .tab-close-button,
+:root[zenwashi-tab-just-closed] .tabbrowser-tab:hover .tab-reset-button {
+  opacity: 0 !important;
+  transition: none !important;
+  pointer-events: none !important;
+}

@@ -5,7 +5,7 @@
   "author": "db",
   "version": "1.8.0",
   "createdAt": "2026-10-13",
-  "updatedAt": "2026-11-08",
+  "updatedAt": "2026-11-24",
   "style": {
     "chrome": "userChrome.css",
     "content": "userContent.css"

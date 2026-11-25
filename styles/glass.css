@@ -1,0 +1,241 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Glass (macOS Window Vibrancy) & Diagnostics
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   17. Glass 磨砂玻璃（zenwashi.glass）
+   -----------------------------------------------------------------------------
+   先把边界讲清楚（和第 12.2 节地址栏玻璃是同一个物理限制）：
+
+   · **做不到**：让侧栏"糊掉它背后的网页"。网页在独立的 content 进程 / 合成器层树里，
+     chrome 的 backdrop-filter 采样不到它；而且侧栏本来也不压在网页上面。
+   · **能做到**：把窗口纸层和侧栏**放成半透明**，让 macOS 的窗口 vibrancy
+     （系统级 NSVisualEffectView，Zen 原生 zen.widget.macos.window-vibrancy 默认开）
+     从纸底下透上来 —— 桌面壁纸已经被系统糊过，这才是"真玻璃"。
+   · 所以这里**不用 backdrop-filter**：侧栏的 backdrop 是窗口纸层，糊一层纯色没有意义，
+     白付一个合成层的代价。真正起作用的是 alpha。
+
+   图层顺序（自下而上）：
+     #zen-browser-background  ← 整窗纸层，玻璃模式下这里是唯一的纸色来源
+     #zen-toolbar-background  ← 整窗工具层，玻璃模式下让位（否则会叠两层纸，颜色发死）
+     #navigator-toolbox       ← 侧栏列，clear 档在这里单独铺一张玻璃纸
+     #zen-appcontent-wrapper  ← 画卷卡片，保持不透明
+
+   档位：
+     off      两档 alpha 都是 100% = 和改之前逐像素一致
+     frosted  整窗 60% 和纸：侧栏与案台是同一张磨砂纸（最克制，推荐先试这个）
+     clear    整窗 0% + 侧栏 52% 玻璃纸：案台直接透出桌面，侧栏是一张浮在壁纸上的玻璃
+
+   紧凑模式的悬浮面板有自己的 .zen-toolbar-background 与圆角阴影（第 15 节），
+   整个块用 :not([zen-compact-mode="true"]) 排除，不碰。
+   ----------------------------------------------------------------------------- */
+
+:root {
+  --zenwashi-glass-window: 100%;
+  --zenwashi-glass-sidebar: 100%;
+  /* 标题栏那一条的纸色；设成 transparent 就回到"有缝"的透明版 */
+  --zenwashi-glass-cap: var(--zenwashi-bg-base);
+}
+
+@media (-moz-pref("zenwashi.glass", "frosted")) {
+  :root {
+    --zenwashi-glass-window: 60%;
+    --zenwashi-glass-sidebar: 0%;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root {
+    --zenwashi-glass-window: 0%;
+    --zenwashi-glass-sidebar: 52%;
+  }
+}
+
+/* 应用层
+   -----------------------------------------------------------------------------
+   注意：这里**不写** `@media not (prefers-reduced-transparency: reduce)`。
+   Gecko 对「not + 条件」这种 MQ4 写法在部分版本里会整条丢弃，一旦被丢弃，
+   下面所有规则都会静默失效，现象就是"开关怎么切都没区别"——上一版就是这么翻的车。
+   改成：规则无条件生效，系统开了"降低透明度"时只把两档 alpha 拉回 100%，
+   视觉上等于退回实心纸（因为纸层仍是 inset:0 全覆盖）。 */
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --zenwashi-glass-window: 100% !important;
+    --zenwashi-glass-sidebar: 100% !important;
+  }
+}
+
+/*
+ * 第一步：让最底层的"窗口画布"让空。
+ * 第 4 节把 :root / #main-window / #browser / #zen-browser-background 都涂成了实心纸色；
+ * 它们在最底层，不透明就永远是"纸盖纸"，上面调多少 alpha 都看不出来。
+ *
+ * ⚠️ 这里必须写 id：#zen-browser-background。第 4 节同一条规则里用的是 id 选择器
+ * （1,0,0），只写 .zen-browser-generic-background（0,3,0）是**压不过 id 的**——
+ * 之前那版就是这么翻车的：伪元素 60% 生效了、诊断绿色也生效了，但元素自身仍是实心纸。
+ * off 档时上层伪元素仍是 100% 纸色（inset:0 全覆盖），观感与改之前一致。
+ */
+:root:not([zen-compact-mode="true"]),
+:root:not([zen-compact-mode="true"]) #main-window,
+:root:not([zen-compact-mode="true"]) #browser,
+:root:not([zen-compact-mode="true"]) #zen-browser-background,
+:root:not([zen-compact-mode="true"]) #zen-toolbar-background,
+:root:not([zen-compact-mode="true"]) .zen-browser-generic-background {
+  background-color: transparent !important;
+}
+
+/* 第二步：整窗纸层只留这一层，alpha 来自档位 */
+:root:not([zen-compact-mode="true"]) #zen-browser-background::before,
+:root:not([zen-compact-mode="true"]) #zen-browser-background::after {
+  background:
+    linear-gradient(
+      var(--blended-addressbar-window-tint-background, transparent),
+      var(--blended-addressbar-window-tint-background, transparent)
+    ),
+    color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-window), transparent) !important;
+}
+
+/* 第三步：工具背景层让位，否则 60% 叠 60% 会变成 84%，颜色发死 */
+:root:not([zen-compact-mode="true"]) #zen-toolbar-background::before,
+:root:not([zen-compact-mode="true"]) #zen-toolbar-background::after {
+  background: transparent !important;
+}
+
+/* 第四步：侧栏各层原本钉着实心纸色，先全部让开，再由 #navigator-toolbox 单独铺一层 */
+:root:not([zen-compact-mode="true"]) #navigator-toolbox,
+:root:not([zen-compact-mode="true"]) #sidebar-box,
+:root:not([zen-compact-mode="true"]) #TabsToolbar,
+:root:not([zen-compact-mode="true"]) #TabsToolbar-customization-target,
+:root:not([zen-compact-mode="true"]) #vertical-pinned-tabs-container,
+:root:not([zen-compact-mode="true"]) #pinned-tabs-container,
+:root:not([zen-compact-mode="true"]) #tabbrowser-tabs,
+:root:not([zen-compact-mode="true"]) #zen-sidebar-bottom-buttons,
+:root:not([zen-compact-mode="true"]) #zen-sidebar-icons-wrapper,
+:root:not([zen-compact-mode="true"]) #zen-workspaces-button,
+:root:not([zen-compact-mode="true"]) #zen-workspaces-button-wrapper,
+:root:not([zen-compact-mode="true"]) .zen-workspaces-button {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* frosted 档是 0% → 透出整窗纸；clear 档是 52% → 独立玻璃纸 */
+:root:not([zen-compact-mode="true"]) #navigator-toolbox {
+  background-color: color-mix(in srgb, var(--zenwashi-bg-base) var(--zenwashi-glass-sidebar), transparent) !important;
+}
+
+/*
+ * 顶部灰带：Firefox 的 browser-shared.css 在 macOS 上给 **body::after** 挂了
+ *   `-moz-default-appearance: -moz-window-titlebar`（appearance: auto），
+ * 画的是**原生标题栏底色**，位置 inset: 0 / z-index: -1，只在标题栏高度那一条可见。
+ * 浏览器窗口的 <html:body> 包住整个 UI（browser.xhtml:159-7747），平时这层被实心纸
+ * 盖得严严实实；侧栏一做半透明，它就从顶上露出来，把侧栏切成"上面灰带 + 下面玻璃"。
+ *
+ * ⚠️ 别找错元素：我们第一版写成了 #navigator-toolbox::after，那是想当然——
+ *    Firefox 挂的是 body::after（pageInfo/organizer 那两个是别的文档，不影响主窗口）。
+ *
+ * 关掉之后这块区域会露出下面的 #zen-browser-background（也就是同一张 60% 玻璃），
+ * 整条侧栏才是一张连续的玻璃。
+ */
+@media (-moz-pref("zenwashi.glass", "frosted")) {
+  :root:not([zen-compact-mode="true"]) body::after {
+    -moz-default-appearance: none !important;
+    appearance: none !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root:not([zen-compact-mode="true"]) body::after {
+    -moz-default-appearance: none !important;
+    appearance: none !important;
+  }
+}
+
+/* 顺带把标题栏容器本身的原生外观也关掉：如果那条灰带是 #titlebar 自己的
+   -moz-window-titlebar 外观画的，上面那条 body::after 是治不到的。 */
+@media (-moz-pref("zenwashi.glass", "frosted")) {
+  :root:not([zen-compact-mode="true"]) #titlebar {
+    -moz-default-appearance: none !important;
+    appearance: none !important;
+    background: transparent !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root:not([zen-compact-mode="true"]) #titlebar {
+    -moz-default-appearance: none !important;
+    appearance: none !important;
+    background: transparent !important;
+  }
+}
+
+/*
+ * 标题栏那一条：做实心和纸，而不是假装玻璃
+ * -----------------------------------------------------------------------------
+ * 结论先说：macOS **原生标题栏那一层不参与窗口 vibrancy**。
+ * 证据链：
+ *   · 探针实测，缝的位置 == #zen-sidebar-top-buttons 下沿 == --zen-toolbar-height
+ *     == 系统标题栏高度；而该元素自己 background: transparent，chrome 里没有元素在画它；
+ *   · 关掉 body::after / #titlebar 的 -moz-window-titlebar 外观 → 无效；
+ *   · widget.macos.titlebar-blend-mode.behind-window = true → 实测无效。
+ * 也就是说：标题栏背后永远是系统给的那层底，壁纸透不上来。半透明玻璃做在这块上，
+ * 只能得到"一块没有纹理的平色"——比实心纸更像 bug。
+ *
+ * 所以这一条**故意做成实心和纸**（和 `off` 档的观感一致），底部压一条发丝线当分隔，
+ * 读起来是"画卷的天头"，而不是"玻璃没铺到"。下面才是玻璃本体。
+ * 想要彻底不要这条，把 --zenwashi-glass-cap 设为 transparent（会回到有缝的状态）。
+ */
+@media (-moz-pref("zenwashi.glass", "frosted")) {
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-top-buttons {
+    background-color: var(--zenwashi-glass-cap, var(--zenwashi-bg-base)) !important;
+    background-image: none !important;
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--zenwashi-fg-primary) 8%, transparent) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-top-buttons {
+    background-color: var(--zenwashi-glass-cap, var(--zenwashi-bg-base)) !important;
+    background-image: none !important;
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--zenwashi-fg-primary) 8%, transparent) !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   17.2 灰带定位探针（zenwashi.diagnostics.glass）
+   -----------------------------------------------------------------------------
+   三个候选各描一圈颜色，看谁的**下边缘**正好压在灰带下沿：
+     红 = #titlebar          （macOS 标题栏容器）
+     蓝 = #zen-sidebar-top-buttons（红绿灯 + 收起按钮那一行）
+     橙 = #TabsToolbar       （垂直标签栏）
+   下沿对齐谁，灰带就是谁画的；三个都不对齐 → 那条带在窗口层（OS），CSS 够不到。
+   平时保持关闭。
+   ----------------------------------------------------------------------------- */
+@media (-moz-bool-pref: "zenwashi.diagnostics.glass") {
+  :root:not([zen-compact-mode="true"]) #titlebar {
+    outline: 2px solid #ff0000 !important;
+    outline-offset: -2px !important;
+  }
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-top-buttons {
+    outline: 2px solid #0000ff !important;
+    outline-offset: -2px !important;
+  }
+  :root:not([zen-compact-mode="true"]) #TabsToolbar {
+    outline: 2px solid #ff8800 !important;
+    outline-offset: -2px !important;
+  }
+}
+
+/* clear 档的侧栏是一张独立玻璃纸，需要一条发丝线把边缘带出来；
+   frosted 档整窗同一张纸，不能有线。 */
+@media (-moz-pref("zenwashi.glass", "clear")) {
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    box-shadow: inset -1px 0 0 color-mix(in srgb, var(--zenwashi-fg-primary) 10%, transparent) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.glass", "clear")) and (prefers-reduced-transparency: reduce) {
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    box-shadow: none !important;
+  }
+}

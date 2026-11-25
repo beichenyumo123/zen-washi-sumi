@@ -1,0 +1,67 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Reduced Motion & Tab Ink Indicator
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   14. Reduced Motion (系统「减弱动态效果」)
+   ----------------------------------------------------------------------------- */
+/* 这里只收掉本主题声明的「运动」，保留颜色 / 透明度反馈：
+ *   · 标签行内的悬停右移、按落下沉、Essentials 键帽位移；
+ *   · 标签切换的缩放 / 柔焦过渡（直接落到终态）。
+ * Zen 自己的 WAAPI 动效（开关标签、工作区切换等）由 window.gReduceMotion 守卫，
+ * 不需要在这里重复处理；加载转圈（.tab-throbber::before）保持原样。 */
+@media (prefers-reduced-motion: reduce) {
+  #tabbrowser-tabs .tabbrowser-tab .tab-content,
+  #tabbrowser-tabs .tabbrowser-tab .tab-label-container,
+  #tabbrowser-tabs .tabbrowser-tab .tab-icon-image,
+  #tabbrowser-tabs .tabbrowser-tab .tab-icon-stack > * {
+    translate: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: none !important;
+    scale: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   15. Tab Ink Indicator (标签切换瞬态墨痕)
+   -----------------------------------------------------------------------------
+   由 js/tab-indicator.uc.js 驱动，偏好 zenwashi.tab.indicator（默认关，opt-in）。
+
+   这里刻意不画常驻的左侧指示线（第 6 节已把它删掉），只画切换途中那 320ms：
+     · 前缘 0–60% 走完，后缘 35% 才出发 —— 运动逻辑来自 FlClash；
+     · 4px 实心圆头，不做两端渐隐：渐隐会让圆头看起来发虚、发细；
+     · 超长距离只在目标标签处画一小段向上/向下的局部墨痕（脚本内）；
+     · 抵达时脚本把 opacity 归零，静止态不留任何东西；
+     · 颜色/粗细全部走主题 token，深色与四套 palette 自动跟随。
+   元素由脚本按需创建；脚本未启用时这些规则不会命中任何节点。
+   ----------------------------------------------------------------------------- */
+#zenwashi-tab-ink-layer {
+  position: fixed;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2147483000;
+  contain: strict;
+}
+
+#zenwashi-tab-ink {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--zenwashi-accent);
+  opacity: 0;
+}
+
+/* 系统「减弱动态效果」时连节点都不显示；脚本侧也有同样的判断。 */
+@media (prefers-reduced-motion: reduce) {
+  #zenwashi-tab-ink {
+    display: none !important;
+  }
+}

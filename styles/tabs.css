@@ -1,0 +1,140 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Tab Deck & Active Tab
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   6. Tab Deck: Clear Active Tab (清晰辨识选中标签，不影响文件夹)
+   ----------------------------------------------------------------------------- */
+.tab-line,
+.tab-indicator,
+.tab-context-line,
+.tab-group-line,
+.tabbrowser-tab::before,
+.tabbrowser-tab::after,
+#tabbrowser-tabs .tab-line,
+.tab-background::before,
+.tab-background::after {
+  display: none !important;
+  opacity: 0 !important;
+  background: none !important;
+}
+
+/* 普通标签页微调边距与圆角 */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) {
+  border-radius: var(--zenwashi-tab-radius, 8px) !important;
+  box-shadow: none !important;
+  margin-inline: 4px !important;
+  color: var(--zenwashi-fg-secondary) !important;
+  transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 静态几何锁：刻意不用 !important。
+ *
+ * Zen 的开关标签动效由 gZenVerticalTabsManager.animateItemOpen/Close() 驱动，
+ * 走 WAAPI（Animation 来源）。CSS 层叠中「作者 !important」高于「Animation」，
+ * 原先的 transform: none !important / margin-block: 1px !important 会把关闭动画里的
+ * scale(1→0.95) 和负 margin 让位整段压掉；第 8 节的 opacity: 1 !important 又把
+ * 最后剩下的淡出也压掉了。三者叠加的结果是关闭动画完全不可见，节点直接消失，
+ * 列表瞬移。
+ *
+ * 去掉 !important 后：静止时这两条照样生效（选择器特异性足够高），
+ * 动画期间交给 WAAPI 接管；Motion One 结束时 commitStyles() 把终值写回内联样式，
+ * 再由 DOM 移除接走，因此不会回弹。
+ * （closing 只是 JS 属性，Zen 从不给关闭中的标签设置 [closing] 属性。） */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):not([aria-hidden="true"]) {
+  transform: none;
+  margin-block: 1px;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) .tab-background {
+  border-radius: var(--zenwashi-tab-radius, 8px) !important;
+  border: 1px solid transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  transition: background-color var(--zenwashi-duration) var(--zenwashi-ease),
+              border-color var(--zenwashi-duration) var(--zenwashi-ease),
+              box-shadow var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+/* 普通标签悬停态 */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):hover:not([selected]):not([visuallyselected]) .tab-background {
+  background-color: var(--zenwashi-tab-hover-bg) !important;
+  /* 悬停时先浮现一道发丝边，选中时再变成完整卡片 —— 边缘的定义逐级递进，
+     比"只换底色"更有实体感，且依然是零辉光。 */
+  border-color: var(--zenwashi-border-subtle) !important;
+}
+
+/* 
+ * 6.1 标签行的触摸反馈（--zenwashi-tap = 140ms）
+ * -----------------------------------------------------------------------------
+ * 之前这一块只有背景淡入，而 .tab-label 的颜色甚至没有过渡（瞬跳）；
+ * 整行也完全没有运动 —— 这是侧栏里面积最大、点得最多却最"死"的部分。
+ * 这里补三件事：
+ *   1. 文字颜色走 140ms 触碰级过渡（补上原先缺失的 transition）；
+ *   2. 悬停时整行内容右移 2px，鼠标移开时用 240ms 缓回 —— "碰到会回应，离开会归位"；
+ *   3. 只动画 .tab-content，不动 .tabbrowser-tab：
+ *      标签自身有 transform: none !important（第 6 节开头），而且这里用独立的
+ *      `translate` 属性而非 transform，可以完全绕开那句话的封锁（与 essentials 同法）。
+ */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) .tab-label {
+  transition: color var(--zenwashi-tap) var(--zenwashi-ease) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab) .tab-content {
+  translate: 0 0;
+  transition: translate var(--zenwashi-duration) var(--zenwashi-ease) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):hover .tab-content {
+  translate: 2px 0;
+  transition: translate var(--zenwashi-tap) var(--zenwashi-ease) !important;
+}
+
+/* 
+ * 6.2 点击落笔：普通标签的按压反馈（由「选中」触发的一次性动画）
+ * -----------------------------------------------------------------------------
+ * 普通标签是一条扁平纸带，没有侧壁厚度可用；而缩放会让文字变形，不能照搬 essentials。
+ * 所以用 .tab-content 的 `transform` 做一次短促的下沉：图标与标题一起被按下 2px 再回来。
+ *
+ * 为什么用 transform 而不是 hover 那条 translate：
+ *   两者是**独立的属性**，互不覆盖 —— 悬停仍在用 translate 做 2px 右移，
+ *   按下用 transform 做纵向沉降，可以同时生效（与 essentials 图标同一手法）。
+ *   而标签自身有 transform: none !important，所以只能动 .tab-content。
+ *
+ * 触发点与 essentials 一致：用 [selected]，不依赖 :active 的存续时间，
+ * 再快的点击也必定播完。节奏：0.28s，18%(≈50ms) 落到底并保持到 48%。
+ * 按下时背景同时变成选中卡片、内容从悬停的 2px 归位 —— 三件事凑成一次"落笔"。
+ */
+@keyframes zenwashiTabPress {
+  0%   { transform: translateY(0); }
+  18%  { transform: translateY(2px); }
+  48%  { transform: translateY(2px); }
+  100% { transform: translateY(0); }
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):is([selected], [visuallyselected]) .tab-content {
+  animation: zenwashiTabPress 0.28s var(--zenwashi-ease) 1;
+}
+
+/* 当前选中/激活的普通标签页：浅色纯和纸微卡片底色（无左侧指示线） */
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected="true"] .tab-background,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected] .tab-background,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[visuallyselected] .tab-background {
+  background-color: var(--zenwashi-tab-selected-bg) !important;
+  border-color: var(--zenwashi-tab-selected-border) !important;
+  box-shadow: var(--zenwashi-tab-selected-shadow) !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected="true"] .tab-label,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected] .tab-label,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[visuallyselected] .tab-label {
+  color: var(--zenwashi-fg-primary) !important;
+  font-weight: 600 !important;
+}
+
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected="true"] .tab-icon-image,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[selected] .tab-icon-image,
+.tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab)[visuallyselected] .tab-icon-image {
+  opacity: 1 !important;
+}

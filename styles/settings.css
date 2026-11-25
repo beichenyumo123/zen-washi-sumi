@@ -14,15 +14,16 @@
 
 @-moz-document url-prefix("about:preferences") {
   @media not (-moz-pref("zenwashi.settings.skin", false)) {
-    /* ---- 1. 调色板：由 colors.css 派生 ---------------------------------- */
+    /* ---- 1. 调色板：由 colors.css 派生（可用 tools/sync-palettes.py 校验/同步） ---- */
+    /* >>> sync-palettes:settings:start >>> */
     :root {
-    --zwset-bg: light-dark(#F7F6F2, #141517);
-    --zwset-card: light-dark(#FFFFFF, #1F2126);
-    --zwset-fg: light-dark(#262421, #E8E5DC);
-    --zwset-fg-dim: light-dark(#6E685F, #928D84);
-    --zwset-line: light-dark(rgba(60, 52, 42, 0.10), rgba(245, 242, 235, 0.09));
-    --zwset-accent: light-dark(#376850, #4E8B6E);
-    --zwset-accent-tint: light-dark(rgba(55, 104, 80, 0.15), rgba(78, 139, 110, 0.22));
+      --zwset-bg: light-dark(#F7F6F2, #141517);
+      --zwset-card: light-dark(#FFFFFF, #1F2126);
+      --zwset-fg: light-dark(#262421, #E8E5DC);
+      --zwset-fg-dim: light-dark(#6E685F, #928D84);
+      --zwset-line: light-dark(rgba(60, 52, 42, 0.10), rgba(245, 242, 235, 0.09));
+      --zwset-accent: light-dark(#376850, #4E8B6E);
+      --zwset-accent-tint: light-dark(rgba(55, 104, 80, 0.15), rgba(78, 139, 110, 0.22));
     }
     @media (-moz-pref("zenwashi.palette", "rose-pine")) {
       :root {
@@ -59,58 +60,59 @@
     }
     @media (-moz-pref("zenwashi.accent", "umber")) {
       :root {
-      --zwset-accent: light-dark(#78563D, #D49852);
-      --zwset-accent-tint: light-dark(rgba(120, 86, 61, 0.15), rgba(212, 152, 82, 0.22));
+        --zwset-accent: light-dark(#78563D, #D49852);
+        --zwset-accent-tint: light-dark(rgba(120, 86, 61, 0.15), rgba(212, 152, 82, 0.22));
       }
     }
     @media (-moz-pref("zenwashi.accent", "cinnabar")) {
       :root {
-      --zwset-accent: light-dark(#B53D30, #C95B4E);
-      --zwset-accent-tint: light-dark(rgba(181, 61, 48, 0.15), rgba(201, 91, 78, 0.22));
+        --zwset-accent: light-dark(#B53D30, #C95B4E);
+        --zwset-accent-tint: light-dark(rgba(181, 61, 48, 0.15), rgba(201, 91, 78, 0.22));
       }
     }
     @media (-moz-pref("zenwashi.accent", "indigo")) {
       :root {
-      --zwset-accent: light-dark(#2B5079, #4F7EA8);
-      --zwset-accent-tint: light-dark(rgba(43, 80, 121, 0.15), rgba(79, 126, 168, 0.22));
+        --zwset-accent: light-dark(#2B5079, #4F7EA8);
+        --zwset-accent-tint: light-dark(rgba(43, 80, 121, 0.15), rgba(79, 126, 168, 0.22));
       }
     }
     @media (-moz-pref("zenwashi.accent", "yamabuki")) {
       :root {
-      --zwset-accent: light-dark(#B87C24, #E2A73B);
-      --zwset-accent-tint: light-dark(rgba(184, 124, 36, 0.15), rgba(226, 167, 59, 0.22));
+        --zwset-accent: light-dark(#B87C24, #E2A73B);
+        --zwset-accent-tint: light-dark(rgba(184, 124, 36, 0.15), rgba(226, 167, 59, 0.22));
       }
     }
     @media (-moz-pref("zenwashi.accent", "asagi")) {
       :root {
-      --zwset-accent: light-dark(#2C7A7B, #4FD1C5);
-      --zwset-accent-tint: light-dark(rgba(44, 122, 123, 0.15), rgba(79, 209, 197, 0.22));
+        --zwset-accent: light-dark(#2C7A7B, #4FD1C5);
+        --zwset-accent-tint: light-dark(rgba(44, 122, 123, 0.15), rgba(79, 209, 197, 0.22));
       }
     }
     @media (-moz-pref("zenwashi.accent", "ayame")) {
       :root {
-      --zwset-accent: light-dark(#6B46C1, #9F7AEA);
-      --zwset-accent-tint: light-dark(rgba(107, 70, 193, 0.15), rgba(159, 122, 234, 0.22));
+        --zwset-accent: light-dark(#6B46C1, #9F7AEA);
+        --zwset-accent-tint: light-dark(rgba(107, 70, 193, 0.15), rgba(159, 122, 234, 0.22));
       }
     }
     @media (-moz-pref("zenwashi.accent", "sumi-mono")) {
       :root {
-      --zwset-accent: light-dark(#4A4641, #A8A29E);
-      --zwset-accent-tint: light-dark(rgba(74, 70, 65, 0.15), rgba(168, 162, 158, 0.22));
+        --zwset-accent: light-dark(#4A4641, #A8A29E);
+        --zwset-accent-tint: light-dark(rgba(74, 70, 65, 0.15), rgba(168, 162, 158, 0.22));
       }
     }
     @media (-moz-pref("zenwashi.accent", "rose-pine-dawn")) {
       :root {
-      --zwset-accent: light-dark(#B4637A, #EB6F92);
-      --zwset-accent-tint: light-dark(rgba(180, 99, 122, 0.16), rgba(235, 111, 146, 0.22));
+        --zwset-accent: light-dark(#B4637A, #EB6F92);
+        --zwset-accent-tint: light-dark(rgba(180, 99, 122, 0.16), rgba(235, 111, 146, 0.22));
       }
     }
     @media (-moz-pref("zenwashi.accent", "catppuccin-latte")) {
       :root {
-      --zwset-accent: light-dark(#EA76CB, #F5BDE6);
-      --zwset-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 189, 230, 0.22));
+        --zwset-accent: light-dark(#EA76CB, #F5BDE6);
+        --zwset-accent-tint: light-dark(rgba(234, 118, 203, 0.16), rgba(245, 189, 230, 0.22));
       }
     }
+    /* <<< sync-palettes:settings:end <<< */
 
     /* ---- 2. 覆盖 Firefox 设计令牌 --------------------------------------- */
     #preferences-root {

@@ -1,0 +1,173 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Zen Theme Engine Tokens & Paper Shadow Tiers
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   1. Zen Theme Engine Tokens (与原生编辑主题完全对齐)
+   ----------------------------------------------------------------------------- */
+:root {
+  /* 基础几何参数 */
+  --zenwashi-tab-radius: 8px;
+  --zenwashi-essentials-radius: 8px;
+  --zenwashi-content-radius: 18px;
+  --zenwashi-content-margin: 10px;
+  /* 圆角形状：round = 普通圆弧（CSS 默认）；squircle = 连续圆角（超椭圆）。
+     squircle 依赖 Gecko 的实验特性，需先在 about:config 打开
+     layout.css.corner-shape.enabled = true，再用 Sine 设置项
+     zenwashi.content.corner-style 切到 Squircle；未开启时声明自动失效，退回 round。 */
+  --zenwashi-corner-shape: round;
+  /* 地址栏浮层 (Cmd+T / Cmd+L) 圆角；Sine 会把 zenwashi.urlbar.panel.radius 映射到同名变量 */
+  --zenwashi-urlbar-panel-radius: 15px;
+
+  /* 和纸与松烟墨色彩基调 (Light: 鳥の子色 #F7F6F2 / Dark: 松烟墨 #141517) */
+  --zenwashi-bg-base: light-dark(#F7F6F2, #141517);
+  --zenwashi-bg-surface: light-dark(#FFFFFF, #1F2126);
+  --zenwashi-bg-urlbar: light-dark(#FFFFFF, #1F2126);
+
+  /* 当前选中标签页卡片底色 (温润清晰的浅色和纸微卡片) */
+  --zenwashi-tab-selected-bg: light-dark(#FFFFFF, rgba(255, 255, 255, 0.16));
+  --zenwashi-tab-selected-border: light-dark(rgba(60, 52, 42, 0.12), rgba(245, 242, 235, 0.14));
+  --zenwashi-tab-selected-shadow: 0 2px 6px light-dark(rgba(60, 52, 42, 0.08), rgba(0, 0, 0, 0.35));
+
+  /* Essentials 实体按键（厚键帽）语义 Token。
+   * 核心思路：用「边缘厚度」与「按压凹陷」表达状态，全程不使用任何模糊投影，因此没有外发光。
+   * 明暗两态分开配方：浅色下 surface 与 base 天然有差异，88/12 即可；深色下两者几乎同黑，
+   * 必须往 fg-primary 方向提亮，否则键面与纸底只差 0.3~1% 等于没有键面。 */
+  --zenwashi-key-radius: var(--zenwashi-essentials-radius, 8px);
+  --zenwashi-key-lip: 4px;            /* 键帽侧壁厚度（浮起态）—— 加厚强化实体感 */
+  --zenwashi-key-lip-pressed: 1px;    /* 按下后的剩余厚度 */
+  --zenwashi-key-face: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 88%, var(--zenwashi-bg-base)),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 80%, var(--zenwashi-fg-primary) 18%)
+  );
+  --zenwashi-key-face-hover: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 98%, var(--zenwashi-bg-base)),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 74%, var(--zenwashi-fg-primary) 26%)
+  );
+  --zenwashi-key-face-selected: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 90%, var(--zenwashi-accent) 10%),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 78%, var(--zenwashi-accent) 18%)
+  );
+  /* 描边同样要分两态：浅色下描边比键面暗（墨线压纸），
+     深色下必须比键面亮（受光的棱），否则深色键面提亮后会把描边吃掉，轮廓消失。 */
+  --zenwashi-key-edge: light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 24%, transparent),
+    color-mix(in srgb, var(--zenwashi-fg-primary) 42%, transparent)
+  );
+  --zenwashi-key-edge-hover: light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 34%, transparent),
+    color-mix(in srgb, var(--zenwashi-fg-primary) 56%, transparent)
+  );
+  --zenwashi-key-edge-idle: light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 10%, transparent),
+    color-mix(in srgb, var(--zenwashi-fg-primary) 16%, transparent)
+  );
+  --zenwashi-key-edge-selected: var(--zenwashi-accent);
+  /* 按下时键帽的下沉行程 = 侧壁减少的量，保证视觉底边不动、不溢出标签 */
+  --zenwashi-key-travel: calc(var(--zenwashi-key-lip) - var(--zenwashi-key-lip-pressed));
+
+  /* 墨字字阶 */
+  --zenwashi-fg-primary: light-dark(#262421, #E8E5DC);
+  --zenwashi-fg-secondary: light-dark(#6E685F, #928D84);
+  --zenwashi-fg-muted: light-dark(#A6A096, #66635C);
+
+  /* 标签页悬停微色阶 */
+  --zenwashi-tab-hover-bg: light-dark(rgba(60, 52, 42, 0.05), rgba(245, 242, 235, 0.06));
+
+  /* 发丝微边框 */
+  --zenwashi-border-subtle: light-dark(rgba(60, 52, 42, 0.10), rgba(245, 242, 235, 0.09));
+  --zenwashi-border-distinct: light-dark(rgba(60, 52, 42, 0.18), rgba(245, 242, 235, 0.15));
+
+  /* 默认矿物强调色：竹青 (Bamboo Green) */
+  --zenwashi-accent: light-dark(#376850, #4E8B6E);
+  --zenwashi-accent-tint: light-dark(rgba(55, 104, 80, 0.15), rgba(78, 139, 110, 0.22));
+
+  /* 动效（从容温润的纸墨缓动节奏）
+   * 语义化分层：tap = 触碰级(颜色/小位移)，duration = 落位级(卡片浮现)，rise = 大型物体。
+   * 同一类动作永远用同一条曲线，整个界面才会有"活"的一致感，而不是各说各话。 */
+  --zenwashi-duration: 240ms;
+  --zenwashi-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --zenwashi-tap: 140ms;
+
+  /* ---------------------------------------------------------------------------
+     核心：深度注入 Zen 原生“编辑主题”引擎变量
+     --------------------------------------------------------------------------- */
+  --zen-primary-color: var(--zenwashi-accent) !important;
+  --zen-main-browser-background: var(--zenwashi-bg-base) !important;
+  --zen-colors-primary: var(--zenwashi-bg-base) !important;
+  --zen-colors-secondary: var(--zenwashi-bg-base) !important;
+  --zen-colors-tertiary: var(--zenwashi-bg-surface) !important;
+  --zen-themed-toolbar-bg: var(--zenwashi-bg-base) !important;
+  }
+
+/* -----------------------------------------------------------------------------
+   1.1 Paper Shadow Tiers (网页内容区四档纸面阴影)
+   -----------------------------------------------------------------------------
+   light-dark() 只能返回“一个颜色”，不能包住一整条阴影列表：
+     box-shadow: light-dark(0 10px 28px …, 0 14px 40px …)   ← 整条声明无效
+   而本主题明暗两态的 offset/blur 本来就不同，所以这里用 prefers-color-scheme
+   切换整条 box-shadow。默认 = medium（与设置默认值一致）。
+   ----------------------------------------------------------------------------- */
+:root {
+  --zenwashi-paper-shadow:
+    0 10px 28px rgba(38, 36, 33, 0.18),
+    0 3px 10px rgba(38, 36, 33, 0.10);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 14px 40px rgba(0, 0, 0, 0.78),
+      0 4px 14px rgba(0, 0, 0, 0.50);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "soft")) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 5px 16px rgba(38, 36, 33, 0.12),
+      0 2px 6px rgba(38, 36, 33, 0.06);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "soft")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.58),
+      0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "strong")) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 14px 38px rgba(38, 36, 33, 0.26),
+      0 5px 14px rgba(38, 36, 33, 0.15);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "strong")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 20px 54px rgba(0, 0, 0, 0.88),
+      0 6px 18px rgba(0, 0, 0, 0.62);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "deep")) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 18px 48px rgba(38, 36, 33, 0.36),
+      0 6px 18px rgba(38, 36, 33, 0.22),
+      0 0 12px rgba(38, 36, 33, 0.12);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "deep")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 26px 68px rgba(0, 0, 0, 0.96),
+      0 8px 24px rgba(0, 0, 0, 0.75),
+      0 0 16px rgba(0, 0, 0, 0.50);
+  }
+}

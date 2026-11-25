@@ -1,0 +1,59 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Compact Mode
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   16. Compact Mode (简洁模式 / Zen Compact Mode)
+   -----------------------------------------------------------------------------
+   紧凑模式的侧栏是悬浮的 #navigator-toolbox（position:fixed + translate），
+   圆角/投影由 Zen 自己的 .zen-toolbar-background 负责。
+   主题第 4 节给 #navigator-toolbox / #TabsToolbar / #tabbrowser-tabs 上了
+   var(--zenwashi-bg-base) !important，普通模式没问题；紧凑模式会把悬浮面板
+   盖成一张方角实心纸板，遮掉原生的圆角与漫射阴影。
+   这里只对 compact 作用域放行：
+     · 面板各层透明，让 .zen-toolbar-background 的圆角/阴影露出来；
+     · 纸色仍由 .zen-toolbar-background 承担，避免窗口底色漏出；
+     · 网页内容区四周统一为 zenwashi.compact.content.margin（默认 8px）。
+   ----------------------------------------------------------------------------- */
+:root[zen-compact-mode="true"] #navigator-toolbox,
+:root[zen-compact-mode="true"] #TabsToolbar,
+:root[zen-compact-mode="true"] #TabsToolbar-customization-target,
+:root[zen-compact-mode="true"] #tabbrowser-tabs,
+:root[zen-compact-mode="true"] #vertical-pinned-tabs-container,
+:root[zen-compact-mode="true"] #pinned-tabs-container {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* 悬浮面板的纸色与圆角交给原生层；这里只把颜色钉到主题基底。 */
+:root[zen-compact-mode="true"] .zen-toolbar-background {
+  background-color: var(--zenwashi-bg-base) !important;
+  background-image: none !important;
+}
+
+/*
+ * 紧凑模式悬浮面板的"垂直居中"
+ * -----------------------------------------------------------------------------
+ * 现象：面板贴着窗口底部、顶部却留着一截，上下不对称（截图实测：上 ≈20px、下 ≈2px）。
+ * 原因：Zen 给的是 bottom: --zen-compact-float/2 + height: 100% - 工具栏高度，
+ *       顶部在"工具栏没隐藏"时还会再叠一条 margin-top: 工具栏高度，
+ *       三个值各算各的，天然不可能对称。
+ * 做法：不跟它算，直接把 top / bottom 给同一个值，height: auto 让盒子自己撑满。
+ *       ⚠️ top **必须从工具栏下沿起算**（--zen-toolbar-height-with-bookmarks）：
+ *       上一版直接用了窗口顶边，结果面板把窗口控制按钮（红绿灯）盖进去了，
+ *       观感很怪。从工具栏下沿起算，红绿灯还在外面，面板上下才是真正等距的。
+ * 想单独调竖向留白：Sine 设置 → zenwashi.compact.panel.margin（默认 8px）。
+ * 排除 [animate="true"]：那是 Zen 收起/展开动画过程中的中间帧，不能锁死几何。
+ */
+:root[zen-compact-mode="true"] #navigator-toolbox:not([animate="true"]) {
+  top: calc(var(--zen-toolbar-height-with-bookmarks) + var(--zenwashi-compact-panel-margin, 8px)) !important;
+  bottom: var(--zenwashi-compact-panel-margin, 8px) !important;
+  height: auto !important;
+  margin-block: 0 !important;
+}
+
+/* 紧凑模式下网页不再贴着侧栏让位，四周用同一个用户可控值。 */
+:root[zen-compact-mode="true"]:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+  margin: var(--zenwashi-compact-content-margin, 8px) !important;
+}

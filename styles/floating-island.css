@@ -1,0 +1,297 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — High-Depth Floating Island Viewport
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   5. High-Depth Floating Island (零 position:relative / 零 ::after，防止 XUL Flex 坍缩，同时释放漫射大阴影)
+   ----------------------------------------------------------------------------- */
+#appcontent,
+#zen-appcontent-wrapper,
+#zen-tabbox-wrapper,
+#tabbrowser-tabbox {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+/* 
+ * 窗口背景层：把 Zen 的「新旧双色叠加」压成同一种颜色
+ * -----------------------------------------------------------------------------
+ * 内容区背后是 #zen-browser-background（class .zen-browser-generic-background，
+ * 见 browser.xhtml）。Zen 给它铺了两层伪元素做主题切换过渡：
+ *   ::after  → background: var(--zen-main-browser-background)       opacity: var(--zen-background-opacity)
+ *   ::before → background: var(--zen-main-browser-background-old)    opacity: calc(1 - var(--zen-background-opacity))
+ *
+ * 问题在于 -old 那个变量是 ZenGradientGenerator 从元素的**内联样式**里复制出来的
+ * （它读 element.style.getPropertyValue，不是计算值），主题在 :root 上的
+ * `--zen-main-browser-background: var(--zenwashi-bg-base) !important` 根本影响不到它。
+ * 于是可见底色 = 主题色 与 Zen 自带旧色 的混合：
+ *   · 浅色：Zen 自带浅色本来就接近主题浅色 → 看不出来（这正是当初"浅色正常"的原因）
+ *   · 深色：旧色仍是 Zen 自己的暗调，混进来就偏成了 #11121C 一类，比侧栏暗一截
+ *
+ * 修法：两层都直接钉到调色板的 base（并保留可选的窗口染色层），
+ * 这样 --zen-background-opacity 无论取多少，混合结果都是同一个颜色。
+ */
+#zen-browser-background::before,
+#zen-browser-background::after,
+#zen-toolbar-background::before,
+#zen-toolbar-background::after {
+  background:
+    linear-gradient(
+      var(--blended-addressbar-window-tint-background, transparent),
+      var(--blended-addressbar-window-tint-background, transparent)
+    ),
+    var(--zenwashi-bg-base) !important;
+}
+
+/* 
+ * 1. #tabbrowser-tabpanels 负责外边距 margin 与 overflow: visible（绝不加 position:relative 或 ::after）
+ */
+#tabbrowser-tabpanels {
+  margin: var(--zenwashi-content-margin, 10px) !important;
+  padding: 0 !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: var(--zenwashi-content-radius, 18px) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  transition: margin 0.24s ease, border-radius 0.24s ease !important;
+}
+
+/* 
+ * 2. 外层卡片 (.browserSidebarContainer) 保持原生 XUL 盒模型（零 position:relative、零 ::after 伪元素，防止宽度坍缩），
+ *    保持 overflow: visible !important，承载实体 border、同色防白边底色以及 4 档外部漫射大阴影！
+ */
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) {
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: var(--zenwashi-content-radius, 18px) !important;
+  background-color: var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+  background-clip: padding-box !important;
+  border: var(--zenwashi-content-border-width, 1.5px) solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+  outline: none !important;
+  overflow: visible !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
+  box-sizing: border-box !important;
+  /* 默认 Medium 经典立体漫射阴影；档位由 --zenwashi-paper-shadow 统一切换。
+     不在此处写 transition !important，以免覆盖第 11 节标签切换动效。 */
+  box-shadow: var(--zenwashi-paper-shadow) !important;
+}
+
+/* 四档阴影统一由 1.1 节的 --zenwashi-paper-shadow 提供，
+   面板只引用变量，不再重复 4 条 media query。 */
+
+/* 
+ * 3. 内层视口容器 (.browserContainer) 专门负责 overflow: clip 圆角裁切：
+ *    · 底色透明（兜底底色已交由最内层 browser 承担），避免圆角抗锯齿缝隙透出纯白底板；
+ *    · outline-width: 1.5px + outline-offset: -1px 内压 1px 盖住 Retina 屏 45° 圆弧抗锯齿缝。
+ */
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: clip !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
+  border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) !important;
+  outline: 1.5px solid var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+  outline-offset: -1px !important;
+  background-color: transparent !important;
+}
+
+@media (-moz-pref("zenwashi.content.border", "none")) {
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer {
+    outline: none !important;
+  }
+}
+
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) .browserStack,
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) browser {
+  overflow: clip !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
+  border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px))) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) .browserStack {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* 
+ * 内容视口的兜底底色：显式绑到调色板的 surface，而不是留给 Zen 的 light-dark 兜底。
+ * -----------------------------------------------------------------------------
+ * Zen(zen-browser-container.css:18-21) 给 <browser type="content"> 画的是
+ *   background: light-dark(rgb(255,255,255), rgb(32,32,32));
+ * 浅色 #FFF 恰好等于主题的浅色 surface，所以**浅色看不出问题**；
+ * 深色 #202020 是中性深灰，和 Washi / Macchiato / Nord 的暗底都不一致，
+ * 页面上透明区域（加载中、about:blank、本身就是透明底的站点）就会被它顶出来。
+ * 所以这里不再依赖 transparent 透传，直接把 browser 的底色指定成 surface ——
+ * 不透明页面本来就会盖住它，透明页面则得到正确的调色板底色。
+ */
+#tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) browser {
+  background: var(--zenwashi-bg-surface) !important;
+  background-color: var(--zenwashi-bg-surface) !important;
+}
+
+/* 全屏状态还原平铺 */
+:root[inFullscreen] #tabbrowser-tabpanels,
+:root[inDOMFullscreen] #tabbrowser-tabpanels {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+}
+
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer,
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer .browserStack,
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer browser,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer browser {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* 视口边框粗细档位 (zenwashi.content.border) */
+@media (-moz-pref("zenwashi.content.border", "none")) {
+  :root {
+    --zenwashi-content-border-width: 0px !important;
+  }
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer,
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) .browserStack,
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) browser {
+    border-radius: var(--zenwashi-content-radius, 18px) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "hairline")) {
+  :root {
+    --zenwashi-content-border-width: 0.5px !important;
+  }
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer {
+    outline-width: 0.5px !important;
+    outline-offset: -0.25px !important;
+    border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - 0.5px)) !important;
+  }
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) .browserStack,
+  #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) browser {
+    border-radius: max(0px, calc(var(--zenwashi-content-radius, 18px) - 0.5px)) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "subtle")) {
+  :root {
+    --zenwashi-content-border-width: 1px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "medium")) {
+  :root {
+    --zenwashi-content-border-width: 1.5px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "regular")) {
+  :root {
+    --zenwashi-content-border-width: 2px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "bold")) {
+  :root {
+    --zenwashi-content-border-width: 2.5px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "thick")) {
+  :root {
+    --zenwashi-content-border-width: 3px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "heavy")) {
+  :root {
+    --zenwashi-content-border-width: 4px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "frame")) {
+  :root {
+    --zenwashi-content-border-width: 5px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "gallery")) {
+  :root {
+    --zenwashi-content-border-width: 6px !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "mat")) {
+  :root {
+    --zenwashi-content-border-width: 8px !important;
+  }
+}
+
+
+/* 视口圆角形状 (zenwashi.content.corner-style)
+ * -----------------------------------------------------------------------------
+ * 为什么会有这一项：
+ *   border-radius 画的是**四分之一圆**，它在「直边 → 圆弧」的两个切点处曲率是突变的
+ *   （0 → 1/R）。半径小的时候看不出来；半径开到 25px 这种尺寸，弧线和直边的"接头"
+ *   就会被眼睛捕捉到，表现为"圆角不够顺/有点硬"。macOS 的窗口圆角用的是连续圆角
+ *   （超椭圆 squircle，曲率从 0 平滑过渡到峰值），所以放在系统窗口旁边对比更明显。
+ *
+ * 能不能做：Gecko 已经实现了 CSS 的 corner-shape（超椭圆），但默认锁在静态 pref 后面：
+ *   about:config → layout.css.corner-shape.enabled = true（改完要重启，静态 pref 不热生效）
+ *   打开后，把这里切到 Squircle 才会真的变形；没打开时 corner-shape 属性整条被解析器
+ *   丢弃，--zenwashi-corner-shape: squircle 不会产生任何影响，自动退回普通圆弧。
+ *
+ * 只作用在网页视口那四层（外框 / browserContainer / browserStack+browser），
+ * 不动标签、地址栏、面板，避免一次改到全站。
+ */
+@media (-moz-pref("zenwashi.content.corner-style", "squircle")) {
+  :root {
+    --zenwashi-corner-shape: squircle;
+  }
+}
+
+/* 视口边框色彩模式 (zenwashi.content.border.color) */
+@media (-moz-pref("zenwashi.content.border.color", "accent")) {
+  :root {
+    --zenwashi-content-border-color: var(--zenwashi-accent) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border.color", "accent-tint")) {
+  :root {
+    --zenwashi-content-border-color: var(--zenwashi-accent-tint) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border.color", "subtle")) {
+  :root {
+    --zenwashi-content-border-color: var(--zenwashi-border-subtle) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border.color", "distinct")) {
+  :root {
+    --zenwashi-content-border-color: var(--zenwashi-border-distinct) !important;
+  }
+}

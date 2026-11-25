@@ -1,0 +1,324 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Blended Addressbar Unified Island & Frosted URL Field
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   13. Blended Addressbar Unified Island (可开关：将融合式顶栏与内容区一同包裹进画卷边框)
+   ----------------------------------------------------------------------------- */
+/*
+ * 面板入场时上两角的“临时圆角”
+ * -----------------------------------------------------------------------------
+ * 静态规则把内容层上两角钉成 0（与顶栏无缝）且带 !important，动画改不动它；
+ * clip-path 也补不回来（overflow: clip 已按 0 0 r r 裁掉内容，再裁只会取交集）。
+ * 因此让那两个角由自定义属性驱动，再动画属性本身 —— !important 声明不动，
+ * 但它引用到的值在变，圆角就能真的出现并平滑收回。
+ */
+@property --zw-panel-tl {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@property --zw-panel-tr {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+/*
+ * 地址栏展开期间（含 Cmd+T 新建标签页）：内容区上两角跟随变圆。
+ * -----------------------------------------------------------------------------
+ * 截图里 Cmd+T 的柔焦其实是第 12.4 节「画卷退景」——新建标签页会自动打开地址栏，
+ * 内容区随之向内缩放，露出自己那圈 0 0 r r，于是上直角、下圆角。
+ * 上面那个 keyframes 只在 deck-selected 变化后跑 0.42s，地址栏会一直开着，
+ * 动画结束后圆角就没了，所以这里按「地址栏是否展开」这个状态直接给变量赋值。
+ * 只覆盖地址栏展开；普通页面加载（[busy]）仍保持上直角、与地址栏统一。
+ */
+:root:has(#urlbar[open]) {
+  --zw-panel-tl: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
+  --zw-panel-tr: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
+}
+
+@keyframes zenwashiPanelSettle {
+  from {
+    --zw-panel-tl: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
+    --zw-panel-tr: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
+  }
+  to {
+    --zw-panel-tl: 0px;
+    --zw-panel-tr: 0px;
+  }
+}
+
+/* 触发点：面板成为 deck-selected（切标签、Cmd+T）时播一次，
+   时长/曲线与第 11 节切换动画一致，缩放结束即收回直角。 */
+#tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  animation: zenwashiPanelSettle 0.42s var(--zenwashi-ease) 1;
+}
+
+@media not (-moz-pref("zenwashi.urlbar.blended", false)) {
+  /*
+   * 在「侧边栏 + 顶部工具栏」(:root:not([zen-single-toolbar="true"])) 模式下：
+   * 外层 #zen-appcontent-wrapper 同时容纳顶部地址栏 (#zen-appcontent-navbar-wrapper)
+   * 与下方网页内容区 (#zen-tabbox-wrapper)。
+   * 将原本单独作用于 .browserSidebarContainer 的外边距、大圆角、11 档装裱边框和 4 档立体漫射阴影
+   * 统一提升至 #zen-appcontent-wrapper，使动态取色的融合地址栏与网页内容严丝合缝包裹在同一个画卷边框中。
+   */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+    position: relative !important;
+    margin: var(--zenwashi-content-margin, 10px) !important;
+    /* 边框改由下方 ::after 单层绘制，外框不再叠 border（避免双倍厚度与同心圆错位）；
+       padding 设为 W - 1px，让 <browser> 外沿自然伸入 ::after 边框下方 1px，彻底压死抗锯齿缝。 */
+    padding: max(0px, calc(var(--zenwashi-content-border-width, 1.5px) - 1px)) !important;
+    border-radius: var(--zenwashi-content-radius, 18px) !important;
+    border: none !important;
+    background-color: transparent !important;
+    overflow: hidden !important;
+    corner-shape: var(--zenwashi-corner-shape, round) !important;
+    box-sizing: border-box !important;
+    isolation: isolate !important;
+    z-index: 3 !important;
+    box-shadow: var(--zenwashi-paper-shadow) !important;
+    transition:
+      margin 0.24s ease,
+      padding 0.24s ease,
+      border-radius 0.24s ease,
+      background-color var(--blended-addressbar-color-transition, 120ms ease-out),
+      box-shadow 0.24s ease !important;
+  }
+
+  /* 顶栏开启下方圆角时，圆角处需露出卡片表面色 */
+  @media (-moz-pref("zenwashi.toolbar.bottom-radius", "8px")),
+         (-moz-pref("zenwashi.toolbar.bottom-radius", "12px")),
+         (-moz-pref("zenwashi.toolbar.bottom-radius", "16px")),
+         (-moz-pref("zenwashi.toolbar.bottom-radius", "20px")) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+      background-color: var(--zenwashi-bg-surface) !important;
+    }
+  }
+
+  /* 单层同心装裱边框：外扩 1px 由父级 overflow:hidden 在半径 R 处齐边裁切，
+     内缘落在 W（内半径 (R+1)-(W+1)=R-W），比 padding(W-1) 往内多压 1px 盖住 <browser> 边缘，
+     视觉总厚度严格等于 W，零双层边框、零圆角月牙缝。 */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper::after {
+    content: "" !important;
+    position: absolute !important;
+    inset: -1px !important;
+    border-radius: calc(var(--zenwashi-content-radius, 18px) + 1px) !important;
+    corner-shape: inherit !important;
+    pointer-events: none !important;
+    z-index: 999 !important;
+    box-shadow: inset 0 0 0 calc(var(--zenwashi-content-border-width, 1.5px) + 1px)
+      var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+  }
+
+  @media (-moz-pref("zenwashi.content.border", "none")) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper::after {
+      display: none !important;
+    }
+  }
+
+  /* 顶部地址栏容器：透出网页动态采样色 (--zen-tab-header-background)，消除原本的和纸固定底色覆盖 */
+  :root:not([zen-single-toolbar="true"]) #zen-appcontent-navbar-wrapper,
+  :root:not([zen-single-toolbar="true"]) #zen-appcontent-navbar-container {
+    background-color: var(--zen-tab-header-background, var(--zenwashi-bg-surface)) !important;
+    background-image: none !important;
+    color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --toolbox-textcolor: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --toolbarbutton-icon-fill: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --toolbar-color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --toolbar-field-color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    transition:
+      background-color var(--blended-addressbar-color-transition, 120ms ease-out),
+      color var(--blended-addressbar-color-transition, 120ms ease-out) !important;
+  }
+
+  /*
+   * 微分割线：styles/blended-addressbar.css 会在 #nav-bar 上画 1px 分隔线，
+   * 但本文件第 4 节「顶栏与地址栏」里的 `#nav-bar { box-shadow: none !important }`
+   * 无条件把它覆盖了，导致“隐藏分割线”无论勾选与否都看不到线。
+   * 这里在未勾选（pref 为 false）时重新启用，并让颜色跟随顶栏对比色，
+   * 使分割线在任意网页取色上都保持可见。
+   */
+  :root {
+    --blended-addressbar-toolbar-separator-shadow:
+      inset 0 -1px 0 0 color-mix(in srgb, var(--zen-tab-header-foreground, currentColor) 15%, transparent);
+  }
+
+  @media not (-moz-bool-pref: "uc.blended-addressbar.addressbar-bookmarks-separator.disabled") {
+    :root:not([zen-single-toolbar="true"]) #nav-bar {
+      box-shadow: var(--blended-addressbar-toolbar-separator-shadow) !important;
+    }
+  }
+
+  /* 地址栏文字与图标颜色自动跟随顶栏动态对比色 (--zen-tab-header-foreground)，在深色网页上自动反白 */
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) #urlbar-input,
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-input-box {
+    color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+    --input-color: var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) !important;
+  }
+
+  /*
+   * 磨砂玻璃地址栏输入框（Safari 式，zenwashi.urlbar.glass，默认开）
+   * -----------------------------------------------------------------------------
+   * 先说清楚能做到什么：Firefox/Zen 的 chrome 里 backdrop-filter **采不到网页像素**
+   * （页面在独立的异步合成层里，chrome 的 backdrop 只有自己这棵层树），所以
+   * "让输入框把背后的网页糊掉"这条老路在闭合态是走不通的；能真正糊网页的只有
+   * 第 12.3/12.4 节那种把 filter: blur() 直接打在 <browser> 上的做法，那是整页糊，
+   * 不是一块玻璃。
+   *
+   * 但融合顶栏已经把网页顶部那 8px 像素糊成了一个平均色（--zen-tab-header-background），
+   * 这本身就是"被磨砂过的网页"。所以 Safari 观感真正缺的只有中间那枚玻璃胶囊：
+   *   · 填充 = 顶栏前景色 8% —— 浅色页是"墨色微沉下去"，深色页是"纸白微浮起来"，
+   *     fg 本来就是按底色调过对比度的，这一条公式在任意取色上都成立；
+   *   · 半透明是关键：胶囊底下透出来的就是取色顶栏，也就是网页的模糊色，
+   *     "隔着一层玻璃看网页"的印象由它提供，不靠 blur；
+   *   · 描边与顶部高光都走 inset box-shadow，不用 border：
+   *     不参与盒模型（地址栏高度/内边距零位移），也绝不和 styles/loadbar.css
+   *     glow 模式写死的 background-image 抢地盘；
+   *   · 悬停加深到 12%，聚焦/展开仍回到 12.1 节的和纸浮层，不另起一套底色。
+   * 关闭该项即回到旧行为：输入框完全透明，只剩文字浮在取色顶栏上。
+   */
+  :root {
+    --zenwashi-urlbar-glass-fill: color-mix(in srgb,
+      var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 8%, transparent);
+    --zenwashi-urlbar-glass-fill-hover: color-mix(in srgb,
+      var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 12%, transparent);
+    --zenwashi-urlbar-glass-hairline: color-mix(in srgb,
+      var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 14%, transparent);
+    --zenwashi-urlbar-glass-highlight: color-mix(in srgb, #FFF 12%, transparent);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* 深色顶栏上白高光才看得见，也才是玻璃该有的那道边 */
+      --zenwashi-urlbar-glass-highlight: color-mix(in srgb, #FFF 18%, transparent);
+    }
+  }
+
+  @media not (-moz-pref("zenwashi.urlbar.glass", false)) {
+    :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-background {
+      background-color: var(--zenwashi-urlbar-glass-fill) !important;
+      border-color: transparent !important;
+      border-radius:
+        var(--zenwashi-urlbar-field-radius, 9px) var(--zenwashi-urlbar-field-radius, 9px)
+        var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-field-radius, 9px))
+        var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-field-radius, 9px)) !important;
+      box-shadow:
+        inset 0 0 0 1px var(--zenwashi-urlbar-glass-hairline),
+        inset 0 1px 0 var(--zenwashi-urlbar-glass-highlight) !important;
+      transition:
+        background-color 0.18s var(--zenwashi-ease),
+        box-shadow 0.18s var(--zenwashi-ease) !important;
+    }
+
+    :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover .urlbar-background {
+      background-color: var(--zenwashi-urlbar-glass-fill-hover) !important;
+      box-shadow:
+        inset 0 0 0 1px var(--zenwashi-urlbar-glass-hairline),
+        inset 0 1px 0 var(--zenwashi-urlbar-glass-highlight) !important;
+    }
+  }
+
+  /* 未聚焦/未展开、且关掉玻璃胶囊时的旧行为：输入框与顶栏同色，只剩文字 */
+  @media (-moz-pref("zenwashi.urlbar.glass", false)) {
+    :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-background {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+    }
+
+    :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover .urlbar-background {
+      background-color: color-mix(in srgb, var(--zen-tab-header-foreground, var(--zenwashi-fg-primary)) 7%, transparent) !important;
+    }
+  }
+
+  /* 系统"降低透明度"时退回实心和纸，别在半透明上再叠半透明（关闭玻璃胶囊时不干预） */
+  @media (prefers-reduced-transparency: reduce) {
+    @media not (-moz-pref("zenwashi.urlbar.glass", false)) {
+      :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-background {
+        background-color: var(--zenwashi-bg-surface) !important;
+        box-shadow: inset 0 0 0 1px var(--zenwashi-border-subtle) !important;
+      }
+    }
+  }
+
+  /* 内部内容区去重：由于外框已由 #zen-appcontent-wrapper 统一包裹，非分屏状态下移除内层重复边距、边框与阴影 */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #zen-tabbox-wrapper,
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox,
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabpanels:not([zen-split-view="true"]) {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) min(var(--zenwashi-content-radius, 18px), max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) + 1px))) min(var(--zenwashi-content-radius, 18px), max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) + 1px))) !important;
+  }
+
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer {
+    background-color: transparent !important;
+  }
+
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer,
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) .browserStack,
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) browser {
+    border: none !important;
+    outline: none !important;
+    border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) min(var(--zenwashi-content-radius, 18px), max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) + 1px))) min(var(--zenwashi-content-radius, 18px), max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) + 1px))) !important;
+  }
+
+
+  /*
+   * 在融合顶栏一体框模式下完整保留第 12.3 节「宣纸微敛」(zenwashi.content.loading) 与 12.4 节「画卷退景」加载/展开动画：
+   * - 页面加载时，由外层一体画框 #zen-appcontent-wrapper 整体执行等比微敛内缩 (scale 0.976 / 0.958)，
+   *   使顶部融合地址栏、装裱边框、漫射阴影与网页作为一个整体同步呼吸内敛，而内层 browser 保持宣纸柔焦 (blur)；
+   * - 地址栏展开 (#urlbar[open]) 时，不额外锁定 hbox.deck-selected，直接保留第 12.4 节原有的画卷退景缩放与柔焦。
+   */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
+    transform-origin: center center !important;
+    transition:
+      transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+      margin 0.24s ease,
+      border-radius 0.24s ease,
+      background-color var(--blended-addressbar-color-transition, 120ms ease-out),
+      border-color 0.24s ease,
+      box-shadow 0.24s ease !important;
+  }
+
+  /* 默认档位 (subtle) 与水墨档位 (ink)：一体画框整体微敛至 0.976 */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+    transform: scale(0.976) !important;
+    transition-delay: 0.12s !important;
+  }
+
+  /* 档位 deep：宣纸深敛 (一体画框整体深敛至 0.958) */
+  @media (-moz-pref("zenwashi.content.loading", "deep")), (-moz-pref("zenwashi.tab.loading-animation", 2)) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+      transform: scale(0.958) !important;
+      transition-delay: 0.10s !important;
+    }
+  }
+
+  /* 档位 off：关闭加载缩放 */
+  @media (-moz-pref("zenwashi.content.loading", "off")), (-moz-pref("zenwashi.tab.loading-animation", 0)) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+      transform: none !important;
+      transition-delay: 0s !important;
+    }
+  }
+
+  /* 避免加载时内层 hbox.deck-selected 与外层 #zen-appcontent-wrapper 双重叠加缩放（仅重置 transform，保留第 11 节标签切换 scale 与 12.3 节柔焦变量继承） */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: none !important;
+  }
+}

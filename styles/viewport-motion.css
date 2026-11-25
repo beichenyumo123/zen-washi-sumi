@@ -1,0 +1,512 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Viewport Tab Switch Animations, URL Bar Panel & Loading Veil
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   11. Viewport Tab Switch Animations (多模式标签页切换动效体系)
+   ----------------------------------------------------------------------------- */
+
+/* 
+ * 默认基础动效 (Default):
+ * 从 0.2s 延长至 0.42s 温润阻尼缓动，并显式包含 filter 与 transform 过渡。
+ * ⚠ 本节只负责「标签切换」。第 12.3 / 12.4 节已改为自己声明过渡，
+ *   不再借用这里的列表 —— 以后调整本节的切换模式或曲线，不会连带改变
+ *   加载「宣纸微敛」与地址栏「画卷退景」的节奏。
+ */
+#tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  transform-origin: center center !important;
+  transition: scale 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  scale: 0.972 !important;
+  opacity: 1;
+}
+
+#tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  scale: 1 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* ================= 模式 2: Bounce Smooth (弹簧果冻轻柔回弹) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 2)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: scale 0.58s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 0.58s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.42s ease-out,
+                filter 0.42s ease-out !important;
+    scale: 0.95 !important;
+    opacity: 1;
+    filter: blur(0) !important;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    scale: 1 !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* ================= 模式 3: Bounce Up (上浮滑入) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 3)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: scale 0.42s cubic-bezier(0.3, 0.6, 0.3, 1.2),
+                transform 0.42s cubic-bezier(0.3, 0.6, 0.3, 1.2),
+                opacity 0.38s ease,
+                filter 0.42s ease !important;
+    scale: 0.978 !important;
+    transform: translateY(12px);
+    opacity: 1;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    scale: 1 !important;
+    transform: none;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* ================= 模式 4: Crossfade (交叉溶解淡入淡出) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 4)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                scale 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.42s ease !important;
+    opacity: 0 !important;
+    scale: 0.972 !important;
+    position: absolute !important;
+    inset: 0;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 1;
+  }
+}
+
+/* ================= 模式 5: Zoom Out (景深模糊对焦) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 5)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: scale(1.05);
+    filter: blur(15px);
+    opacity: 1;
+    transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.38s ease !important;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: scale(1);
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* ================= 模式 0: No Animation (静态无动效) ================= */
+@media (-moz-pref("zenwashi.tab.switch-animation", 0)) {
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transition: filter 0.42s ease, transform 0.42s ease, opacity 0.42s ease !important;
+    scale: 1 !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
+  #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    scale: 1 !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* ================= 分屏保护 ================= */
+#tabbrowser-tabpanels[zen-split-view="true"] > hbox {
+  transition: none !important;
+  transform: none !important;
+  scale: 1 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+
+/* -----------------------------------------------------------------------------
+   12. URL Bar Scroll Receding & Page Loading Veil (地址栏「画卷退景」与页面加载「宣纸微敛」)
+   ----------------------------------------------------------------------------- */
+
+/* ---------------- 12.1 地址栏面板本体与候选列表阶梯入场 ---------------- */
+
+/* 
+ * 页面缩放按钮（#urlbar-zoom-button，就是那枚「110%」）：
+ * 平时完全收起、不占位，悬停或聚焦地址栏时才展开淡入。
+ * -----------------------------------------------------------------------------
+ * 这个按钮由 JS 通过 hidden 属性控制（缩放 100% 时彻底移除），所以：
+ *   · 不用 display 去覆盖，避免和原逻辑打架；
+ *   · 用 max-width / padding-inline / margin-inline 真正收拢到 0，
+ *     把占位还给地址文本，不再在按钮之间留下一段摸不着的空档；
+ *   · 展开时同一组属性做过渡，地址文本是平滑让位，而不是硬跳一下。
+ * hidden 仍由原生 display:none 处理，`:not([hidden])` 保证不会把它复活。
+ * 同时挂上 :focus-within，键盘操作聚焦地址栏时也能显露（可访问性）。
+ */
+#urlbar-zoom-button {
+  max-width: 0 !important;
+  min-width: 0 !important;
+  padding-inline: 0 !important;
+  margin-inline: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  transition:
+    opacity 0.16s var(--zenwashi-ease),
+    max-width 0.22s var(--zenwashi-ease),
+    padding-inline 0.22s var(--zenwashi-ease),
+    margin-inline 0.22s var(--zenwashi-ease) !important;
+}
+
+#urlbar:hover #urlbar-zoom-button:not([hidden]),
+#urlbar:focus-within #urlbar-zoom-button:not([hidden]) {
+  max-width: 6em !important;
+  padding-inline: 7px !important;
+  margin-inline: 6px !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* 地址栏下圆角档位（zenwashi.urlbar.bottom-radius）。
+   未设置时两个状态各自回落到自己的上圆角，所以默认完全没有变化。 */
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "0px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 0px; }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "6px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 6px; }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "9px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 9px; }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "12px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 12px; }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "15px")) {
+  :root { --zenwashi-urlbar-bottom-radius: 15px; }
+}
+
+/* 未展开的输入框：用长手属性只改下方两角，不碰上圆角、也不依赖玻璃胶囊那条
+   `:root:not([zen-single-toolbar="true"])` 规则 —— 单工具栏布局下那条本来就不生效，
+   这正是"选了档位却毫无变化"的原因。 */
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "0px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 0px !important;
+    border-end-end-radius: 0px !important;
+  }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "6px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 6px !important;
+    border-end-end-radius: 6px !important;
+  }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "9px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 9px !important;
+    border-end-end-radius: 9px !important;
+  }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "12px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 12px !important;
+    border-end-end-radius: 12px !important;
+  }
+}
+@media (-moz-pref("zenwashi.urlbar.bottom-radius", "15px")) {
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend]),
+  #urlbar:not([zen-floating-urlbar="true"]):not([open]):not([breakout-extend])
+    > .urlbar-background {
+    border-end-start-radius: 15px !important;
+    border-end-end-radius: 15px !important;
+  }
+}
+
+/* 
+ * 12.1.1 面板底色：Cmd+T / Cmd+L 唤出的地址栏浮层
+ * -----------------------------------------------------------------------------
+ * Gecko 158 起地址栏底板元素是 `<div class="urlbar-background">`，没有 id
+ * （见 UrlbarInputBase.#markup），旧的 `#urlbar-background` 选择器一律失效。
+ * 与此同时 Zen 在 `#urlbar[breakout-extend] .urlbar-background` 上写死了
+ *   --zen-urlbar-background-base: light-dark(#fff, #181818)
+ * 并强制上色 —— 这就是无论切哪套调色板，面板都是一块中性白 / 中性黑的原因。
+ *
+ * 用户样式表的 !important 优先级高于作者样式表，所以这里可以稳定覆盖：
+ *   · 底色 = --zenwashi-bg-urlbar（四套基底方案自动联动）
+ *   · 描边 = 发丝墨线（不用满强度 accent，避免浅色下出现一圈发脏的深灰粗边）
+ *   · 投影 = 和纸漫射纸影，靠阴影而不是描边来托起浮层
+ */
+#urlbar:is([open], [breakout-extend]) {
+  border-radius:
+    var(--zenwashi-urlbar-panel-radius, 15px) var(--zenwashi-urlbar-panel-radius, 15px)
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px))
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px)) !important;
+}
+
+#urlbar:is([open], [breakout-extend]) > .urlbar-background {
+  background-color: var(--zenwashi-bg-urlbar) !important;
+  background-image: none !important;
+  border: 1px solid var(--zenwashi-border-distinct) !important;
+  border-radius:
+    var(--zenwashi-urlbar-panel-radius, 15px) var(--zenwashi-urlbar-panel-radius, 15px)
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px))
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px)) !important;
+  outline: none !important;
+  box-shadow:
+    0 20px 48px light-dark(rgba(38, 36, 33, 0.16), rgba(0, 0, 0, 0.72)),
+    0 5px 16px light-dark(rgba(38, 36, 33, 0.08), rgba(0, 0, 0, 0.48)) !important;
+  transition:
+    box-shadow 0.36s var(--zenwashi-ease),
+    border-color 0.36s var(--zenwashi-ease) !important;
+}
+
+/* 亚克力地址栏（zen.theme.acrylic-urlbar）开启时保留磨砂，但把颜色换成和纸色 */
+@media -moz-pref("zen.theme.acrylic-urlbar") and (not (prefers-reduced-transparency: reduce)) {
+  :root:not([zen-no-acrylic="true"]) #urlbar:is([open], [breakout-extend]) > .urlbar-background {
+    background-color: color-mix(in srgb, var(--zenwashi-bg-urlbar) 92%, transparent) !important;
+    backdrop-filter: var(--zen-backdrop-underlay) blur(40px) !important;
+  }
+}
+
+/* 
+ * 12.1.2 面板内的墨字与候选项色阶
+ * -----------------------------------------------------------------------------
+ * 候选项的悬停 / 选中、URL 行、操作文字、一次性搜索引擎按钮都优先读这组
+ * `--urlbarview-*` / `--toolbar-field-*` Token；把 Token 直接改写成调色板值，
+ * 比逐条覆盖具体类名更稳，也能同时覆盖 Zen 在 zen-omnibox.css 里的硬编码值。
+ */
+#urlbar {
+  --toolbar-field-text-color: var(--zenwashi-fg-primary) !important;
+  --toolbar-field-text-color-focus: var(--zenwashi-fg-primary) !important;
+  --urlbarview-background-color-hover: var(--zenwashi-tab-hover-bg) !important;
+  --urlbarview-background-color-selected: var(--zenwashi-accent-tint) !important;
+  --urlbarview-text-color-secondary: var(--zenwashi-fg-secondary) !important;
+  --urlbarview-text-color-selected: var(--zenwashi-fg-primary) !important;
+  --urlbarview-text-color-action: var(--zenwashi-fg-secondary) !important;
+  --urlbarview-separator-color: var(--zenwashi-border-subtle) !important;
+}
+
+/* Zen 把 URL 行与标题分隔符写死成 light-dark(#4f4f4f, #aaa)，改回调色板次级墨色 */
+#urlbar .urlbarView-url,
+#urlbar .urlbarView-title-separator::before {
+  color: var(--zenwashi-fg-secondary) !important;
+}
+
+/* 
+ * 12.1.3 地址栏自带的两块浮层
+ * -----------------------------------------------------------------------------
+ *   · .searchmode-switcher-panel：点搜索图标弹出的「本次用哪个引擎搜索」面板
+ *   · .urlbarView-result-menu：候选结果右键菜单（panel-list popover）
+ * 它们走的是 `--panel-*` / `--panel-list-*` Token，不继承 #urlbar 的颜色，
+ * 所以需要单独按和纸浮层重绘，否则会露出 Zen 自带的中性面板色。
+ */
+.searchmode-switcher-panel,
+.urlbarView-result-menu {
+  --panel-background-color: var(--zenwashi-bg-surface) !important;
+  --panel-text-color: var(--zenwashi-fg-primary) !important;
+  --panel-border-color: var(--zenwashi-border-subtle) !important;
+  --panel-separator-color: var(--zenwashi-border-subtle) !important;
+  --panel-list-background-color: var(--zenwashi-bg-surface) !important;
+  --panel-list-text-color: var(--zenwashi-fg-primary) !important;
+  --panel-list-border-color: var(--zenwashi-border-subtle) !important;
+  --button-background-color-menu-hover: var(--zenwashi-tab-hover-bg) !important;
+  --button-text-color-menu-hover: var(--zenwashi-fg-primary) !important;
+  --button-background-color-menu-active: var(--zenwashi-accent-tint) !important;
+  --button-text-color-menu-active: var(--zenwashi-fg-primary) !important;
+}
+
+/* 结果行：圆角档位 + 选中态过渡。
+   注意这里**不能**用 transform 做动效：上面那段入场动画带 forwards 填充，
+   动画结束后的 transform 会盖掉普通声明，写在 :hover/[selected] 上的位移是无效的。
+   所以过渡全部落在 background-color 与 box-shadow 上。 */
+.urlbarView-row {
+  border-radius: var(--zenwashi-urlbar-result-radius, 8px) !important;
+  transition: background-color 0.18s var(--zenwashi-ease) !important;
+}
+
+@media (-moz-pref("zenwashi.urlbar.result-radius", "0px")) {
+  :root { --zenwashi-urlbar-result-radius: 0px; }
+}
+@media (-moz-pref("zenwashi.urlbar.result-radius", "4px")) {
+  :root { --zenwashi-urlbar-result-radius: 4px; }
+}
+@media (-moz-pref("zenwashi.urlbar.result-radius", "12px")) {
+  :root { --zenwashi-urlbar-result-radius: 12px; }
+}
+@media (-moz-pref("zenwashi.urlbar.result-radius", "16px")) {
+  :root { --zenwashi-urlbar-result-radius: 16px; }
+}
+
+.urlbarView-row[selected] {
+  background-color: var(--zenwashi-accent-tint) !important;
+  color: var(--zenwashi-fg-primary) !important;
+}
+
+@keyframes zenwashiUrlbarRowIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#urlbar-results .urlbarView-row {
+  opacity: 0;
+  animation: zenwashiUrlbarRowIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
+#urlbar-results .urlbarView-row:nth-child(1) { animation-delay: 0.00s !important; }
+#urlbar-results .urlbarView-row:nth-child(2) { animation-delay: 0.04s !important; }
+#urlbar-results .urlbarView-row:nth-child(3) { animation-delay: 0.08s !important; }
+#urlbar-results .urlbarView-row:nth-child(4) { animation-delay: 0.12s !important; }
+#urlbar-results .urlbarView-row:nth-child(5) { animation-delay: 0.16s !important; }
+#urlbar-results .urlbarView-row:nth-child(n+6) { animation-delay: 0.20s !important; }
+
+/* ---------------- 12.2 网页合成层硬件加速基底 ---------------- */
+
+browser {
+  transform: translateZ(0);
+}
+
+/* 
+ * ---------------- 12.2.1 加载「柔焦」承载层 (宣纸微敛 / 画卷退景共用) ----------------
+ *
+ * 为什么柔焦不留在卡片上：
+ *   12.3 与 12.4 都需要「边框跟着卡片一起等比内缩」——那必须用 transform 打在
+ *   hbox.deck-selected (即 .browserSidebarContainer) 上。但 filter 在规范上是对
+ *   「元素自身连同子树」的绘制结果做后处理，元素自己的 border / outline / box-shadow
+ *   就在被处理的像素里，所以 filter 与 border 同层时边框必然被一起糊掉，无解。
+ *   因此把两个属性拆到两层：transform 留在卡片，filter + opacity 落到 browser。
+ *
+ * 为什么选 browser 这一层：
+ *   browser 自身没有任何 border / outline / 阴影 (见上方 :423-432)，是层级里最干净的一层；
+ *   而它的父级 .browserContainer 反而带着一条 outline: 1px (防白缝内压边)，不适合。
+ *   叠加 .browserContainer 的 overflow: clip，模糊会被裁在边框内侧，
+ *   所以哪怕 blur 开到 20px 以上也绝不会晕到边框上——这是结构保证，不是调参巧合。
+ *   opacity 必须与 filter 同层：若留在卡片上，边框会被一起降透明度而「发灰变软」。
+ *
+ * 数值来源：各档位规则通过下面三个自定义属性下发（自定义属性会向下继承到 browser，
+ * 而「何时生效」仍完全由各档位原有的选择器守卫决定，全屏 / 分屏 / Zen Glance 语义不变）。
+ * 本规则必须常驻、不能加 :has(...busy) 之类的条件，否则退出动画会因为同时失去
+ * transition 声明而瞬间跳变。
+ */
+#tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) browser {
+  filter: var(--zenwashi-veil-filter, none) !important;
+  opacity: var(--zenwashi-veil-opacity, 1) !important;
+  /* 外扩补偿：filter: blur() 会把元素边缘平均成透明，露出背后 .browserContainer 的
+   * 纯白底色（--zenwashi-bg-surface），形成边框内侧的白色软光晕。
+   * 这里把模糊层按模糊半径放大一点，让那圈透明边缘落到 .browserContainer 的
+   * overflow: clip 之外被裁掉。fallback 保留原有的 translateZ(0) 硬件加速基底。 */
+  transform: var(--zenwashi-veil-overscan, translateZ(0)) !important;
+  transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+              filter    0.48s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity   0.42s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  transition-delay: var(--zenwashi-veil-delay, 0s) !important;
+}
+
+/* ---------------- 12.3 页面加载效果：宣纸微敛 (zenwashi.content.loading) ---------------- */
+
+/* 
+ * 几何(transform)打在 #tabbrowser-tabpanels > hbox.deck-selected
+ * (即 .browserSidebarContainer.deck-selected)上，边框 / 圆角 / 阴影随之等比内缩；
+ * 柔焦与透明度通过 --zenwashi-veil-* 下发给 12.2.1 的 browser 承载层，避免糊掉边框。
+ * 默认档位 (subtle)：宣纸微敛
+ */
+:root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  transform: scale(0.976) !important;
+  --zenwashi-veil-filter: blur(7px) brightness(0.90) saturate(0.85);
+  --zenwashi-veil-opacity: 0.84;
+  --zenwashi-veil-delay: 0.12s;
+  --zenwashi-veil-overscan: scale(1.06) translateZ(0);   /* ≈3.3σ，盖住 blur(7px) 的透明边缘 */
+  /* 解耦：本节自带过渡，不再借用第 11 节。
+     一并列出 filter / opacity，是为了"加载期间再切标签"时第 11 节的切换动画仍有过渡可用。 */
+  transition: transform 0.48s var(--zenwashi-ease),
+              opacity   0.42s var(--zenwashi-ease),
+              filter    0.48s var(--zenwashi-ease) !important;
+  transition-delay: 0.12s !important;
+}
+
+/* 档位 deep：宣纸深敛 (强景深柔焦) */
+@media (-moz-pref("zenwashi.content.loading", "deep")), (-moz-pref("zenwashi.tab.loading-animation", 2)) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: scale(0.958) !important;
+    --zenwashi-veil-filter: blur(15px) brightness(0.80) saturate(0.75);
+    --zenwashi-veil-opacity: 0.72;
+    --zenwashi-veil-delay: 0.10s;
+    --zenwashi-veil-overscan: scale(1.12) translateZ(0);   /* ≈3σ，盖住 blur(15px) 的透明边缘 */
+    transition: transform 0.48s var(--zenwashi-ease),
+                opacity   0.42s var(--zenwashi-ease),
+                filter    0.48s var(--zenwashi-ease) !important;
+    transition-delay: 0.10s !important;
+  }
+}
+
+/* 档位 ink：水墨未干 (去色水墨还色) */
+@media (-moz-pref("zenwashi.content.loading", "ink")), (-moz-pref("zenwashi.tab.loading-animation", 3)) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: scale(0.976) !important;
+    --zenwashi-veil-filter: grayscale(92%) blur(4px) brightness(0.88);
+    --zenwashi-veil-opacity: 0.80;
+    --zenwashi-veil-delay: 0.10s;
+    --zenwashi-veil-overscan: scale(1.04) translateZ(0);   /* ≈3σ，盖住 blur(4px) 的透明边缘 */
+    transition: transform 0.48s var(--zenwashi-ease),
+                opacity   0.42s var(--zenwashi-ease),
+                filter    0.48s var(--zenwashi-ease) !important;
+    transition-delay: 0.10s !important;
+  }
+}
+
+/* 档位 off：关闭加载动效 */
+@media (-moz-pref("zenwashi.content.loading", "off")), (-moz-pref("zenwashi.tab.loading-animation", 0)) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: none !important;
+    --zenwashi-veil-filter: none;
+    --zenwashi-veil-opacity: 1;
+    --zenwashi-veil-delay: 0s;
+    --zenwashi-veil-overscan: translateZ(0);
+    transition: transform 0.48s var(--zenwashi-ease),
+                opacity   0.42s var(--zenwashi-ease),
+                filter    0.48s var(--zenwashi-ease) !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* ---------------- 12.4 地址栏展开时的底层「画卷退景」(zenwashi.urlbar.recede) ---------------- */
+
+:root:not([inFullscreen]):not([inDOMFullscreen]) #browser:has(#urlbar[open]) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  transform: scale(0.976) !important;
+  --zenwashi-veil-filter: blur(8px) brightness(0.88) saturate(0.85);
+  --zenwashi-veil-opacity: 0.88;
+  --zenwashi-veil-delay: 0s;
+  --zenwashi-veil-overscan: scale(1.07) translateZ(0);   /* ≈3σ，盖住 blur(8px) 的透明边缘 */
+  transition: transform 0.48s var(--zenwashi-ease),
+              opacity   0.42s var(--zenwashi-ease),
+              filter    0.48s var(--zenwashi-ease) !important;
+  transition-delay: 0s !important;
+}
+
+@media (-moz-pref("zenwashi.urlbar.recede", "off")), (-moz-pref("zenwashi.urlbar.animation", 0)) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]) #browser:has(#urlbar[open]) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+    transform: none !important;
+    --zenwashi-veil-filter: none;
+    --zenwashi-veil-opacity: 1;
+    --zenwashi-veil-overscan: translateZ(0);
+  }
+}
