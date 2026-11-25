@@ -36,6 +36,13 @@
       "include": [
         "chrome://browser/content/browser.xhtml"
       ]
+    },
+    "js/loading-veil-timeout.uc.js": {
+      "name": "Washi loading veil 5s timeout",
+      "description": "Automatically clears the page-loading blur & scale effect after 5 seconds so slow or stalled tabs stay readable.",
+      "include": [
+        "chrome://browser/content/browser.xhtml"
+      ]
     }
   },
   "preferences": "preferences.json",

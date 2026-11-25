@@ -255,6 +255,7 @@
     var(--zenwashi-urlbar-panel-radius, 15px) var(--zenwashi-urlbar-panel-radius, 15px)
     var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px))
     var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px)) !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
 }
 
 #urlbar:is([open], [breakout-extend]) > .urlbar-background {
@@ -265,6 +266,7 @@
     var(--zenwashi-urlbar-panel-radius, 15px) var(--zenwashi-urlbar-panel-radius, 15px)
     var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px))
     var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px)) !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
   outline: none !important;
   box-shadow:
     0 20px 48px light-dark(rgba(38, 36, 33, 0.16), rgba(0, 0, 0, 0.72)),
@@ -272,6 +274,21 @@
   transition:
     box-shadow 0.36s var(--zenwashi-ease),
     border-color 0.36s var(--zenwashi-ease) !important;
+}
+
+/* Cmd+T / Cmd+L 独立悬浮面板：四角始终对称跟随 zenwashi.urlbar.panel.radius，
+   彻底与顶栏输入框的 zenwashi.urlbar.bottom-radius 解耦，并启用连续圆角（squircle）。 */
+#urlbar[zen-floating-urlbar="true"]:is([open], [breakout-extend]),
+#urlbar[zen-floating-urlbar="true"]:is([open], [breakout-extend]) > .urlbar-background {
+  border-radius: var(--zenwashi-urlbar-panel-radius, 15px) !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
+}
+
+/* 悬浮 Cmd+T 打开时，隐藏顶栏原位留下的空白灰框，让视觉更聚焦于浮层 */
+:root:has(#urlbar[open][zen-floating-urlbar="true"]) #urlbar-container {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 
 /* 亚克力地址栏（zen.theme.acrylic-urlbar）开启时保留磨砂，但把颜色换成和纸色 */
@@ -329,13 +346,53 @@
   --button-text-color-menu-active: var(--zenwashi-fg-primary) !important;
 }
 
+/* 结果列表容器：底部留白与左右对齐，圆角裁切避免内容溢出外框 */
+#urlbar .urlbarView {
+  border-radius:
+    0 0
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px))
+    var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px)) !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
+}
+
+#urlbar[zen-floating-urlbar="true"] .urlbarView {
+  border-radius:
+    0 0
+    var(--zenwashi-urlbar-panel-radius, 15px)
+    var(--zenwashi-urlbar-panel-radius, 15px) !important;
+}
+
+#urlbar .urlbarView-body-inner {
+  padding-block-end: 8px !important;
+}
+
 /* 结果行：圆角档位 + 选中态过渡。
-   注意这里**不能**用 transform 做动效：上面那段入场动画带 forwards 填充，
+   注意这里**不能**用 transform 做动效：入场动画带 forwards 填充，
    动画结束后的 transform 会盖掉普通声明，写在 :hover/[selected] 上的位移是无效的。
    所以过渡全部落在 background-color 与 box-shadow 上。 */
 .urlbarView-row {
   border-radius: var(--zenwashi-urlbar-result-radius, 8px) !important;
+  corner-shape: var(--zenwashi-corner-shape, round) !important;
   transition: background-color 0.18s var(--zenwashi-ease) !important;
+}
+
+/* 最后一条可见候选项（含单候选项）：下方两角自动按同心圆角（外圆角 - 8px 留白）
+   放大，避免大圆角面板下只有一条候选项时左下/右下圆角曲率不协调。 */
+#urlbar-results .urlbarView-row:not([hidden]):not(:has(~ .urlbarView-row:not([hidden]))) {
+  --zenwashi-row-bottom-radius: max(
+    var(--zenwashi-urlbar-result-radius, 8px),
+    calc(var(--zenwashi-urlbar-bottom-radius, var(--zenwashi-urlbar-panel-radius, 15px)) - 8px)
+  );
+  border-radius:
+    var(--zenwashi-urlbar-result-radius, 8px) var(--zenwashi-urlbar-result-radius, 8px)
+    var(--zenwashi-row-bottom-radius) var(--zenwashi-row-bottom-radius) !important;
+}
+
+#urlbar[zen-floating-urlbar="true"] #urlbar-results .urlbarView-row:not([hidden]):not(:has(~ .urlbarView-row:not([hidden]))) {
+  --zenwashi-row-bottom-radius: max(
+    var(--zenwashi-urlbar-result-radius, 8px),
+    calc(var(--zenwashi-urlbar-panel-radius, 15px) - 8px)
+  );
 }
 
 @media (-moz-pref("zenwashi.urlbar.result-radius", "0px")) {
@@ -351,9 +408,31 @@
   :root { --zenwashi-urlbar-result-radius: 16px; }
 }
 
-.urlbarView-row[selected] {
+/* 选中候选项：显式锁定内部标题、动作文案、URL 与图标墨色，
+   防止 Zen 原生 SelectedItemText（白色）覆盖导致浅色底上白字看不清。 */
+#urlbar .urlbarView-row[selected] {
   background-color: var(--zenwashi-accent-tint) !important;
   color: var(--zenwashi-fg-primary) !important;
+}
+
+#urlbar .urlbarView-row[selected] :is(
+  .urlbarView-row-inner,
+  .urlbarView-title,
+  .urlbarView-title strong,
+  .urlbarView-tags,
+  .urlbarView-type-icon,
+  .urlbarView-favicon
+) {
+  color: var(--zenwashi-fg-primary) !important;
+  fill: var(--zenwashi-fg-primary) !important;
+}
+
+#urlbar .urlbarView-row[selected] :is(
+  .urlbarView-url,
+  .urlbarView-action,
+  .urlbarView-title-separator::before
+) {
+  color: var(--zenwashi-fg-secondary) !important;
 }
 
 @keyframes zenwashiUrlbarRowIn {
@@ -367,17 +446,19 @@
   }
 }
 
-#urlbar-results .urlbarView-row {
+/* 仅在面板初次展开（zenwashi-urlbar-opening）时播放阶梯入场动画，
+   后续打字更新候选项时不再从 opacity: 0 重播，彻底消除输入闪烁。 */
+:root[zenwashi-urlbar-opening="true"] #urlbar-results .urlbarView-row {
   opacity: 0;
-  animation: zenwashiUrlbarRowIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  animation: zenwashiUrlbarRowIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
 }
 
-#urlbar-results .urlbarView-row:nth-child(1) { animation-delay: 0.00s !important; }
-#urlbar-results .urlbarView-row:nth-child(2) { animation-delay: 0.04s !important; }
-#urlbar-results .urlbarView-row:nth-child(3) { animation-delay: 0.08s !important; }
-#urlbar-results .urlbarView-row:nth-child(4) { animation-delay: 0.12s !important; }
-#urlbar-results .urlbarView-row:nth-child(5) { animation-delay: 0.16s !important; }
-#urlbar-results .urlbarView-row:nth-child(n+6) { animation-delay: 0.20s !important; }
+:root[zenwashi-urlbar-opening="true"] #urlbar-results .urlbarView-row:nth-child(1) { animation-delay: 0.00s !important; }
+:root[zenwashi-urlbar-opening="true"] #urlbar-results .urlbarView-row:nth-child(2) { animation-delay: 0.03s !important; }
+:root[zenwashi-urlbar-opening="true"] #urlbar-results .urlbarView-row:nth-child(3) { animation-delay: 0.06s !important; }
+:root[zenwashi-urlbar-opening="true"] #urlbar-results .urlbarView-row:nth-child(4) { animation-delay: 0.09s !important; }
+:root[zenwashi-urlbar-opening="true"] #urlbar-results .urlbarView-row:nth-child(5) { animation-delay: 0.12s !important; }
+:root[zenwashi-urlbar-opening="true"] #urlbar-results .urlbarView-row:nth-child(n+6) { animation-delay: 0.15s !important; }
 
 /* ---------------- 12.2 网页合成层硬件加速基底 ---------------- */
 
@@ -427,9 +508,11 @@ browser {
  * 几何(transform)打在 #tabbrowser-tabpanels > hbox.deck-selected
  * (即 .browserSidebarContainer.deck-selected)上，边框 / 圆角 / 阴影随之等比内缩；
  * 柔焦与透明度通过 --zenwashi-veil-* 下发给 12.2.1 的 browser 承载层，避免糊掉边框。
+ * 超过 5 秒仍未加载完时，js/loading-veil-timeout.uc.js 会打上 zenwashi-loading-timedout="true"，
+ * 下面各档位自动失配、平滑还原清晰态。
  * 默认档位 (subtle)：宣纸微敛
  */
-:root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+:root:not([zenwashi-loading-timedout="true"]):not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
   transform: scale(0.976) !important;
   --zenwashi-veil-filter: blur(7px) brightness(0.90) saturate(0.85);
   --zenwashi-veil-opacity: 0.84;
@@ -445,7 +528,7 @@ browser {
 
 /* 档位 deep：宣纸深敛 (强景深柔焦) */
 @media (-moz-pref("zenwashi.content.loading", "deep")), (-moz-pref("zenwashi.tab.loading-animation", 2)) {
-  :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  :root:not([zenwashi-loading-timedout="true"]):not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transform: scale(0.958) !important;
     --zenwashi-veil-filter: blur(15px) brightness(0.80) saturate(0.75);
     --zenwashi-veil-opacity: 0.72;
@@ -460,7 +543,7 @@ browser {
 
 /* 档位 ink：水墨未干 (去色水墨还色) */
 @media (-moz-pref("zenwashi.content.loading", "ink")), (-moz-pref("zenwashi.tab.loading-animation", 3)) {
-  :root:not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  :root:not([zenwashi-loading-timedout="true"]):not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transform: scale(0.976) !important;
     --zenwashi-veil-filter: grayscale(92%) blur(4px) brightness(0.88);
     --zenwashi-veil-opacity: 0.80;

@@ -239,34 +239,96 @@
   },
   {
     "type": "separator",
-    "label": "Glass 磨砂玻璃（透出 macOS 桌面）",
+    "label": "Wallpaper 侧栏墙纸（颗粒与印花）",
     "margin": "14px 0 10px 0"
   },
   {
     "type": "dropdown",
-    "property": "zenwashi.glass",
-    "label": "Glass 玻璃质感 (靠 macOS 窗口 vibrancy 透出桌面；系统开“降低透明度”时自动失效)",
+    "property": "zenwashi.wallpaper.grain",
+    "label": "Paper grain 纸面颗粒质感（仿 Yab @2x 细颗粒平铺，零滤镜开销）",
     "defaultValue": "off",
     "options": [
       {
         "value": "off",
-        "label": "Off 实心和纸 (默认)"
+        "label": "Off 无颗粒（默认）"
       },
       {
-        "value": "frosted",
-        "label": "Frosted 整窗磨砂 (侧栏与案台同一张半透明和纸，最克制)"
+        "value": "subtle",
+        "label": "Subtle 细腻纸纹（轻度）"
       },
       {
-        "value": "clear",
-        "label": "Clear 玻璃侧栏 (案台透出桌面，侧栏是一张浮在壁纸上的玻璃纸)"
+        "value": "standard",
+        "label": "Standard 和纸颗粒（Yab 标准，推荐）"
+      },
+      {
+        "value": "rough",
+        "label": "Rough 粗陶手工纸（明显颗粒）"
       }
     ]
   },
   {
-    "type": "checkbox",
-    "property": "zenwashi.diagnostics.glass",
-    "label": "⚠️ Diagnostics 玻璃调试（侧栏画洋红条纹、窗口层画绿色，验证规则到底有没有生效）",
-    "defaultValue": false
+    "type": "dropdown",
+    "property": "zenwashi.wallpaper.pattern",
+    "label": "Sidebar pattern 侧栏线描印花（仿 Yab / Telegram 墙纸涂鸦）",
+    "defaultValue": "none",
+    "options": [
+      {
+        "value": "none",
+        "label": "None 无印花（默认）"
+      },
+      {
+        "value": "washi",
+        "label": "Washi 和纸风物（折扇、梅花、银杏、竹叶、云月、灯笼等）"
+      },
+      {
+        "value": "browser",
+        "label": "Browser 浏览器涂鸦（Yab 原版：地球、指针、钥匙、锁、标签等）"
+      },
+      {
+        "value": "life",
+        "label": "Life 日常涂鸦（Yab 原版：咖啡杯、猫咪、星球、云朵、纸飞机等）"
+      },
+      {
+        "value": "halloween",
+        "label": "Halloween 万圣节涂鸦（Yab 原版：南瓜、幽灵、蝙蝠、女巫帽等）"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.wallpaper.strength",
+    "label": "Pattern strength 印花显色强度（深色模式下自动适度降噪防刺眼）",
+    "defaultValue": "standard",
+    "options": [
+      {
+        "value": "subtle",
+        "label": "Subtle 极淡暗纹"
+      },
+      {
+        "value": "standard",
+        "label": "Standard 柔和印花（Yab 标准，推荐）"
+      },
+      {
+        "value": "vivid",
+        "label": "Vivid 清晰印花"
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.wallpaper.tint",
+    "label": "Pattern ink 印花墨色",
+    "defaultValue": "ink",
+    "options": [
+      {
+        "value": "ink",
+        "label": "Ink 随主题墨色（默认，自动适配明暗与四套调色板）"
+      },
+      {
+        "value": "accent",
+        "label": "Mineral accent 矿物强调色（竹青 / 朱砂 / 琉璃等）"
+      }
+    ]
   },
   {
     "type": "separator",
@@ -380,9 +442,9 @@
   {
     "type": "string",
     "property": "zenwashi.urlbar.panel.radius",
-    "label": "Panel corner radius 地址栏浮层圆角 (Cmd+T / Cmd+L)",
+    "label": "Panel corner radius 悬浮地址栏面板圆角 (Cmd+T / Cmd+L，独立四角对称，支持任意 px 与 Squircle)",
     "defaultValue": "15px",
-    "placeholder": "15px"
+    "placeholder": "20px"
   },
   {
     "type": "separator",

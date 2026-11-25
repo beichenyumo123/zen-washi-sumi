@@ -1001,3 +1001,47 @@ Sine（`chrome/JS/services/stylesheets.sys.mjs`）把 `preferences.json` 的每�
 | `uifont.size.enabled` / `uifont.size` | `zenwashi.font.size.enabled` / `zenwashi.font.size` |
 | `uifont.sidebar-size.enabled` / `uifont.sidebar-size` | `zenwashi.font.sidebar-size.enabled` / `zenwashi.font.sidebar-size` |
 | `uifont.weight.enabled` / `uifont.weight` | `zenwashi.font.weight.enabled` / `zenwashi.font.weight` |
+
+---
+
+## 12. 侧栏与整窗墙纸 (`styles/wallpaper.css`)
+
+将 Yab 浏览器的纸面颗粒（`Grain.tile`）与无缝线描涂鸦（`LookDrawings`）移植进主题：颗粒是 `128×128` `@2x` 确定性 `xorshift32` 黑白噪点（`textures/grain.png`，逻辑 `64px×64px` 平铺），印花是 `320×320` 无缝环绕单线 SVG（`textures/pattern-*.svg`，经 `mask-image` 着色，自动跟随浅/深色与四套调色板）。
+
+### 12.1 内容区四周留白不显示墙纸的三个错目标（别再试）
+
+悬浮画卷（`#zen-appcontent-wrapper`）四周的留白与大圆角外缘，要和侧栏一起铺上墙纸，先后踩过三个坑：
+
+| 错目标 | 为什么不生效 |
+| :-- | :-- |
+| `#zen-toolbar-background::before / ::after` | 它挂在侧栏体系里，并不铺在 `#zen-appcontent-wrapper` 背后，内容区四周留白完全吃不到。 |
+| `#appcontent::before / ::after` | Zen 浏览器已用 `#zen-appcontent-wrapper` 替代了 Firefox 原生 `#appcontent`，选择器静默落空。 |
+| `#browser::before / ::after`（`z-index: -1`） | 真正负责整窗背景的 **`#zen-browser-background`** 压在 `#browser` 负层级伪元素前面，而且 `glass.css` / `floating-island.css` 在 `#zen-browser-background::before / ::after` 上画了 100% 不透明底纸色，直接把 `#browser` 背后的墙纸严严实实盖住。 |
+
+### 12.2 正确做法：把底纸色挪回 `#zen-browser-background` 自身，释放两个伪元素
+
+`#zen-browser-background` 是 `floating-island.css` 与 `glass.css` 早已实证的**真实整窗背景层**。开启任意墙纸项（`grain != off` 或 `pattern != none`）时：
+
+1. **底纸色归本体**：由 `#zen-browser-background` 自身承担整窗纸色（保留 `--blended-addressbar-window-tint-background` 窗口染色与 `--zenwashi-glass-window` 磨砂透明度）；
+2. **先清双伪元素**：第一时间把 `#zen-browser-background::before / ::after` 置为 `background: transparent; opacity: 0`——**不可省略**，否则只开印花（不开颗粒）时，`glass.css` 留在 `::after` 上的实心纸色会把 `::before` 里的印花整个盖掉；
+3. **分担两层纹理**：`#zen-browser-background::before` 专画印花（`mask-image`），`#zen-browser-background::after` 专画颗粒（`background-image`），两层互不抢位、自由组合；
+4. **侧栏与磨砂玻璃协同**：
+   - 实心和纸（`off`）与 `clear` 模式下，侧栏 `#navigator-toolbox` 自身带纸底，会盖住底层的 `#zen-browser-background`，因此由 `#navigator-toolbox::before / ::after`（`isolation: isolate` + `z-index: -1`）补绘侧栏区域；简洁模式则挂在 `.zen-toolbar-background` 上并继承圆角。
+   - `frosted` 模式下 `#navigator-toolbox` 完全透明，必须隐藏 `#navigator-toolbox::before / ::after`，直接透出 `#zen-browser-background` 单层壁纸，避免侧栏出现双层叠加。
+
+### 12.3 左右侧栏零拼缝对齐
+
+利用两套纹理四边无缝的特性，让 `#zen-browser-background` 与 `#navigator-toolbox` 始终以**共享的那条窗口外边**为平铺原点：
+
+- 默认左侧栏：两者都对齐 `left top`；
+- 右侧栏（`@media (-moz-pref("zen.tabs.vertical.right-side"))`）：两者都对齐 `right top`。
+
+这样无论怎么拖拽侧栏宽度，侧栏与内容案台的颗粒和印花在交界处都能严丝合缝。
+
+### 12.4 纹理重新生成
+
+所有贴图均由纯标准库脚本生成，后续调整印花密度、尺寸或增删图案时直接修改并重跑：
+
+```bash
+python3 tools/generate-wallpaper-textures.py
+```

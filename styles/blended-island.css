@@ -24,19 +24,8 @@
   initial-value: 0px;
 }
 
-/*
- * 地址栏展开期间（含 Cmd+T 新建标签页）：内容区上两角跟随变圆。
- * -----------------------------------------------------------------------------
- * 截图里 Cmd+T 的柔焦其实是第 12.4 节「画卷退景」——新建标签页会自动打开地址栏，
- * 内容区随之向内缩放，露出自己那圈 0 0 r r，于是上直角、下圆角。
- * 上面那个 keyframes 只在 deck-selected 变化后跑 0.42s，地址栏会一直开着，
- * 动画结束后圆角就没了，所以这里按「地址栏是否展开」这个状态直接给变量赋值。
- * 只覆盖地址栏展开；普通页面加载（[busy]）仍保持上直角、与地址栏统一。
- */
-:root:has(#urlbar[open]) {
-  --zw-panel-tl: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
-  --zw-panel-tr: max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px)));
-}
+/* 融合一体框模式下，地址栏展开（Cmd+T）由外层 #zen-appcontent-wrapper 整体连同边框一起缩放，
+   内容区上沿始终紧贴顶栏保持直角（0px），不再脱开露出顶栏下方的白带与接缝细线。 */
 
 @keyframes zenwashiPanelSettle {
   from {
@@ -280,9 +269,9 @@
 
   /*
    * 在融合顶栏一体框模式下完整保留第 12.3 节「宣纸微敛」(zenwashi.content.loading) 与 12.4 节「画卷退景」加载/展开动画：
-   * - 页面加载时，由外层一体画框 #zen-appcontent-wrapper 整体执行等比微敛内缩 (scale 0.976 / 0.958)，
-   *   使顶部融合地址栏、装裱边框、漫射阴影与网页作为一个整体同步呼吸内敛，而内层 browser 保持宣纸柔焦 (blur)；
-   * - 地址栏展开 (#urlbar[open]) 时，不额外锁定 hbox.deck-selected，直接保留第 12.4 节原有的画卷退景缩放与柔焦。
+   * - 页面加载（[busy]，5s 超时后由 zenwashi-loading-timedout 自动解除）与地址栏展开（#urlbar[open]）时，
+   *   统一由外层一体画框 #zen-appcontent-wrapper 整体执行等比内缩，使顶部融合地址栏、装裱边框、
+   *   漫射阴影与网页作为一个整体同步退景，彻底消除顶栏与网页脱开时露出的白带与细线。
    */
   :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper {
     transform-origin: center center !important;
@@ -295,15 +284,15 @@
       box-shadow 0.24s ease !important;
   }
 
-  /* 默认档位 (subtle) 与水墨档位 (ink)：一体画框整体微敛至 0.976 */
-  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+  /* 默认档位 (subtle) 与水墨档位 (ink)：一体画框整体微敛至 0.976（超过 5s 自动解除） */
+  :root:not([zenwashi-loading-timedout="true"]):not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
     transform: scale(0.976) !important;
     transition-delay: 0.12s !important;
   }
 
   /* 档位 deep：宣纸深敛 (一体画框整体深敛至 0.958) */
   @media (-moz-pref("zenwashi.content.loading", "deep")), (-moz-pref("zenwashi.tab.loading-animation", 2)) {
-    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+    :root:not([zenwashi-loading-timedout="true"]):not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
       transform: scale(0.958) !important;
       transition-delay: 0.10s !important;
     }
@@ -317,8 +306,24 @@
     }
   }
 
-  /* 避免加载时内层 hbox.deck-selected 与外层 #zen-appcontent-wrapper 双重叠加缩放（仅重置 transform，保留第 11 节标签切换 scale 与 12.3 节柔焦变量继承） */
-  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
+  /* 地址栏展开（Cmd+T / Cmd+L 画卷退景）：外层一体画框连同装裱边框与顶栏一起微缩至 0.976 */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(#urlbar[open]):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+    transform: scale(0.976) !important;
+    transition-delay: 0s !important;
+  }
+
+  @media (-moz-pref("zenwashi.urlbar.recede", "off")), (-moz-pref("zenwashi.urlbar.animation", 0)) {
+    :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]):has(#urlbar[open]):has(#tabbrowser-tabpanels:not([zen-split-view="true"])) #zen-appcontent-wrapper {
+      transform: none !important;
+      transition-delay: 0s !important;
+    }
+  }
+
+  /* 避免加载或地址栏展开时内层 hbox.deck-selected 与外层 #zen-appcontent-wrapper 双重叠加缩放
+     （仅重置 transform，保留第 11 节标签切换 scale 与 12.3/12.4 节柔焦变量继承；
+     注意必须带 #browser，否则特异性比 viewport-motion.css §12.4 少一个 ID 会被压回去） */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):has(.tabbrowser-tab:is([selected], [visuallyselected]):is([busy], [busy="true"])) #browser #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)),
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]) #browser:has(#urlbar[open]) #tabbrowser-tabpanels:not([zen-split-view="true"]) > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transform: none !important;
   }
 }

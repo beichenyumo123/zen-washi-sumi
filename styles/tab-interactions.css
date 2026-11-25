@@ -187,7 +187,7 @@
 :root[zenwashi-float-positioned="true"] #urlbar[open][zen-floating-urlbar="true"] {
   left: var(--zenwashi-float-x) !important;
   top: var(--zenwashi-float-y) !important;
-  translate: -50% -50% !important;
+  translate: -50% 0 !important;
 }
 
 /* ---------------- 9.16 工作区指示器开关 ---------------- */

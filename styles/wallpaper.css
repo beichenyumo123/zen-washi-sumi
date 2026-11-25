@@ -1,0 +1,292 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Window & Sidebar Wallpaper (Grain & Pattern)
+   -----------------------------------------------------------------------------
+   灵感与参数源自 Yab 浏览器的 Grain (Design.swift) 与 LookDrawings (LookDrawings.swift)：
+     · 颗粒层 (::after)：128×128 @2x Retina 确定性 xorshift32 黑白噪点平铺
+       （64px×64px 逻辑尺寸），让纯色和纸拥有真实纸面微粒质感，零实时滤镜开销。
+     · 印花层 (::before)：320×320 无缝环绕单线手绘涂鸦平铺（mask-image 着色），
+       默认跟随 --zenwashi-fg-primary 墨色，自动适配浅/深色与全部四套调色板，
+       也支持切换为当前矿物强调色 (--zenwashi-accent)。
+
+   图层与无缝拼接设计：
+     · 两项默认均为关闭（grain=off / pattern=none），关闭时整份样式零介入。
+     · 整窗案台层 #zen-browser-background：开启任一墙纸项后，由本体承担整窗底纸色
+       （含窗口染色），先清空双伪元素，再由 ::before 专画印花、::after 专画颗粒，
+       完整覆盖普通模式与简洁模式的内容区四周留白和大圆角外缘。
+     · 侧栏区（普通模式 #navigator-toolbox / 简洁模式 .zen-toolbar-background）：
+       开启墙纸时将侧栏内部各子容器底色让空，由 #navigator-toolbox::before / ::after
+       （isolation: isolate + z-index: -1）在底纸之上、标签之下绘制墙纸；简洁模式则
+       挂在 .zen-toolbar-background 上并继承圆角。
+     · 锚点对齐：左侧栏时 #zen-browser-background 与 #navigator-toolbox 均对齐 left top，
+       右侧栏时均对齐 right top，共享同一条窗口外边，无论侧栏宽度如何变化都零拼缝。
+   ============================================================================= */
+
+:root {
+  --zenwashi-wallpaper-ink: var(--zenwashi-fg-primary);
+  --zenwashi-wallpaper-pattern-url: none;
+  --zenwashi-wallpaper-pattern-opacity: 0.11;
+  --zenwashi-wallpaper-grain-opacity: 0;
+  /* 默认左侧边栏：#zen-browser-background 与 #navigator-toolbox 共享窗口左边界 */
+  --zenwashi-wallpaper-pos: left top;
+}
+
+@media (-moz-pref("zen.tabs.vertical.right-side")) {
+  :root {
+    /* 右侧边栏：#zen-browser-background 与 #navigator-toolbox 共享窗口右边界 */
+    --zenwashi-wallpaper-pos: right top;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 深色底上亮线更易显眼，与 Yab LookDrawings.opacity() 保持同一光学折减 */
+    --zenwashi-wallpaper-pattern-opacity: 0.09;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   18.1 偏好项映射：颗粒档位 / 印花主题 / 显色强度 / 墨色来源
+   ----------------------------------------------------------------------------- */
+
+/* 颗粒质感强度 (zenwashi.wallpaper.grain) */
+@media (-moz-pref("zenwashi.wallpaper.grain", "subtle")) {
+  :root {
+    --zenwashi-wallpaper-grain-opacity: 0.045;
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.grain", "standard")) {
+  :root {
+    /* 与 Yab Grain.standard (0.35 * 0.2 = 0.07) 一致 */
+    --zenwashi-wallpaper-grain-opacity: 0.07;
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.grain", "rough")) {
+  :root {
+    --zenwashi-wallpaper-grain-opacity: 0.13;
+  }
+}
+
+/* 印花图案集 (zenwashi.wallpaper.pattern) */
+@media (-moz-pref("zenwashi.wallpaper.pattern", "washi")) {
+  :root {
+    --zenwashi-wallpaper-pattern-url: url("chrome://sine/content/zen-washi-sumi/textures/pattern-washi.svg");
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.pattern", "browser")) {
+  :root {
+    --zenwashi-wallpaper-pattern-url: url("chrome://sine/content/zen-washi-sumi/textures/pattern-browser.svg");
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.pattern", "life")) {
+  :root {
+    --zenwashi-wallpaper-pattern-url: url("chrome://sine/content/zen-washi-sumi/textures/pattern-life.svg");
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.pattern", "halloween")) {
+  :root {
+    --zenwashi-wallpaper-pattern-url: url("chrome://sine/content/zen-washi-sumi/textures/pattern-halloween.svg");
+  }
+}
+
+/* 印花显色强度 (zenwashi.wallpaper.strength) */
+@media (-moz-pref("zenwashi.wallpaper.strength", "subtle")) {
+  :root {
+    --zenwashi-wallpaper-pattern-opacity: 0.055;
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.strength", "subtle")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-wallpaper-pattern-opacity: 0.045;
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.strength", "standard")) {
+  :root {
+    --zenwashi-wallpaper-pattern-opacity: 0.11;
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.strength", "standard")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-wallpaper-pattern-opacity: 0.09;
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.strength", "vivid")) {
+  :root {
+    --zenwashi-wallpaper-pattern-opacity: 0.17;
+  }
+}
+@media (-moz-pref("zenwashi.wallpaper.strength", "vivid")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-wallpaper-pattern-opacity: 0.14;
+  }
+}
+
+/* 印花墨色来源 (zenwashi.wallpaper.tint) */
+@media (-moz-pref("zenwashi.wallpaper.tint", "accent")) {
+  :root {
+    --zenwashi-wallpaper-ink: var(--zenwashi-accent);
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   18.2 接管底纸层与侧栏子容器透底（任一墙纸开关启用时生效）
+   -----------------------------------------------------------------------------
+   1. #zen-browser-background：把底纸色挪回本体，清空 ::before / ::after，
+      再由 18.3 / 18.4 分别画印花与颗粒，防止单开其一时另一伪元素用实心纸色遮盖。
+   2. 侧栏内部各子容器原本由 sidebar.css 铺了实心纸色，开启墙纸时让为透明，
+      使 #navigator-toolbox 上的墙纸伪元素完整透出。
+   ----------------------------------------------------------------------------- */
+@media (-moz-pref("zenwashi.wallpaper.pattern", "washi")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "browser")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "life")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "halloween")),
+       (-moz-pref("zenwashi.wallpaper.grain", "subtle")),
+       (-moz-pref("zenwashi.wallpaper.grain", "standard")),
+       (-moz-pref("zenwashi.wallpaper.grain", "rough")) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]) #zen-browser-background {
+    background:
+      linear-gradient(
+        var(--blended-addressbar-window-tint-background, transparent),
+        var(--blended-addressbar-window-tint-background, transparent)
+      ),
+      var(--zenwashi-bg-base) !important;
+  }
+
+  :root:not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]) #zen-browser-background::before,
+  :root:not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]) #zen-browser-background::after {
+    background: transparent !important;
+    background-image: none !important;
+    mask-image: none !important;
+    opacity: 0 !important;
+  }
+
+  :root:not([zen-compact-mode="true"]) #sidebar-box,
+  :root:not([zen-compact-mode="true"]) #TabsToolbar,
+  :root:not([zen-compact-mode="true"]) #TabsToolbar-customization-target,
+  :root:not([zen-compact-mode="true"]) #vertical-pinned-tabs-container,
+  :root:not([zen-compact-mode="true"]) #pinned-tabs-container,
+  :root:not([zen-compact-mode="true"]) #tabbrowser-tabs,
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-bottom-buttons,
+  :root:not([zen-compact-mode="true"]) #zen-sidebar-icons-wrapper,
+  :root:not([zen-compact-mode="true"]) #zen-workspaces-button,
+  :root:not([zen-compact-mode="true"]) #zen-workspaces-button-wrapper,
+  :root:not([zen-compact-mode="true"]) .zen-workspaces-button {
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   18.3 印花层渲染（::before — mask-image 无缝平铺）
+   ----------------------------------------------------------------------------- */
+@media (-moz-pref("zenwashi.wallpaper.pattern", "washi")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "browser")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "life")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "halloween")) {
+  /* 整窗案台层（#zen-browser-background）：覆盖悬浮画卷四周留白与大圆角外缘 */
+  :root:not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]) #zen-browser-background::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    pointer-events: none !important;
+    background: var(--zenwashi-wallpaper-ink, var(--zenwashi-fg-primary)) !important;
+    background-image: none !important;
+    mask-image: var(--zenwashi-wallpaper-pattern-url) !important;
+    mask-repeat: repeat !important;
+    mask-size: 320px 320px !important;
+    mask-position: var(--zenwashi-wallpaper-pos, left top) !important;
+    opacity: var(--zenwashi-wallpaper-pattern-opacity, 0.11) !important;
+  }
+
+  /* 普通模式侧边栏：与窗口底对齐同一外边 */
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    position: relative !important;
+    isolation: isolate !important;
+  }
+
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+    background-color: var(--zenwashi-wallpaper-ink, var(--zenwashi-fg-primary)) !important;
+    background-image: none !important;
+    mask-image: var(--zenwashi-wallpaper-pattern-url) !important;
+    mask-repeat: repeat !important;
+    mask-size: 320px 320px !important;
+    mask-position: var(--zenwashi-wallpaper-pos, left top) !important;
+    opacity: var(--zenwashi-wallpaper-pattern-opacity, 0.11) !important;
+  }
+
+  /* 简洁模式：挂在悬浮侧栏的 .zen-toolbar-background 上，自动跟随圆角裁切 */
+  :root[zen-compact-mode="true"] .zen-toolbar-background::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    border-radius: inherit !important;
+    pointer-events: none !important;
+    background-color: var(--zenwashi-wallpaper-ink, var(--zenwashi-fg-primary)) !important;
+    background-image: none !important;
+    mask-image: var(--zenwashi-wallpaper-pattern-url) !important;
+    mask-repeat: repeat !important;
+    mask-size: 320px 320px !important;
+    mask-position: 0 0 !important;
+    opacity: var(--zenwashi-wallpaper-pattern-opacity, 0.11) !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   18.4 颗粒层渲染（::after — @2x Retina 噪点无缝平铺）
+   ----------------------------------------------------------------------------- */
+@media (-moz-pref("zenwashi.wallpaper.grain", "subtle")),
+       (-moz-pref("zenwashi.wallpaper.grain", "standard")),
+       (-moz-pref("zenwashi.wallpaper.grain", "rough")) {
+  /* 整窗案台层（#zen-browser-background） */
+  :root:not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]) #zen-browser-background::after {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    pointer-events: none !important;
+    background: transparent !important;
+    background-image: url("chrome://sine/content/zen-washi-sumi/textures/grain.png") !important;
+    background-repeat: repeat !important;
+    background-size: 64px 64px !important;
+    background-position: var(--zenwashi-wallpaper-pos, left top) !important;
+    opacity: var(--zenwashi-wallpaper-grain-opacity, 0.07) !important;
+  }
+
+  /* 普通模式侧边栏 */
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox {
+    position: relative !important;
+    isolation: isolate !important;
+  }
+
+  :root:not([zen-compact-mode="true"]) #navigator-toolbox::after {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+    background-color: transparent !important;
+    background-image: url("chrome://sine/content/zen-washi-sumi/textures/grain.png") !important;
+    background-repeat: repeat !important;
+    background-size: 64px 64px !important;
+    background-position: var(--zenwashi-wallpaper-pos, left top) !important;
+    opacity: var(--zenwashi-wallpaper-grain-opacity, 0.07) !important;
+  }
+
+  /* 简洁模式悬浮侧栏 */
+  :root[zen-compact-mode="true"] .zen-toolbar-background::after {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    border-radius: inherit !important;
+    pointer-events: none !important;
+    background-color: transparent !important;
+    background-image: url("chrome://sine/content/zen-washi-sumi/textures/grain.png") !important;
+    background-repeat: repeat !important;
+    background-size: 64px 64px !important;
+    background-position: 0 0 !important;
+    opacity: var(--zenwashi-wallpaper-grain-opacity, 0.07) !important;
+  }
+}
