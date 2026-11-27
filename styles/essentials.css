@@ -35,8 +35,8 @@
 .tabbrowser-tab[zen-essential="true"] {
   border-radius: var(--zenwashi-essentials-radius, 8px) !important;
   box-shadow: none !important;
-  transform: none !important;
-  opacity: 1 !important;
+  transform: none;
+  opacity: 1;
 }
 
 /* 
@@ -139,8 +139,8 @@
               transform var(--zenwashi-tap) var(--zenwashi-ease) !important;
 }
 
-:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:hover .tab-icon-image,
-.tabbrowser-tab[zen-essential="true"]:hover .tab-icon-image {
+:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:not([selected]):not([visuallyselected]):hover .tab-icon-image,
+.tabbrowser-tab[zen-essential="true"]:not([selected]):not([visuallyselected]):hover .tab-icon-image {
   opacity: 1 !important;
   filter: none !important;
   transform: scale(1.06) !important;
@@ -155,15 +155,12 @@
  *   0.06s 的过渡跑不完、甚至可能一帧都没渲染，于是"按得快就没有按动效果"。
  *   改成由 [selected] 触发的一次性关键帧动画后，动画一旦开始就一定跑完，
  *   与鼠标按住多久无关 —— 每一次切换都必然看到完整的落键。
- * 代价：按住不放时不会持续保持压下（那只有 :active 能做到），但标签点击本来都是瞬时的。
- * 节奏：0.32s。0% 从"悬停抬起 -1px"出发（与 7.3 同一个起始位，按下去不会有 1px 的突跳），
- *       20%(≈64ms) 落到底并保持到 50%，之后回弹到悬停位。
+ * 终点回到 [selected] 的静止态（translateY(0) / translate: 0 0），避免动画结束瞬间从 -1px 回跳。
  */
 @keyframes zenwashiKeyTap {
-  0%   { transform: translateY(-1px) scale(1);                             border-bottom-width: var(--zenwashi-key-lip); }
-  20%  { transform: translateY(var(--zenwashi-key-travel)) scale(0.97);    border-bottom-width: var(--zenwashi-key-lip-pressed); }
-  50%  { transform: translateY(var(--zenwashi-key-travel)) scale(0.97);    border-bottom-width: var(--zenwashi-key-lip-pressed); }
-  100% { transform: translateY(-1px) scale(1);                             border-bottom-width: var(--zenwashi-key-lip); }
+  0%   { transform: translateY(-0.5px) scale(1);                             border-bottom-width: var(--zenwashi-key-lip); }
+  24%  { transform: translateY(var(--zenwashi-key-travel)) scale(0.97);    border-bottom-width: var(--zenwashi-key-lip-pressed); }
+  100% { transform: translateY(0) scale(1);                                border-bottom-width: var(--zenwashi-key-lip); }
 }
 
 /* 图标是 .tab-background 的兄弟节点，必须同步下沉。
@@ -171,20 +168,19 @@
  * 主题与 Zen 都在图标上用 `transform: ... !important` 锁过盒模型，
  * 而 !important 会压过动画；`translate` 与 `transform` 是两个独立属性，互不干扰。 */
 @keyframes zenwashiKeyTapIcon {
-  0%   { translate: 0 -1px; }
-  20%  { translate: 0 var(--zenwashi-key-travel); }
-  50%  { translate: 0 var(--zenwashi-key-travel); }
-  100% { translate: 0 -1px; }
+  0%   { translate: 0 -0.5px; }
+  24%  { translate: 0 var(--zenwashi-key-travel); }
+  100% { translate: 0 0; }
 }
 
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected], [visuallyselected]) .tab-background,
 .tabbrowser-tab[zen-essential="true"]:is([selected], [visuallyselected]) .tab-background {
-  animation: zenwashiKeyTap 0.32s var(--zenwashi-ease) 1;
+  animation: zenwashiKeyTap 0.28s var(--zenwashi-ease) 1;
 }
 
 :is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab:is([selected], [visuallyselected]) .tab-icon-image,
 .tabbrowser-tab[zen-essential="true"]:is([selected], [visuallyselected]) .tab-icon-image {
-  animation: zenwashiKeyTapIcon 0.32s var(--zenwashi-ease) 1;
+  animation: zenwashiKeyTapIcon 0.28s var(--zenwashi-ease) 1;
 }
 
 /* ---------------- 7.5 选中态：键帽保持浮起，侧壁换成矿物色封边 ---------------- */
@@ -236,4 +232,68 @@
 #zen-sidebar-bottom-buttons toolbarbutton:hover {
   background-color: var(--zenwashi-tab-hover-bg) !important;
   color: var(--zenwashi-fg-primary) !important;
+}
+
+/* -----------------------------------------------------------------------------
+   7.7 Essentials 悬停展开（zenwashi.essentials.hover-expand）
+   -----------------------------------------------------------------------------
+   · 仅限制 height / max-height / min-height / overflow / align-content，绝不干预
+     width / margin / padding / grid，严格遵守 §2 约定，避免窄侧栏贴边或裁切。
+   · 运行期优先交由 js/essentials-auto-expand.uc.js 接管（[zenwashi-essentials-spring="true"]）：
+     - 实测真实内容高度与折叠行距（消除 max-height 280px 上段空跑与曲线截断）；
+     - 临界阻尼弹簧（damping 1.0, response 0.26s），0ms 响应移入、途中可随时打断反向并衔接速度；
+     - 折叠区之下卡片同步做阶梯淡入与微位移，从折痕下自然舒展。
+   · 未启用脚本前的纯 CSS 兜底仅作用于实际网格容器（不叠套外层 #zen-essentials）。
+   ----------------------------------------------------------------------------- */
+@media (-moz-pref("zenwashi.essentials.hover-expand", "1row")) {
+  :root {
+    --zenwashi-essentials-collapsed-height: 53px;
+  }
+}
+
+@media (-moz-pref("zenwashi.essentials.hover-expand", "2rows")) {
+  :root {
+    --zenwashi-essentials-collapsed-height: 103px;
+  }
+}
+
+@media (-moz-pref("zenwashi.essentials.hover-expand", "1row")),
+       (-moz-pref("zenwashi.essentials.hover-expand", "2rows")) {
+  /* JS 弹簧接管态：禁用 CSS max-height 过渡避免打架；height / overflow 由脚本逐帧写入 */
+  :root[zen-sidebar-expanded="true"][zenwashi-essentials-spring="true"] :is(#zen-essentials-container, .zen-essentials-container),
+  :root[zen-sidebar-expanded="true"][zenwashi-essentials-spring="true"] #zen-essentials:not(:has(.zen-essentials-container, #zen-essentials-container)) {
+    min-height: 0 !important;
+    align-content: start !important;
+    transition: none !important;
+  }
+
+  /* 纯 CSS 兜底态（脚本尚未挂载或未启用时）：仅作用于单层网格容器 */
+  :root[zen-sidebar-expanded="true"]:not([zenwashi-essentials-spring="true"]) :is(#zen-essentials-container, .zen-essentials-container),
+  :root[zen-sidebar-expanded="true"]:not([zenwashi-essentials-spring="true"]) #zen-essentials:not(:has(.zen-essentials-container, #zen-essentials-container)) {
+    max-height: var(--zenwashi-essentials-collapsed-height, 53px) !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    align-content: start !important;
+    transition: max-height 0.28s var(--zenwashi-ease) 0.14s !important;
+  }
+
+  :root[zen-sidebar-expanded="true"]:not([zenwashi-essentials-spring="true"]) :is(#zen-essentials-container, .zen-essentials-container):is(:hover, :has(:focus-visible)),
+  :root[zen-sidebar-expanded="true"]:not([zenwashi-essentials-spring="true"]) #zen-essentials:not(:has(.zen-essentials-container, #zen-essentials-container)):is(:hover, :has(:focus-visible)),
+  :root[zen-sidebar-expanded="true"]:not([zenwashi-essentials-spring="true"])[zenwashi-essentials-selected-hidden="true"] :is(#zen-essentials-container, .zen-essentials-container),
+  :root[zen-sidebar-expanded="true"]:not([zenwashi-essentials-spring="true"])[zenwashi-essentials-selected-hidden="true"] #zen-essentials:not(:has(.zen-essentials-container, #zen-essentials-container)) {
+    max-height: 180px !important;
+    transition: max-height 0.24s var(--zenwashi-ease) 0s !important;
+  }
+
+  /* 收起态下给下方工作区指示器留出呼吸间距（不改 Essentials 自身外边距，遵守 §2） */
+  :root[zen-sidebar-expanded="true"] .zen-current-workspace-indicator {
+    margin-block-start: 6px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[zen-sidebar-expanded="true"] :is(#zen-essentials, #zen-essentials-container, .zen-essentials-container) {
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+  }
 }

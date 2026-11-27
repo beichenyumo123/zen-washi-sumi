@@ -11,6 +11,7 @@
  * Zen 自己的 WAAPI 动效（开关标签、工作区切换等）由 window.gReduceMotion 守卫，
  * 不需要在这里重复处理；加载转圈（.tab-throbber::before）保持原样。 */
 @media (prefers-reduced-motion: reduce) {
+  #tabbrowser-tabs .tabbrowser-tab > .tab-stack,
   #tabbrowser-tabs .tabbrowser-tab .tab-content,
   #tabbrowser-tabs .tabbrowser-tab .tab-label-container,
   #tabbrowser-tabs .tabbrowser-tab .tab-icon-image,
@@ -22,10 +23,17 @@
 
   #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transition: none !important;
+    animation: none !important;
     scale: 1 !important;
     transform: none !important;
     filter: none !important;
     opacity: 1 !important;
+    --zenwashi-veil-filter: none !important;
+    --zenwashi-veil-overscan: translateZ(0) !important;
+  }
+
+  #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) browser {
+    transition: none !important;
   }
 }
 

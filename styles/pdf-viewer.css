@@ -75,24 +75,13 @@
     --zenwashi-pdf-accent: light-dark(#376850, #4E8B6E);
     --zenwashi-pdf-accent-tint: light-dark(rgba(55, 104, 80, 0.18), rgba(78, 139, 110, 0.26));
 
-    --zenwashi-pdf-page-radius: 6px;
+    --zenwashi-pdf-page-radius: var(--zenwashi-pdf-page-radius-custom, 6px);
     --zenwashi-pdf-gap: 22px;
   }
 
-  /* ---- 纸页圆角档位 (zenwashi.pdf.page-radius) -------------------------- */
-  /* CSS 读不到任意数值的 pref，所以用离散档位 + 等值媒体查询实现可配置。 */
-  @media (-moz-pref("zenwashi.pdf.page-radius", "0px")) {
-    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-page-radius: 0px; }
-  }
-  @media (-moz-pref("zenwashi.pdf.page-radius", "4px")) {
-    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-page-radius: 4px; }
-  }
-  @media (-moz-pref("zenwashi.pdf.page-radius", "10px")) {
-    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-page-radius: 10px; }
-  }
-  @media (-moz-pref("zenwashi.pdf.page-radius", "14px")) {
-    :root:has(link[href^="resource://pdf.js"]) { --zenwashi-pdf-page-radius: 14px; }
-  }
+  /* ---- 纸页圆角 (zenwashi.pdf.page-radius) ------------------------------ */
+  /* 任意数字/长度值由 js/pdf-page-radius.uc.js 通过 nsIStyleSheetService
+     跨进程注入 --zenwashi-pdf-page-radius-custom；此处保留 6px 默认兜底。 */
 
   /* ---- 纸页投影档位 (zenwashi.pdf.page-shadow) -------------------------- */
   /* 页间只有 20 来像素的间隙，投影给太淡等于没有；这里 medium 就是"明显可见"的

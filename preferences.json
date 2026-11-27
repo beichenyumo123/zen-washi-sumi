@@ -350,6 +350,64 @@
     "defaultValue": true
   },
   {
+    "type": "dropdown",
+    "property": "zenwashi.urlbar.header-color",
+    "label": "Header color scheme 融合顶栏配色风格（和纸淡釉不夺目，自适应当前主题方案）",
+    "defaultValue": "mineral-mist",
+    "options": [
+      {
+        "value": "mineral-mist",
+        "label": "Mineral mist 矿物淡釉（主题纸面揉入 8% 强调色，素雅不夺目，推荐）"
+      },
+      {
+        "value": "paper-surface",
+        "label": "Washi surface 素雅纸面（与选卡/画布表面同色）"
+      },
+      {
+        "value": "mist-paper",
+        "label": "Mist veil 雾霭柔纸（介于侧栏底纸与表面之间）"
+      },
+      {
+        "value": "adaptive-soft",
+        "label": "Soft page blend 网页柔融（随网页变色并降噪，融入和纸感）"
+      },
+      {
+        "value": "adaptive",
+        "label": "Dynamic page 网页原色（完全跟随当前网页顶部采样色）"
+      }
+    ]
+  },
+  {
+    "type": "checkbox",
+    "property": "zenwashi.urlbar.wallpaper",
+    "label": "Header paper texture 融合顶栏同步墙纸（叠加颗粒与印花质感，印花墨色随网页底色自动适配）",
+    "defaultValue": true
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.urlbar.floating-shadow",
+    "label": "Floating header shadow 融合顶栏悬浮阴影（向下方网页投射柔和阴影，呈现纸条悬浮感）",
+    "defaultValue": "medium",
+    "options": [
+      {
+        "value": "off",
+        "label": "Off 无悬浮阴影"
+      },
+      {
+        "value": "subtle",
+        "label": "Subtle 轻柔投影"
+      },
+      {
+        "value": "medium",
+        "label": "Medium 柔和悬浮（推荐）"
+      },
+      {
+        "value": "strong",
+        "label": "Strong 浓郁立体"
+      }
+    ]
+  },
+  {
     "type": "checkbox",
     "property": "zenwashi.urlbar.color-transition",
     "label": "Smooth color transition 顶栏/画卷边框随网页变色时渐变（160ms）",
@@ -360,19 +418,6 @@
     "property": "uc.blended-addressbar.addressbar-bookmarks-separator.disabled",
     "label": "Remove header separator 隐藏融合顶栏与网页之间的微分割线",
     "defaultValue": false
-  },
-  {
-    "type": "checkbox",
-    "property": "zenwashi.urlbar.glass",
-    "label": "Frosted URL field 磨砂玻璃地址栏输入框（未聚焦/未展开时保留半透明玻璃胶囊）",
-    "defaultValue": true
-  },
-  {
-    "type": "string",
-    "property": "zenwashi.urlbar.field.radius",
-    "label": "URL field corner radius 磨砂输入框圆角",
-    "defaultValue": "9px",
-    "placeholder": "9px"
   },
   {
     "type": "dropdown",
@@ -478,6 +523,26 @@
     "property": "zenwashi.essentials.ink-icons",
     "label": "Essentials ink sleeping state 未加载项呈淡墨水墨调 (已加载保持原彩)",
     "defaultValue": true
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.essentials.hover-expand",
+    "label": "Essentials hover expand Essentials 悬停展开（平时只露前几行省高度，鼠标移入平滑展开）",
+    "defaultValue": "1row",
+    "options": [
+      {
+        "value": "off",
+        "label": "Off 全部常驻显示"
+      },
+      {
+        "value": "1row",
+        "label": "1 Row 平时显示 1 行，悬停展开 (Default)"
+      },
+      {
+        "value": "2rows",
+        "label": "2 Rows 平时显示 2 行，悬停展开"
+      }
+    ]
   },
   {
     "type": "checkbox",
@@ -635,7 +700,7 @@
   {
     "type": "dropdown",
     "property": "zenwashi.toolbar.bottom-radius",
-    "label": "Top bar bottom corners 顶栏（工具栏那层纸面）的下方圆角",
+    "label": "Top bar bottom corners 顶栏下方圆角（仅非融合顶栏生效；融合顶栏自动保持直角防缺角）",
     "defaultValue": "0px",
     "options": [
       {
@@ -734,6 +799,37 @@
   },
   {
     "type": "checkbox",
+    "property": "zenwashi.sidebar.narrow.enabled",
+    "label": "Custom narrow sidebar width 启用自定义窄侧栏宽度（突破 Zen 原生最小宽度限制；关闭后恢复原生拖动宽度）",
+    "defaultValue": true
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.sidebar.width",
+    "processAs": "var",
+    "label": "Narrow sidebar width 窄侧栏宽度",
+    "defaultValue": "152px",
+    "options": [
+      {
+        "value": "164px",
+        "label": "164px 轻度收窄"
+      },
+      {
+        "value": "152px",
+        "label": "152px 紧凑窄栏 (Default)"
+      },
+      {
+        "value": "136px",
+        "label": "136px 极简窄栏"
+      },
+      {
+        "value": "120px",
+        "label": "120px 超窄侧栏"
+      }
+    ]
+  },
+  {
+    "type": "checkbox",
     "property": "zenwashi.settings.skin",
     "label": "Settings skin 设置页换肤（about:preferences 使用和纸配色与圆角卡片）",
     "defaultValue": true
@@ -756,32 +852,17 @@
     "defaultValue": true
   },
   {
-    "type": "dropdown",
+    "type": "checkbox",
+    "property": "zenwashi.pdf.wallpaper",
+    "label": "Reader background wallpaper 阅读器背景同步墙纸（复用侧栏的纸面颗粒与线描印花设置）",
+    "defaultValue": true
+  },
+  {
+    "type": "string",
     "property": "zenwashi.pdf.page-radius",
-    "label": "Page corner radius 纸页圆角",
+    "label": "Page corner radius 纸页圆角（填数字默认按 px，如 0、6、12 或 12px）",
     "defaultValue": "6px",
-    "options": [
-      {
-        "value": "0px",
-        "label": "0 直角（与原生一致）"
-      },
-      {
-        "value": "4px",
-        "label": "4px 克制"
-      },
-      {
-        "value": "6px",
-        "label": "6px 和纸手感 (Default)"
-      },
-      {
-        "value": "10px",
-        "label": "10px 明显圆润"
-      },
-      {
-        "value": "14px",
-        "label": "14px 卡片感"
-      }
-    ]
+    "placeholder": "6"
   },
   {
     "type": "dropdown",
@@ -883,7 +964,7 @@
   {
     "type": "checkbox",
     "property": "zenwashi.icons.enabled",
-    "label": "New Icons 使用 New Icons 图标集（工具栏 / 地址栏 / 面板 / 右键菜单；关闭则用 Zen 原生图标）",
+    "label": "Solar Outline Icons 使用 Solar Outline 平滑圆角图标集（工具栏 / 地址栏 / 面板 / 右键菜单；关闭则用 Zen 原生图标）",
     "defaultValue": true
   },
   {

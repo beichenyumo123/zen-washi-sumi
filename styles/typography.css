@@ -232,3 +232,38 @@
     font-weight: var(--zenwashi-font-weight, 400) !important;
   }
 }
+
+/* -----------------------------------------------------------------------------
+   6. 光学字号、分尺寸字距与等宽数字 (Optical Sizing, Tracking & Tabular Numerals)
+   -----------------------------------------------------------------------------
+   无论是否更换自定义字体，系统字体（SF Pro）与可变字体（Inter / MiSans VF）
+   都能受益于光学字号、按字号微调的字距以及等宽数字：
+     · font-optical-sizing: auto 让可变字体随字号自动调整字形细节；
+     · 小号辅助字（11–12px）略放正字距提升清晰度，较大标题略收负字距更紧凑；
+     · 缩放比例、查找计数等动态数字使用 tabular-nums，避免数值变化时横向抖动。
+   ----------------------------------------------------------------------------- */
+:root {
+  font-optical-sizing: auto;
+}
+
+/* 较大标题与工作区名称：轻微负字距 */
+.panel-header,
+#sidebar-title,
+.zen-current-workspace-indicator-name {
+  letter-spacing: -0.01em;
+}
+
+/* 小号辅助文字：轻微正字距增强可读性 */
+.pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
+#urlbar .urlbarView-url,
+.tab-secondary-label,
+#statuspanel-label {
+  letter-spacing: 0.01em;
+}
+
+/* 动态数字 UI：等宽数字防止数值变化时宽度抖动 */
+#urlbar-zoom-button,
+.found-matches {
+  font-variant-numeric: tabular-nums;
+}
+

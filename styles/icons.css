@@ -1,10 +1,9 @@
 /* =============================================================================
-   Zen Washi & Sumi — New Icons 图标集（内置）
+   Zen Washi & Sumi — Solar Outline 图标集（内置）
    -----------------------------------------------------------------------------
-   图标素材来自 qumeqa/zen-icons（New Icons v1.4），已改为 chrome:// 外部 SVG
-   引用（Gecko 158 只给 chrome:// 图片传递 SVG context paint，data: URI 会
-   回退成透明/黑色）。图标本身仍是 stroke="context-fill"，颜色跟随元素 fill，
-   因此会随主题前景色与融合顶栏（--zen-tab-header-foreground）一起变化。
+   图标素材来自 Solar Icons Outline（480 Design, CC BY 4.0, via Iconify），
+   自带 100% 平滑超椭圆圆角，经 chrome:// 外部 SVG 引用并适配 context-fill，
+   颜色自动跟随主题前景色与融合顶栏（--zen-tab-header-foreground）变化。
 
    开关：zenwashi.icons.enabled（Sine 设置 → Icons 图标集）
    ============================================================================= */

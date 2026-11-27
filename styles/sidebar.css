@@ -29,6 +29,7 @@ zen-folder .tab-group-label-container {
   background: transparent !important;
   color: var(--zenwashi-fg-primary) !important;
   position: relative !important;
+  transition: color var(--zenwashi-tap) var(--zenwashi-ease) !important;
 }
 
 zen-folder .tab-group-label-container::before,
@@ -320,3 +321,81 @@ zen-folder[collapsed]:not(:has(.tabbrowser-tab:not([aria-hidden="true"]))) > :is
  * （见 UrlbarInputBase.#markup），所以旧 id 选择器早已静默失效。
  * 底板与展开面板的配色统一收敛到第 12.1 节，这里不再重复声明。
  */
+
+/* -----------------------------------------------------------------------------
+   4.1 Custom Narrow Sidebar Width (可开关：突破 Zen 原生最小侧栏宽度限制)
+   -----------------------------------------------------------------------------
+   · 严格单层 @media（不嵌套 @media），并配合 preferences.json 的 processAs: "var"，
+     确保在 Sine 设置中切换档位时 --zenwashi-sidebar-width 立即更新。
+   · 遵循 §2 约定：不覆写 #zen-essentials / .zen-essentials-container 的网格与
+     padding/margin，交由 Zen 原生弹性引擎按新宽度对称排布，避免右侧贴边。
+   ----------------------------------------------------------------------------- */
+:root {
+  --zenwashi-sidebar-width: 152px;
+}
+
+@media (-moz-pref("zenwashi.sidebar.width", "164px")) {
+  :root { --zenwashi-sidebar-width: 164px; }
+}
+@media (-moz-pref("zenwashi.sidebar.width", "152px")) {
+  :root { --zenwashi-sidebar-width: 152px; }
+}
+@media (-moz-pref("zenwashi.sidebar.width", "136px")) {
+  :root { --zenwashi-sidebar-width: 136px; }
+}
+@media (-moz-pref("zenwashi.sidebar.width", "120px")) {
+  :root { --zenwashi-sidebar-width: 120px; }
+}
+
+@media not (-moz-pref("zenwashi.sidebar.narrow.enabled", false)) {
+  :root[zen-sidebar-expanded="true"]:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"]):not([macOSNativeFullscreen]):not([customizing]) #navigator-toolbox {
+    --zen-sidebar-width: var(--zenwashi-sidebar-width, 152px) !important;
+    width: var(--zenwashi-sidebar-width, 152px) !important;
+    min-width: var(--zenwashi-sidebar-width, 152px) !important;
+    max-width: var(--zenwashi-sidebar-width, 152px) !important;
+  }
+
+  :root[zen-sidebar-expanded="true"]:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"]):not([macOSNativeFullscreen]):not([customizing]) :is(#TabsToolbar, #TabsToolbar-customization-target, #tabbrowser-tabs, #zen-sidebar-top-buttons, #zen-sidebar-top-buttons-customization-target) {
+    min-width: 0 !important;
+  }
+
+  :root[zen-sidebar-expanded="true"]:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"]):not([macOSNativeFullscreen]):not([customizing]) #zen-sidebar-top-buttons {
+    padding-inline: 4px !important;
+    gap: 2px !important;
+  }
+
+  /* 底部按钮与工作区切换图标收紧，防止窄栏下右侧按钮被裁切 */
+  :root[zen-sidebar-expanded="true"]:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"]):not([macOSNativeFullscreen]):not([customizing]) #zen-sidebar-bottom-buttons {
+    padding-inline: 2px !important;
+    gap: 1px !important;
+    min-width: 0 !important;
+  }
+
+  :root[zen-sidebar-expanded="true"]:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"]):not([macOSNativeFullscreen]):not([customizing]) #zen-sidebar-bottom-buttons toolbarbutton {
+    padding: 4px !important;
+    min-width: 24px !important;
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  :root[zen-sidebar-expanded="true"]:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"]):not([macOSNativeFullscreen]):not([customizing]) #zen-workspaces-button {
+    gap: 1px !important;
+    padding-inline: 2px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  :root[zen-sidebar-expanded="true"]:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"]):not([macOSNativeFullscreen]):not([customizing]) #zen-workspaces-button .subviewbutton {
+    padding: 3px !important;
+    min-width: 22px !important;
+  }
+
+  /* 普通标签页横向边距微调，为窄栏文字留出更多显示空间 */
+  :root[zen-sidebar-expanded="true"]:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"]):not([macOSNativeFullscreen]):not([customizing]) .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab) {
+    margin-inline: 2px !important;
+  }
+
+  :root[zen-sidebar-expanded="true"]:not([zen-single-toolbar="true"]):not([inDOMFullscreen="true"]):not([inFullscreen="true"]):not([macOSNativeFullscreen]):not([customizing]) .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab) .tab-content {
+    padding-inline: 7px !important;
+  }
+}

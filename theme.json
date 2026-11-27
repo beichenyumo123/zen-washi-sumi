@@ -43,6 +43,20 @@
       "include": [
         "chrome://browser/content/browser.xhtml"
       ]
+    },
+    "js/essentials-auto-expand.uc.js": {
+      "name": "Washi essentials auto expand",
+      "description": "Keeps Essentials expanded when a tab below the collapsed fold is selected.",
+      "include": [
+        "chrome://browser/content/browser.xhtml"
+      ]
+    },
+    "js/pdf-page-radius.uc.js": {
+      "name": "Washi PDF page corner radius",
+      "description": "Applies numeric zenwashi.pdf.page-radius values to the out-of-process PDF viewer via nsIStyleSheetService.",
+      "include": [
+        "chrome://browser/content/browser.xhtml"
+      ]
     }
   },
   "preferences": "preferences.json",

@@ -157,6 +157,7 @@
     stroke.setAttribute("aria-hidden", "true");
     // 定位同样内联兜底：即使主题 CSS 没加载，墨痕也不会变成层里的静态块。
     stroke.style.position = "absolute";
+    stroke.style.top = "0px";
     stroke.style.opacity = "0";
     layer.appendChild(stroke);
     win.document.documentElement.appendChild(layer);
@@ -185,6 +186,7 @@
     }
     if (stroke) {
       stroke.style.opacity = "0";
+      stroke.style.willChange = "";
     }
   }
 
@@ -198,7 +200,8 @@
     const top = forward ? lerp(fromY, toY, trail) : lerp(fromY, toY, lead);
     const bottom = forward ? lerp(fromY, toY, lead) : lerp(fromY, toY, trail);
 
-    stroke.style.top = top + "px";
+    // 纵向位移改走合成层 transform，减少布局属性写入；高度保持实值以维持圆头不拉伸。
+    stroke.style.transform = `translate3d(0, ${top}px, 0)`;
     stroke.style.height = bottom - top + BAR_LENGTH + "px";
 
     // 入场 32ms；最后 16% 化开；抵达时归零。
@@ -212,6 +215,7 @@
     }
     raf = 0;
     stroke.style.opacity = "0";
+    stroke.style.willChange = "";
   }
 
   function animate(from, to) {
@@ -263,7 +267,8 @@
 
     fromY = startBarTop;
     toY = toBarTop;
-    stroke.style.top = fromY + "px";
+    stroke.style.willChange = "transform, opacity";
+    stroke.style.transform = `translate3d(0, ${fromY}px, 0)`;
     stroke.style.height = BAR_LENGTH + "px";
     stroke.style.opacity = "0";
 

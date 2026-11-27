@@ -56,13 +56,13 @@
                 opacity 0.38s ease,
                 filter 0.42s ease !important;
     scale: 0.978 !important;
-    transform: translateY(12px);
+    transform: translateY(12px) !important;
     opacity: 1;
   }
 
   #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     scale: 1 !important;
-    transform: none;
+    transform: none !important;
     opacity: 1 !important;
     filter: none !important;
   }
@@ -70,6 +70,12 @@
 
 /* ================= 模式 4: Crossfade (交叉溶解淡入淡出) ================= */
 @media (-moz-pref("zenwashi.tab.switch-animation", 4)) {
+  /* 必须给 #tabbrowser-tabpanels 建立定位包含块，否则绝对定位的面板会在融合模式下
+     逃逸到外层 #zen-appcontent-wrapper 并盖住顶栏。 */
+  #tabbrowser-tabpanels:not([zen-split-view="true"]) {
+    position: relative !important;
+  }
+
   #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     transition: opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1),
                 scale 0.38s cubic-bezier(0.22, 1, 0.36, 1),
@@ -78,31 +84,43 @@
     opacity: 0 !important;
     scale: 0.972 !important;
     position: absolute !important;
-    inset: 0;
+    inset: 0 !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
   }
 
   #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
     opacity: 1 !important;
+    scale: 1 !important;
     pointer-events: auto !important;
-    z-index: 1;
+    z-index: 1 !important;
   }
 }
 
 /* ================= 模式 5: Zoom Out (景深模糊对焦) ================= */
 @media (-moz-pref("zenwashi.tab.switch-animation", 5)) {
+  /* Apple Materialize 对焦：轻量模糊(6px) + 温和景深缩放(1.024→1) + 柔顺透明度落位(0.88→1)，
+     统一收紧到 0.30s 临界阻尼感曲线；opacity 挂在 hbox 层避免透明时透出卡片底色。 */
   #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
-    transform: scale(1.05);
-    filter: blur(15px);
-    opacity: 1;
-    transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-                filter 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-                opacity 0.38s ease !important;
+    scale: 1.024 !important;
+    opacity: 0.88 !important;
+    filter: none !important;
+    --zenwashi-veil-filter: blur(6px);
+    --zenwashi-veil-overscan: scale(1.035) translateZ(0);
+    --zenwashi-veil-transform-duration: 0.30s;
+    --zenwashi-veil-filter-duration: 0.28s;
+    --zenwashi-veil-opacity-duration: 0.22s;
+    transition: scale 0.30s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.30s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.20s cubic-bezier(0.22, 1, 0.36, 1) !important;
   }
 
   #tabbrowser-tabpanels > hbox.deck-selected:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
-    transform: scale(1);
+    scale: 1 !important;
     opacity: 1 !important;
     filter: none !important;
+    --zenwashi-veil-filter: none;
+    --zenwashi-veil-overscan: translateZ(0);
   }
 }
 
@@ -119,12 +137,16 @@
     scale: 1 !important;
     opacity: 1 !important;
     filter: none !important;
+    animation: none !important;
   }
 }
 
-/* ================= 分屏保护 ================= */
-#tabbrowser-tabpanels[zen-split-view="true"] > hbox {
+/* ================= 分屏与全屏保护 ================= */
+#tabbrowser-tabpanels[zen-split-view="true"] > hbox,
+:root:is([inFullscreen], [inDOMFullscreen]) #tabbrowser-tabpanels > hbox,
+:root:is([inFullscreen], [inDOMFullscreen]) #tabbrowser-tabpanels > hbox.deck-selected {
   transition: none !important;
+  animation: none !important;
   transform: none !important;
   scale: 1 !important;
   opacity: 1 !important;
@@ -496,9 +518,9 @@ browser {
    * 这里把模糊层按模糊半径放大一点，让那圈透明边缘落到 .browserContainer 的
    * overflow: clip 之外被裁掉。fallback 保留原有的 translateZ(0) 硬件加速基底。 */
   transform: var(--zenwashi-veil-overscan, translateZ(0)) !important;
-  transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
-              filter    0.48s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity   0.42s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  transition: transform var(--zenwashi-veil-transform-duration, 0.48s) cubic-bezier(0.22, 1, 0.36, 1),
+              filter    var(--zenwashi-veil-filter-duration, 0.48s) cubic-bezier(0.22, 1, 0.36, 1),
+              opacity   var(--zenwashi-veil-opacity-duration, 0.42s) cubic-bezier(0.22, 1, 0.36, 1) !important;
   transition-delay: var(--zenwashi-veil-delay, 0s) !important;
 }
 

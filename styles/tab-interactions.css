@@ -13,12 +13,23 @@
     transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
   }
 
+  /* 悬停休眠标签时自动唤醒清晰度，在墙纸与彩底上依然清楚可读 */
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([aria-hidden="true"]):hover {
+    opacity: 0.92;
+  }
+
   /* 非休眠态恢复完全不透明。刻意不用 !important：
    * 关闭动画（WAAPI，opacity 1→0）只有在普通声明之上才能生效；
    * 静止态这里本来就是 1，去掉权重不影响休眠淡入淡出。 */
   .tabbrowser-tab:not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]):not([aria-hidden="true"]) {
     opacity: 1;
   }
+}
+
+/* 卸载/休眠标签页的删除线加粗至 2px */
+.tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]) .tab-label {
+  text-decoration: line-through !important;
+  text-decoration-thickness: 2px !important;
 }
 
 /* -----------------------------------------------------------------------------
@@ -30,6 +41,7 @@
   margin-inline: 8px !important;
   margin-block: 6px !important;
   padding: 0 !important;
+  min-height: 20px !important;
   border: none !important;
   background: transparent !important;
   display: flex !important;
@@ -73,11 +85,12 @@
 
 /* 
  * 右侧“清除”按钮：
- * 1. 平时隐藏（与 Zen 原生一致），侧栏悬停或按钮获得焦点时才浮现；
+ * 1. 平时彻底隐藏（即使鼠标悬停在侧栏其它区域也不提前冒出），仅鼠标移到分隔栏/按钮处或聚焦时才浮现；
  * 2. 绝对定位浮在横线右端，不参与 flex 排布 —— 隐藏时不会截短横线，横线始终满行；
  * 3. 不透明表面色遮住从下方穿过的横线，让纸片像压在胶囊线上；
  * 4. 默认 pointer-events: none，避免看不见时误点清空标签。
  */
+#navigator-toolbox[zen-has-implicit-hover="true"] .pinned-tabs-container-separator:not(:hover):not(:focus-within) .zen-workspace-close-unpinned-tabs-button,
 .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
 #titlebar .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
 #TabsToolbar .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button {
@@ -112,9 +125,14 @@
     box-shadow var(--zenwashi-duration) var(--zenwashi-ease) !important;
 }
 
-/* 侧栏悬停 / 按钮聚焦时才浮现；横线是独立元素，显隐按钮都不会让横线缩短 */
-#navigator-toolbox[zen-has-implicit-hover="true"] .pinned-tabs-container-separator .zen-workspace-close-unpinned-tabs-button,
+/* 仅鼠标移到分隔栏（清除按钮所在行）或聚焦时才浮现，不再被侧栏全局悬停触发 */
+#navigator-toolbox .pinned-tabs-container-separator:hover .zen-workspace-close-unpinned-tabs-button,
+#TabsToolbar .pinned-tabs-container-separator:hover .zen-workspace-close-unpinned-tabs-button,
+#titlebar .pinned-tabs-container-separator:hover .zen-workspace-close-unpinned-tabs-button,
 .pinned-tabs-container-separator:hover .zen-workspace-close-unpinned-tabs-button,
+#navigator-toolbox .pinned-tabs-container-separator:focus-within .zen-workspace-close-unpinned-tabs-button,
+#TabsToolbar .pinned-tabs-container-separator:focus-within .zen-workspace-close-unpinned-tabs-button,
+#titlebar .pinned-tabs-container-separator:focus-within .zen-workspace-close-unpinned-tabs-button,
 .pinned-tabs-container-separator:focus-within .zen-workspace-close-unpinned-tabs-button {
   opacity: 1 !important;
   pointer-events: auto !important;
@@ -260,6 +278,8 @@
   /* 朱砂点印 (Cinnabar Seal) 专属色彩 Token */
   --zenwashi-seal-red: light-dark(#B53D30, #D96557);
   --zenwashi-seal-bg: light-dark(rgba(181, 61, 48, 0.13), rgba(217, 101, 87, 0.20));
+  --zenwashi-seal-glow: light-dark(rgba(181, 61, 48, 0.24), rgba(217, 101, 87, 0.34));
+  --zenwashi-seal-glow-mid: light-dark(rgba(181, 61, 48, 0.10), rgba(217, 101, 87, 0.15));
   --zenwashi-seal-border: light-dark(rgba(181, 61, 48, 0.28), rgba(217, 101, 87, 0.35));
   --zenwashi-seal-active-bg: light-dark(rgba(181, 61, 48, 0.24), rgba(217, 101, 87, 0.32));
 }
@@ -275,11 +295,13 @@
 .tabbrowser-tab .tab-close-button,
 .tabbrowser-tab .tab-reset-button {
   appearance: none !important;
-  border-radius: 4px !important; /* 微圆角方印造型 */
+  border: none !important;
+  border-radius: 4px !important;
   opacity: 0 !important;
   pointer-events: none !important;
   cursor: pointer !important;
   background: transparent !important;
+  box-shadow: none !important;
   padding: 3px !important;
   margin-inline-end: 2px !important;
   width: 18px !important;
@@ -294,7 +316,6 @@
   transition: opacity 0.26s var(--zenwashi-ease),
               transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
               background-color 0.26s var(--zenwashi-ease),
-              box-shadow 0.26s var(--zenwashi-ease),
               color 0.26s var(--zenwashi-ease) !important;
 }
 
@@ -306,7 +327,7 @@
   transform: scale(1) !important;
 }
 
-/* 鼠标移入按钮自身：化作一枚朱砂方印（淡朱砂印泥底 + 细印框 + 朱砂红叉号） */
+/* 鼠标移入按钮自身：无边框纯朱砂红叉号，融入右侧红色光晕 */
 .tabbrowser-tab .tab-close-button:hover,
 .tabbrowser-tab .tab-reset-button:hover,
 .tabbrowser-tab .tab-close-button:hover > .toolbarbutton-icon,
@@ -321,16 +342,18 @@
 .tabbrowser-tab .tab-close-button:hover,
 .tabbrowser-tab .tab-reset-button:hover {
   transform: scale(1.08) !important;
-  background-color: var(--zenwashi-seal-bg) !important;
-  box-shadow: inset 0 0 0 1px var(--zenwashi-seal-border) !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-/* 点击落印反馈：微沉下压，印泥加深 */
+/* 点击落印反馈：微沉下压，不加边框 */
 .tabbrowser-tab .tab-close-button:active,
 .tabbrowser-tab .tab-reset-button:active {
   transform: scale(0.90) !important;
-  background-color: var(--zenwashi-seal-active-bg) !important;
-  box-shadow: inset 0 0 0 1px var(--zenwashi-seal-red) !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   transition-duration: 0.12s !important;
 }
 
@@ -341,25 +364,24 @@
 
 /* ---------------- 10.2 预备关闭态：墨迹微褪与朱砂微晕 ---------------- */
 
-/* 悬停关闭按钮时，标签文字与图标墨色从容微褪并轻微内敛，给予清晰预判 */
+/* 悬停关闭按钮时，标签文字与图标墨色从容微褪，不再横向抖动 */
 .tabbrowser-tab .tab-label-container,
 .tabbrowser-tab .tab-icon-image {
-  transition: opacity 0.28s var(--zenwashi-ease),
-              transform 0.28s var(--zenwashi-ease) !important;
+  transition: opacity 0.22s var(--zenwashi-ease) !important;
 }
 
 .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):has(.tab-close-button:hover, .tab-reset-button:hover) .tab-label-container,
 .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):has(.tab-close-button:hover, .tab-reset-button:hover) .tab-icon-image {
-  opacity: 0.42 !important;
-  transform: translateX(-3px) !important;
+  opacity: 0.45 !important;
 }
 
-/* 卡片右侧泛起极淡的朱砂印泥渐变晕染 */
+/* 卡片右侧泛起朱砂印泥渐变晕染 */
 .tabbrowser-tab:not([zen-essential="true"]):not(.zen-essentials-container tab):has(.tab-close-button:hover, .tab-reset-button:hover) .tab-background {
   background-image: linear-gradient(
     to left,
-    var(--zenwashi-seal-bg) 0%,
-    transparent 48%
+    var(--zenwashi-seal-glow) 0%,
+    var(--zenwashi-seal-glow-mid) 24%,
+    transparent 56%
   ) !important;
   border-color: var(--zenwashi-seal-border) !important;
 }
@@ -395,22 +417,16 @@
  * 这样「关闭」的节奏由标签行自己主导，而不是被内容区拖着走。 */
 :root[zenwashi-tab-closing] #tabbrowser-tabpanels > hbox:not([zen-split="true"], .zen-glance-background, :has(.zen-glance-background)) {
   transition: none !important;
+  animation: none !important;
   scale: 1 !important;
   transform: none !important;
   filter: none !important;
   opacity: 1 !important;
 }
 
-/* 关闭导致的「新标签被选中」不是一次真实按压，不该再播一遍落笔动画。 */
+/* 关闭导致的「新标签被选中」不是一次真实点击，不播选中回弹动画。 */
+:root[zenwashi-tab-closing] .tabbrowser-tab:is([selected], [visuallyselected]) > .tab-stack,
+:root[zenwashi-tab-closing] .tabbrowser-tab:is([selected], [visuallyselected]) .tab-background,
 :root[zenwashi-tab-closing] .tabbrowser-tab:is([selected], [visuallyselected]) .tab-content {
   animation: none !important;
-}
-
-/* 列表上移后指针会落到下一行；短暂抑制关闭按钮浮现，
- * 避免「刚关掉一个，下一行的朱砂印章立刻弹到指针下」。 */
-:root[zenwashi-tab-just-closed] .tabbrowser-tab:hover .tab-close-button,
-:root[zenwashi-tab-just-closed] .tabbrowser-tab:hover .tab-reset-button {
-  opacity: 0 !important;
-  transition: none !important;
-  pointer-events: none !important;
 }

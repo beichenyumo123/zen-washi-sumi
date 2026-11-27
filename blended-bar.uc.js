@@ -1826,16 +1826,23 @@
   function shouldDeferContinuousTheme(theme, browser, reason) {
     if (!continuousThemeReasons.has(reason)) return false;
 
+    const href = getBrowserHref(browser);
+    // 只有对「当前已上色的同一页面」的连续跳变才启用死区与防抖；
+    // 刚切到新页面或尚未拿到首个非 host-cache 样本时立即放行，防止静态页首次精确采样被吞。
+    if (!lastAppliedTheme?.bg || lastAppliedTheme.href !== href || lastAppliedTheme.source === 'host-cache') {
+      stableColorCandidate = null;
+      return false;
+    }
+
     const profile = readColorStabilityProfile();
     if (!profile.threshold || !profile.confirmations) return false;
 
     const rgb = parseCssRgb(theme?.bg);
     if (!rgb) return false;
 
-    const href = getBrowserHref(browser);
     if (stableColorCandidate && stableColorCandidate.href !== href) stableColorCandidate = null;
 
-    const appliedRgb = parseCssRgb(lastAppliedTheme?.bg);
+    const appliedRgb = parseCssRgb(lastAppliedTheme.bg);
     if (appliedRgb && colorChannelDelta(appliedRgb, rgb) <= profile.threshold) {
       // 和当前已经上色的颜色几乎一样：死区，直接丢掉
       stableColorCandidate = null;
@@ -1947,7 +1954,8 @@
     const root = chromeDoc.documentElement;
     const rootStyle = root.style;
     const blendedOn = isWashiBlendedEnabled();
-    root.toggleAttribute('data-zenwashi-blended', blendedOn);
+    if (blendedOn) root.setAttribute('data-zenwashi-blended', 'true');
+    else root.removeAttribute('data-zenwashi-blended');
     const radius = readBoolPref(frameRadiusDisabledPref, false)
       ? '0px'
       : normalizeCssLength(readStringPref(washiContentRadiusPref, readStringPref(frameRadiusPref, '18px')), '18px');
@@ -4509,6 +4517,9 @@
     refreshSplitAddressbars();
   }
 
+  let onTabSelectHandler = null;
+  let onTabCloseHandler = null;
+
   function cleanupAddressbarEnhancements() {
     if (addressbarEnhancementsDisposed) return;
     clearInterval(loadbarTimer);
@@ -4530,7 +4541,9 @@
     for (const name of ['height', 'radius', 'background', 'border', 'shadow', 'font', 'copy-icon', 'site-icon', 'input-padding', 'text-padding', 'action-width', 'action-radius']) {
       removeStylePropertyIfChanged(chromeDoc.documentElement.style, `--blended-addressbar-native-${name}`);
     }
-    gBrowser.tabContainer.removeEventListener('TabAttrModified', scheduleSplitAddressbars);
+    if (onTabSelectHandler) gBrowser?.tabContainer?.removeEventListener('TabSelect', onTabSelectHandler);
+    if (onTabCloseHandler) gBrowser?.tabContainer?.removeEventListener('TabClose', onTabCloseHandler);
+    gBrowser?.tabContainer?.removeEventListener('TabAttrModified', scheduleSplitAddressbars);
     addressbarEnhancementsDisposed = true;
   }
 
@@ -4548,7 +4561,7 @@
     observeSplitAddressbars();
     refreshLiveSampling();
 
-    gBrowser.tabContainer.addEventListener('TabSelect', () => {
+    onTabSelectHandler = () => {
       chromeDoc.documentElement.removeAttribute('data-blended-addressbar-color-loading');
       resetThemeArbitration(getBrowserHref(gBrowser.selectedBrowser));
       scheduleSplitAddressbars();
@@ -4559,15 +4572,18 @@
       schedulePaneCornerRadiiUpdate();
       handleZenBoostStateChange();
       scheduleActiveUpdate({ reason: 'tab-select', keepCachedTheme: true });
-    });
+    };
 
-    gBrowser.tabContainer.addEventListener('TabAttrModified', scheduleSplitAddressbars);
-    gBrowser.tabContainer.addEventListener('TabClose', (event) => {
+    onTabCloseHandler = (event) => {
       loadbarStates.delete(event.target?.linkedBrowser);
       renderedSampleRequests.delete(event.target?.linkedBrowser);
       scheduleSplitAddressbars();
       detachPersistentThemeListener(event.target?.linkedBrowser || null);
-    });
+    };
+
+    gBrowser.tabContainer.addEventListener('TabSelect', onTabSelectHandler);
+    gBrowser.tabContainer.addEventListener('TabAttrModified', scheduleSplitAddressbars);
+    gBrowser.tabContainer.addEventListener('TabClose', onTabCloseHandler);
 
     try {
       let colorSchemeQuery = null;

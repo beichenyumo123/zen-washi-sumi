@@ -10,6 +10,7 @@ Generate seamless wallpaper textures for Zen Washi & Sumi:
 Uses only the Python standard library.
 """
 
+import base64
 import math
 import pathlib
 import struct
@@ -17,6 +18,7 @@ import zlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "textures"
+PDF_WALLPAPER_CSS = ROOT / "styles" / "pdf-wallpaper.css"
 SIDE = 320.0
 
 
@@ -409,14 +411,175 @@ def generate_pattern_svg(name: str, path: pathlib.Path) -> None:
     path.write_text(svg, encoding="utf-8")
 
 
+def build_pdf_wallpaper_css(grain_bytes: bytes, patterns: dict[str, str]) -> str:
+    grain_b64 = base64.b64encode(grain_bytes).decode("ascii")
+    pattern_vars = []
+    for name, svg_text in patterns.items():
+        svg_b64 = base64.b64encode(svg_text.encode("utf-8")).decode("ascii")
+        pattern_vars.append(
+            f'@media (-moz-pref("zenwashi.wallpaper.pattern", "{name}")) {{\n'
+            f'  :root:has(link[href^="resource://pdf.js"]) {{\n'
+            f'    --zenwashi-pdf-pattern-url: url("data:image/svg+xml;base64,{svg_b64}");\n'
+            f'  }}\n'
+            f'}}'
+        )
+    pattern_vars_block = "\n".join(pattern_vars)
+
+    return f"""/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — PDF Reader Wallpaper (Grain & Pattern)
+   -----------------------------------------------------------------------------
+   由 tools/generate-wallpaper-textures.py 自动生成，请勿手动改写 base64 纹理。
+   原因见 styles/pdf-viewer.css 顶部说明：
+     · PDF 阅读器 (resource://pdf.js/web/viewer.html) 为 out-of-process 文档且受 CSP
+       限制（仅放行 resource: / blob: / data:），无法访问 chrome://sine/ 与相对 file://。
+     · 因此将 textures/grain.png 与 textures/pattern-*.svg 内联为 data: URI，
+       跟随 zenwashi.wallpaper.*（颗粒 / 印花 / 强度 / 墨色）铺设在阅读器取景桌面
+       #outerContainer 之上、PDF 纸页之下（可通过 zenwashi.pdf.wallpaper 单独关闭）。
+   严格保持单层 @media（不嵌套 @media），确保 Sine 切档即时热生效。
+   ============================================================================= */
+
+:root:has(link[href^="resource://pdf.js"]) {{
+  --zenwashi-pdf-wallpaper-ink: var(--zenwashi-pdf-fg);
+  --zenwashi-pdf-pattern-url: none;
+  --zenwashi-pdf-pattern-opacity: 0.11;
+  --zenwashi-pdf-grain-opacity: 0;
+}}
+
+@media (prefers-color-scheme: dark) {{
+  :root:has(link[href^="resource://pdf.js"]) {{
+    --zenwashi-pdf-pattern-opacity: 0.09;
+  }}
+}}
+
+/* 颗粒质感强度 (zenwashi.wallpaper.grain) */
+@media (-moz-pref("zenwashi.wallpaper.grain", "subtle")) {{
+  :root:has(link[href^="resource://pdf.js"]) {{ --zenwashi-pdf-grain-opacity: 0.045; }}
+}}
+@media (-moz-pref("zenwashi.wallpaper.grain", "standard")) {{
+  :root:has(link[href^="resource://pdf.js"]) {{ --zenwashi-pdf-grain-opacity: 0.07; }}
+}}
+@media (-moz-pref("zenwashi.wallpaper.grain", "rough")) {{
+  :root:has(link[href^="resource://pdf.js"]) {{ --zenwashi-pdf-grain-opacity: 0.13; }}
+}}
+
+/* 印花图案集 (zenwashi.wallpaper.pattern) */
+{pattern_vars_block}
+
+/* 印花显色强度 (zenwashi.wallpaper.strength) */
+@media (-moz-pref("zenwashi.wallpaper.strength", "subtle")) {{
+  :root:has(link[href^="resource://pdf.js"]) {{ --zenwashi-pdf-pattern-opacity: 0.055; }}
+}}
+@media (-moz-pref("zenwashi.wallpaper.strength", "subtle")) and (prefers-color-scheme: dark) {{
+  :root:has(link[href^="resource://pdf.js"]) {{ --zenwashi-pdf-pattern-opacity: 0.045; }}
+}}
+@media (-moz-pref("zenwashi.wallpaper.strength", "standard")) {{
+  :root:has(link[href^="resource://pdf.js"]) {{ --zenwashi-pdf-pattern-opacity: 0.11; }}
+}}
+@media (-moz-pref("zenwashi.wallpaper.strength", "standard")) and (prefers-color-scheme: dark) {{
+  :root:has(link[href^="resource://pdf.js"]) {{ --zenwashi-pdf-pattern-opacity: 0.09; }}
+}}
+@media (-moz-pref("zenwashi.wallpaper.strength", "vivid")) {{
+  :root:has(link[href^="resource://pdf.js"]) {{ --zenwashi-pdf-pattern-opacity: 0.17; }}
+}}
+@media (-moz-pref("zenwashi.wallpaper.strength", "vivid")) and (prefers-color-scheme: dark) {{
+  :root:has(link[href^="resource://pdf.js"]) {{ --zenwashi-pdf-pattern-opacity: 0.14; }}
+}}
+
+/* 印花墨色来源 (zenwashi.wallpaper.tint) */
+@media (-moz-pref("zenwashi.wallpaper.tint", "accent")) {{
+  :root:has(link[href^="resource://pdf.js"]) {{
+    --zenwashi-pdf-wallpaper-ink: var(--zenwashi-pdf-accent);
+  }}
+}}
+
+/* 任一墙纸启用时：建立 #outerContainer 隔离层叠上下文并确保内部滚动容器透底（.page 纸页仍保持实体底色） */
+@media (-moz-pref("zenwashi.wallpaper.pattern", "washi")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "browser")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "life")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "halloween")),
+       (-moz-pref("zenwashi.wallpaper.grain", "subtle")),
+       (-moz-pref("zenwashi.wallpaper.grain", "standard")),
+       (-moz-pref("zenwashi.wallpaper.grain", "rough")) {{
+  :root:has(link[href^="resource://pdf.js"]) #outerContainer:not(.presentationMode) {{
+    position: relative !important;
+    isolation: isolate !important;
+  }}
+
+  :root:has(link[href^="resource://pdf.js"]) #outerContainer:not(.presentationMode) :is(#mainContainer, #viewerContainer, #viewer) {{
+    background-color: transparent !important;
+    background-image: none !important;
+  }}
+}}
+
+/* 印花层 (::before — mask-image 无缝平铺) */
+@media (-moz-pref("zenwashi.wallpaper.pattern", "washi")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "browser")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "life")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "halloween")) {{
+  :root:has(link[href^="resource://pdf.js"]) #outerContainer:not(.presentationMode)::before {{
+    content: "" !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+    background-color: var(--zenwashi-pdf-wallpaper-ink, var(--zenwashi-pdf-fg)) !important;
+    background-image: none !important;
+    mask-image: var(--zenwashi-pdf-pattern-url) !important;
+    mask-repeat: repeat !important;
+    mask-size: 320px 320px !important;
+    mask-position: center top !important;
+    opacity: var(--zenwashi-pdf-pattern-opacity, 0.11) !important;
+  }}
+}}
+
+/* 颗粒层 (::after — @2x Retina 噪点无缝平铺) */
+@media (-moz-pref("zenwashi.wallpaper.grain", "subtle")),
+       (-moz-pref("zenwashi.wallpaper.grain", "standard")),
+       (-moz-pref("zenwashi.wallpaper.grain", "rough")) {{
+  :root:has(link[href^="resource://pdf.js"]) #outerContainer:not(.presentationMode)::after {{
+    content: "" !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+    background-color: transparent !important;
+    background-image: url("data:image/png;base64,{grain_b64}") !important;
+    background-repeat: repeat !important;
+    background-size: 64px 64px !important;
+    background-position: 0 0 !important;
+    opacity: var(--zenwashi-pdf-grain-opacity, 0.07) !important;
+  }}
+}}
+
+/* 禁用 PDF 皮肤 / 禁用阅读器墙纸 / 高对比度模式下关闭 */
+@media (-moz-pref("zenwashi.pdf.enabled", false)),
+       (-moz-pref("zenwashi.pdf.wallpaper", false)),
+       (forced-colors: active) {{
+  :root:has(link[href^="resource://pdf.js"]) #outerContainer::before,
+  :root:has(link[href^="resource://pdf.js"]) #outerContainer::after {{
+    content: none !important;
+    display: none !important;
+  }}
+}}
+"""
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    generate_grain_png(OUT_DIR / "grain.png")
-    print(f"Generated {OUT_DIR / 'grain.png'}")
+    grain_path = OUT_DIR / "grain.png"
+    generate_grain_png(grain_path)
+    print(f"Generated {grain_path}")
+    patterns: dict[str, str] = {}
     for name in SETS:
         out = OUT_DIR / f"pattern-{name}.svg"
         generate_pattern_svg(name, out)
+        patterns[name] = out.read_text(encoding="utf-8")
         print(f"Generated {out}")
+    PDF_WALLPAPER_CSS.write_text(
+        build_pdf_wallpaper_css(grain_path.read_bytes(), patterns),
+        encoding="utf-8",
+    )
+    print(f"Generated {PDF_WALLPAPER_CSS}")
 
 
 if __name__ == "__main__":
