@@ -62,11 +62,20 @@ function Read-TextFile([string]$Path) {
 function Write-Utf8File([string]$Path, [string]$Text) {
     $dir = Split-Path -Parent $Path
     if ($dir -and -not (Test-Path -LiteralPath $dir)) {
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        [void][System.IO.Directory]::CreateDirectory($dir)
     }
     # 不要 BOM：mods.json / CSS 都按严格 UTF-8 读，BOM 会让 JSON.parse 报错。
     $encoding = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($Path, $Text, $encoding)
+}
+
+function ConvertTo-FileUri([string]$Path) {
+    $full = [System.IO.Path]::GetFullPath($Path)
+    if ($full -match '^[A-Za-z]:[\\/]') {
+        $escaped = ($full.Replace('%', '%25').Replace('#', '%23') -replace '\\', '/')
+        return (New-Object System.Uri ('file:///' + $escaped)).AbsoluteUri
+    }
+    return (New-Object System.Uri $full).AbsoluteUri
 }
 
 function Clear-ReadOnly([string]$Path) {
@@ -188,8 +197,12 @@ function Stop-ZenSafely {
     if ($Kill) {
         Write-Step 'Zen 未在 30 秒内退出，按 -Force 强制结束进程...'
         Get-ZenProcess | Stop-Process -Force -ErrorAction SilentlyContinue
-        Start-Sleep -Seconds 2
-        return
+        $killDeadline = (Get-Date).AddSeconds(5)
+        while ((Get-Date) -lt $killDeadline) {
+            if (@(Get-ZenProcess).Count -eq 0) { return }
+            Start-Sleep -Milliseconds 300
+        }
+        throw '无法强制结束 Zen 进程（可能权限不足或文件被占用），请手动在任务管理器中结束 zen.exe 后重试。'
     }
 
     throw 'Zen 在 30 秒内仍未退出，已中止安装。请手动完全退出 Zen（确认任务管理器里没有 zen.exe / 后台进程）后重新运行本脚本，或加 -Force 强制结束。'
@@ -199,19 +212,48 @@ function Stop-ZenSafely {
 # Profile 探测
 # ---------------------------------------------------------------------------
 function Get-SineModsCandidates {
-    $roots = @()
+    $appRoots = @()
     if ($env:APPDATA) {
-        $roots += (Join-Path $env:APPDATA 'zen\Profiles')
-        $roots += (Join-Path $env:APPDATA 'Zen\Profiles')
+        $appRoots += (Join-Path $env:APPDATA 'zen')
+        $appRoots += (Join-Path $env:APPDATA 'Zen')
     }
 
     $found = @()
-    foreach ($root in $roots) {
-        if (-not (Test-Path -LiteralPath $root)) { continue }
-        foreach ($profile in Get-ChildItem -LiteralPath $root -Directory -Force -ErrorAction SilentlyContinue) {
-            $candidate = Join-Path (Join-Path $profile.FullName 'chrome') 'sine-mods'
-            if (-not (Test-Path -LiteralPath (Join-Path $candidate 'mods.json'))) { continue }
-            if ($found -notcontains $candidate) { $found += $candidate }
+    foreach ($appRoot in $appRoots) {
+        $profilesRoot = Join-Path $appRoot 'Profiles'
+        if (Test-Path -LiteralPath $profilesRoot) {
+            foreach ($profile in Get-ChildItem -LiteralPath $profilesRoot -Directory -Force -ErrorAction SilentlyContinue) {
+                $candidate = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $profile.FullName 'chrome') 'sine-mods'))
+                if (-not (Test-Path -LiteralPath (Join-Path $candidate 'mods.json'))) { continue }
+                if ($found -notcontains $candidate) { $found += $candidate }
+            }
+        }
+
+        $iniPath = Join-Path $appRoot 'profiles.ini'
+        if (Test-Path -LiteralPath $iniPath -PathType Leaf) {
+            $inProfile = $false
+            $isRelative = $true
+            $relOrAbsPath = $null
+            $lines = @(Get-Content -LiteralPath $iniPath -Encoding UTF8 -ErrorAction SilentlyContinue) + '[__END__]'
+            foreach ($rawLine in $lines) {
+                $line = $rawLine.Trim()
+                if ($line -match '^\[(.+)\]$') {
+                    if ($inProfile -and $relOrAbsPath) {
+                        $profDir = if ($isRelative) { Join-Path $appRoot $relOrAbsPath } else { $relOrAbsPath }
+                        $candidate = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $profDir 'chrome') 'sine-mods'))
+                        if ((Test-Path -LiteralPath (Join-Path $candidate 'mods.json')) -and ($found -notcontains $candidate)) {
+                            $found += $candidate
+                        }
+                    }
+                    $inProfile = ($matches[1] -match '^Profile')
+                    $isRelative = $true
+                    $relOrAbsPath = $null
+                    continue
+                }
+                if (-not $inProfile) { continue }
+                if ($line -match '^IsRelative=(.+)$') { $isRelative = ($matches[1].Trim() -eq '1') }
+                elseif ($line -match '^Path=(.+)$') { $relOrAbsPath = $matches[1].Trim() }
+            }
         }
     }
     return $found
@@ -229,7 +271,7 @@ function Sync-ModTree {
     $excludedFiles = @('.DS_Store')
 
     if (-not (Test-Path -LiteralPath $Destination)) {
-        New-Item -ItemType Directory -Path $Destination -Force | Out-Null
+        [void][System.IO.Directory]::CreateDirectory($Destination)
     }
 
     # 清掉历史遗留的 .git（只读对象会让覆盖失败）。
@@ -245,9 +287,13 @@ function Sync-ModTree {
     $robocopy = Get-Command robocopy -ErrorAction SilentlyContinue
     if ($robocopy) {
         # 退出码 0-7 都是成功（1=有文件复制，2=有额外文件被删，3=两者都有）。
-        & $robocopy.Source $Source $Destination /MIR /XD .git (Join-Path $Source '.git') /XF .DS_Store /NFL /NDL /NJH /NJS /NP /R:1 /W:1 | Out-Null
+        $rcOutput = @(& $robocopy.Source $Source $Destination /MIR /XD .git (Join-Path $Source '.git') /XF .DS_Store /NFL /NDL /NJH /NJS /NP /R:1 /W:1 2>&1)
         $code = $LASTEXITCODE
         if ($code -ge 8) {
+            $detail = (($rcOutput | ForEach-Object { "$_".Trim() } | Where-Object { $_ }) | Select-Object -Last 5) -join "`n"
+            if ($detail) {
+                throw "robocopy 同步失败（退出码 $code）。请确认 Zen 已完全退出后重试：`n$detail"
+            }
             throw "robocopy 同步失败（退出码 $code）。请确认 Zen 已完全退出后重试。"
         }
         return
@@ -267,7 +313,7 @@ function Sync-ModTree {
         $target = Join-Path $Destination $rel
         $targetDir = Split-Path -Parent $target
         if (-not (Test-Path -LiteralPath $targetDir)) {
-            New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+            [void][System.IO.Directory]::CreateDirectory($targetDir)
         }
         Copy-Item -LiteralPath $file.FullName -Destination $target -Force
         $seen += $rel
@@ -300,7 +346,7 @@ try {
     if (-not (Test-Path -LiteralPath (Join-Path $SourcePath 'theme.json'))) {
         throw "找不到主题源目录（需要包含 theme.json）：$SourcePath"
     }
-    $SourcePath = (Resolve-Path -LiteralPath $SourcePath).Path
+    $SourcePath = (Resolve-Path -LiteralPath $SourcePath).ProviderPath
 
     if (-not $SineMods) {
         $candidates = @(Get-SineModsCandidates)
@@ -324,7 +370,7 @@ $list
     if (-not (Test-Path -LiteralPath $SineMods)) {
         throw "sine-mods 目录不存在：$SineMods"
     }
-    $SineMods = (Resolve-Path -LiteralPath $SineMods).Path
+    $SineMods = (Resolve-Path -LiteralPath $SineMods).ProviderPath
     if (-not (Test-Path -LiteralPath (Join-Path $SineMods 'mods.json') -PathType Leaf)) {
         throw "目录中缺少 mods.json，Sine 可能还没初始化：$SineMods"
     }
@@ -407,7 +453,7 @@ $list
         $cssPath = Join-Path $SineMods $entrypoint
         $text = Read-TextFile $cssPath
         if ($text -notmatch [regex]::Escape($ModId)) {
-            $uri = (New-Object System.Uri ([System.IO.Path]::GetFullPath((Join-Path $ModDir $rel)))).AbsoluteUri
+            $uri = ConvertTo-FileUri (Join-Path $ModDir $rel)
             $importLine = "@import `"$uri`";`n"
             if ($text -and -not $text.EndsWith("`n")) { $text += "`n" }
             $text = $text + $importLine
@@ -456,19 +502,36 @@ $list
         $detail = ($problems | ForEach-Object { "  - $_" }) -join "`n"
         throw "注册校验失败：`n$detail"
     }
-    $scriptNames = @($saved.scripts.PSObject.Properties | ForEach-Object { $_.Name })
+    $scriptNames = @($savedScripts | ForEach-Object { $_.Name })
     Write-Step ("校验通过：version={0} origin={1} scripts={2}" -f $saved.version, $saved.origin, ($scriptNames -join ', '))
 
     # ---- 清理 startupCache，确保重启后最新 .uc.js 立即被编译加载 ----
+    $cacheCandidates = @()
+    $targetProfileDir = Split-Path -Parent $chromeDir
+    if ($targetProfileDir) {
+        $cacheCandidates += (Join-Path $targetProfileDir 'startupCache')
+    }
     if ($env:LOCALAPPDATA) {
         foreach ($root in @((Join-Path $env:LOCALAPPDATA 'zen\Profiles'), (Join-Path $env:LOCALAPPDATA 'Zen\Profiles'))) {
             if (-not (Test-Path -LiteralPath $root)) { continue }
             foreach ($profile in Get-ChildItem -LiteralPath $root -Directory -Force -ErrorAction SilentlyContinue) {
-                $cache = Join-Path $profile.FullName 'startupCache'
-                if (-not (Test-Path -LiteralPath $cache)) { continue }
-                Remove-Item -LiteralPath $cache -Recurse -Force -ErrorAction SilentlyContinue
-                Write-Step "已清理启动缓存: $cache"
+                $cacheCandidates += (Join-Path $profile.FullName 'startupCache')
             }
+        }
+    }
+    $seenCaches = @()
+    foreach ($cache in $cacheCandidates) {
+        $fullCache = [System.IO.Path]::GetFullPath($cache)
+        if ($seenCaches -contains $fullCache) { continue }
+        $seenCaches += $fullCache
+        if (-not (Test-Path -LiteralPath $fullCache)) { continue }
+        Clear-ReadOnly $fullCache
+        Remove-Item -LiteralPath $fullCache -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path -LiteralPath $fullCache) {
+            Write-Host "⚠ 未能完全清理启动缓存（可能仍有文件被占用）: $fullCache"
+        }
+        else {
+            Write-Step "已清理启动缓存: $fullCache"
         }
     }
 

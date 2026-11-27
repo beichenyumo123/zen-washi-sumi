@@ -139,8 +139,8 @@
   #zen-sidebar-web-panel,
   .zen-current-workspace-indicator,
   .zen-current-workspace-indicator-name,
-  toolbarbutton,
-  .toolbarbutton-text,
+  toolbarbutton:not(.titlebar-button, .titlebar-min, .titlebar-max, .titlebar-restore, .titlebar-close, .titlebar-buttonbox-container toolbarbutton),
+  .toolbarbutton-text:not(.titlebar-buttonbox-container *, .titlebar-button *),
   menupopup,
   menuitem,
   menu,
@@ -150,8 +150,8 @@
   .panel-header,
   .panel-subview-body,
   popupnotification,
-  description,
-  label,
+  description:not(.titlebar-buttonbox-container *, .titlebar-button *),
+  label:not(.titlebar-buttonbox-container *, .titlebar-button *),
   tooltip,
   #statuspanel-label,
   #findbar,
@@ -159,6 +159,33 @@
   .bookmark-item,
   #appMenu-popup {
     font-family: var(--zenwashi-font-family) !important;
+  }
+}
+
+/* Windows 标题栏最小化 / 最大化 / 还原 / 关闭按钮用 Segoe Fluent Icons / Segoe MDL2 Assets
+   Private Use Area 字形绘制，必须守住系统图标字体，否则启用自定义字体后会变成乱码（豆腐块）。
+   刻意用单层 @media 组合，不嵌套。 */
+@media (-moz-platform: windows) and (-moz-pref("zenwashi.font.family", "inter")),
+  (-moz-platform: windows) and (-moz-pref("zenwashi.font.family", "misans")),
+  (-moz-platform: windows) and (-moz-pref("zenwashi.font.family", "lxgw")),
+  (-moz-platform: windows) and (-moz-pref("zenwashi.font.family", "jetbrains")),
+  (-moz-platform: windows) and (-moz-pref("zenwashi.font.family", "fira")),
+  (-moz-platform: windows) and (-moz-pref("zenwashi.font.family", "roboto")),
+  (-moz-platform: windows) and (-moz-pref("zenwashi.font.family", "poppins")),
+  (-moz-platform: windows) and (-moz-pref("zenwashi.font.family", "custom")) {
+  .titlebar-buttonbox-container,
+  .titlebar-buttonbox-container *:not(tooltip),
+  .titlebar-buttonbox,
+  .titlebar-buttonbox *:not(tooltip),
+  .titlebar-button,
+  .titlebar-button *:not(tooltip),
+  .titlebar-button::before,
+  .titlebar-button::after,
+  .titlebar-min,
+  .titlebar-max,
+  .titlebar-restore,
+  .titlebar-close {
+    font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets", -moz-use-system-font !important;
   }
 }
 
@@ -176,12 +203,12 @@
   .urlbarView-title,
   .urlbarView-url,
   #searchbar,
-  .toolbarbutton-text,
+  .toolbarbutton-text:not(.titlebar-buttonbox-container *, .titlebar-button *),
   menuitem,
   menu,
   menulist,
-  label,
-  description,
+  label:not(.titlebar-buttonbox-container *, .titlebar-button *),
+  description:not(.titlebar-buttonbox-container *, .titlebar-button *),
   .panel-header,
   .bookmark-item,
   .findbar-textbox {
@@ -224,12 +251,22 @@
   :root,
   #urlbar-input,
   #searchbar,
-  .toolbarbutton-text,
+  .toolbarbutton-text:not(.titlebar-buttonbox-container *, .titlebar-button *),
   menuitem,
   .bookmark-item,
   .findbar-textbox,
   .panel-header {
     font-weight: var(--zenwashi-font-weight, 400) !important;
+  }
+}
+
+/* Windows 标题栏图标字体只有 Regular 字重，防止 :root 的字重覆写触发合成加粗 */
+@media (-moz-platform: windows) and (-moz-pref("zenwashi.font.weight.enabled", true)) {
+  .titlebar-button,
+  .titlebar-button *:not(tooltip),
+  .titlebar-button::before,
+  .titlebar-button::after {
+    font-weight: 400 !important;
   }
 }
 

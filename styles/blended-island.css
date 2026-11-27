@@ -157,15 +157,13 @@
     --input-color: var(--zenwashi-header-ink, var(--zenwashi-fg-primary)) !important;
   }
 
-  /* 未聚焦/未展开的融合地址栏输入框保持透明底板，悬停仅微亮提示 */
-  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) .urlbar-background {
+  /* 未聚焦/未展开的融合地址栏输入框无论常态还是悬停均保持完全透明底板 */
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]) :is(.urlbar-background, .urlbar-background:hover),
+  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover .urlbar-background {
+    --zen-toolbar-element-bg: transparent !important;
     background-color: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
-  }
-
-  :root:not([zen-single-toolbar="true"]) #urlbar:not([zen-floating-urlbar="true"]):not([focused]):not([focused="true"]):not([open]):not([breakout-extend="true"]):hover .urlbar-background {
-    background-color: color-mix(in srgb, var(--zenwashi-header-ink, var(--zenwashi-fg-primary)) 7%, transparent) !important;
   }
 
   /* 内部内容区去重：由于外框已由 #zen-appcontent-wrapper 统一包裹，非分屏状态下移除内层重复边距、边框与阴影 */

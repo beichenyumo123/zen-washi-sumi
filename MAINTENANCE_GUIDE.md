@@ -982,9 +982,10 @@ Sine（`chrome/JS/services/stylesheets.sys.mjs`）把 `preferences.json` 的每�
 
 5. **中文回退必须显式拼**。Inter / JetBrains / Fira 都没有汉字字形，`font-family: "Inter", sans-serif` 遇到中文会掉回默认衬线。每套字体后面统一接 `var(--zenwashi-font-cjk)`（苹方 → 微软雅黑 → 思源黑体）。
 
-### 11.3 图标不受影响
+### 11.3 图标与窗口控制按钮
 
-内置 New Icons 是 `list-style-image` / `content: url("chrome://…svg")` 的 SVG，不是图标字体，所以大面积 `font-family !important` 不会把图标变成豆腐块——这是可以放心铺字体的前提。若哪天换成图标字体，这条规则必须收窄。
+- 内置 New Icons 是 `list-style-image` / `content: url("chrome://…svg")` 的 SVG，不受 `font-family` 影响。
+- **Windows 标题栏控制按钮除外**：Windows 上的最小化 / 最大化 / 还原 / 关闭按钮（`.titlebar-buttonbox-container` → `.titlebar-button` / `::before` / `::after`）本质上是 `<toolbarbutton>`，用系统图标字体 `"Segoe Fluent Icons"` / `"Segoe MDL2 Assets"` 的 PUA 码位渲染图标。直接写 `toolbarbutton { font-family: ... !important }` 会覆盖掉图标字体，使右上角按钮变成乱码（豆腐块）。`styles/typography.css` 在字体族 / 字号 / 字重规则中排除了窗口按钮及其后代，并在 `@media (-moz-platform: windows)` 下显式兜底 `"Segoe Fluent Icons", "Segoe MDL2 Assets", -moz-use-system-font !important` 与 `font-weight: 400 !important`。**新增字体档位时，Windows 兜底那处 `@media` 白名单也要同步追加。**
 
 ### 11.4 覆盖范围
 
