@@ -1046,3 +1046,10 @@ Sine（`chrome/JS/services/stylesheets.sys.mjs`）把 `preferences.json` 的每�
 ```bash
 python3 tools/generate-wallpaper-textures.py
 ```
+
+### 12.5 前景标签与墙纸的景深层次
+
+开启 `Vivid` 印花或高颗粒档位并滚动标签列表时，若前景卡片过透或休眠行使用整行 `opacity`，静止的细线涂鸦会穿透文字触发“图底反转”（感觉印花浮在标签之上）。为此：
+
+- 休眠标签（`styles/tab-interactions.css`）改用实色 `--zenwashi-fg-muted` 与图标微褪，不再压低整行 `opacity`；
+- 墙纸启用时（`styles/wallpaper.css` §18.5）在 `#zen-tabs-wrapper` 铺 30% 底纸轻纱（撤掉会抹掉顶部纹理的纯色 `#zen-tabs-wrapper::before`），并提高选中/悬停 `.tab-background` 的不透明度与未选中文字对比度，确立「文字与卡片 > 轻纱 > 墙纸底纹」的物理层次。

@@ -290,3 +290,55 @@
     opacity: var(--zenwashi-wallpaper-grain-opacity, 0.07) !important;
   }
 }
+
+/* -----------------------------------------------------------------------------
+   18.5 前景标签景深与遮挡（防止滚动时产生"印花浮在标签之上"的图底反转）
+   -----------------------------------------------------------------------------
+   1. #zen-tabs-wrapper：铺设 30% 底纸轻纱（上下 12px 柔化渐入），既保留侧栏纹理，
+      又让静止涂鸦退回“纸底”平面；同时撤掉纯色粘性条 #zen-tabs-wrapper::before，
+      避免顶部出现无颗粒/无印花的平涂擦除带。
+   2. 选中 / 悬停卡片：补足实体不透明度（尤其是默认深色选中态原为 16% 透明），
+      让交互卡片真正压住并遮挡底下的印花线条。
+   3. 普通 / 休眠标签文字：提高实色墨字对比度，确保移动字迹稳稳压过静止底纹。
+   ----------------------------------------------------------------------------- */
+@media (-moz-pref("zenwashi.wallpaper.pattern", "washi")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "browser")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "life")),
+       (-moz-pref("zenwashi.wallpaper.pattern", "halloween")),
+       (-moz-pref("zenwashi.wallpaper.grain", "subtle")),
+       (-moz-pref("zenwashi.wallpaper.grain", "standard")),
+       (-moz-pref("zenwashi.wallpaper.grain", "rough")) {
+  #zen-tabs-wrapper {
+    background: linear-gradient(
+      to bottom,
+      transparent 0px,
+      color-mix(in srgb, var(--zenwashi-bg-base) 30%, transparent) 12px,
+      color-mix(in srgb, var(--zenwashi-bg-base) 30%, transparent) calc(100% - 12px),
+      transparent 100%
+    ) !important;
+  }
+
+  #zen-tabs-wrapper::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([selected="true"], [selected], [visuallyselected]) .tab-background {
+    background-color: light-dark(
+      var(--zenwashi-bg-surface),
+      color-mix(in srgb, var(--zenwashi-bg-surface) 88%, var(--zenwashi-fg-primary) 12%)
+    ) !important;
+  }
+
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):hover:not([selected]):not([visuallyselected]) .tab-background {
+    background-color: color-mix(in srgb, var(--zenwashi-bg-surface) 92%, transparent) !important;
+  }
+
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):not([selected]):not([selected="true"]):not([visuallyselected]):not(:hover):not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]) .tab-label {
+    color: color-mix(in srgb, var(--zenwashi-fg-primary) 72%, var(--zenwashi-bg-base)) !important;
+  }
+
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([aria-hidden="true"]):not([selected]):not([selected="true"]):not([visuallyselected]):not(:hover) .tab-label {
+    color: color-mix(in srgb, var(--zenwashi-fg-muted) 65%, var(--zenwashi-fg-secondary)) !important;
+  }
+}

@@ -6,22 +6,23 @@
    8. Sleeping Tabs (墨迹微褪 · 严格排除所有 Essentials 容器)
    ----------------------------------------------------------------------------- */
 @media not (-moz-pref("zenwashi.tab.sleep-fade", false)) {
-  /* 休眠标签的淡化同样不能加 !important：
-   * 关闭一个休眠标签时，WAAPI 的 opacity 淡出也需要能压过它。 */
-  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([aria-hidden="true"]) {
-    opacity: 0.6;
+  /* 休眠标签不压整行 opacity（否则底层墙纸印花会穿透半透明字形与图标，产生"印花浮在字上"的错觉）；
+     改为实色淡墨字 + 图标微褪，行级仍保持 opacity: 1 供 js/tab-close.uc.js 的 WAAPI 淡出读取。 */
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([aria-hidden="true"]):not([selected]):not([selected="true"]):not([visuallyselected]):not(:hover) .tab-label {
+    color: var(--zenwashi-fg-muted) !important;
+  }
+
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([aria-hidden="true"]) .tab-icon-image {
+    opacity: 0.52;
     transition: opacity var(--zenwashi-duration) var(--zenwashi-ease) !important;
   }
 
   /* 悬停休眠标签时自动唤醒清晰度，在墙纸与彩底上依然清楚可读 */
-  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([aria-hidden="true"]):hover {
-    opacity: 0.92;
+  .tabbrowser-tab:not([zen-essential="true"]):not(:is(#zen-essentials-container, #zen-essentials, .zen-essentials-container) .tabbrowser-tab):is([discarded], [discarded="true"], [pending], [pending="true"]):not([aria-hidden="true"]):hover .tab-icon-image {
+    opacity: 0.95;
   }
 
-  /* 非休眠态恢复完全不透明。刻意不用 !important：
-   * 关闭动画（WAAPI，opacity 1→0）只有在普通声明之上才能生效；
-   * 静止态这里本来就是 1，去掉权重不影响休眠淡入淡出。 */
-  .tabbrowser-tab:not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]):not([aria-hidden="true"]) {
+  .tabbrowser-tab:not([discarded]):not([discarded="true"]):not([pending]):not([pending="true"]):not([aria-hidden="true"]) .tab-icon-image {
     opacity: 1;
   }
 }
