@@ -14,6 +14,7 @@
   - `preferences.json`：Sine Mods 动态配置项（强调色、视口圆角、边距、阴影档位等）。
   - `install.sh` / `install.ps1`：自动将主题注册并同步至 Zen Profile 的部署脚本（macOS/Linux / Windows，行为一致）。
   - `styles/typography.css`：界面字体层（字体族 / 字号 / 侧栏字号 / 字重），设置项在 Sine → **Typography 界面字体**。
+  - `js/workspace-wheel.uc.js` / `styles/workspace-wheel.css`：底部 `#zen-workspaces-button` 悬停触发的临界阻尼弹簧轮盘面板（支持 `zenwashi.sidebar.workspace-wheel-style` 切换「侧栏弧形轮盘 `sidebar-arc`」与「上方半圆轮盘 `top-semicircle`」，展示图标与名称并支持一键卸载工作区）。
 
 ---
 

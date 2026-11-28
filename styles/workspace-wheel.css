@@ -1,0 +1,708 @@
+/* =============================================================================
+   Zen Washi & Sumi (和纸与松烟墨) — Radial Workspace Wheel (双形态工作区轮盘)
+   -----------------------------------------------------------------------------
+   指针悬停底部 #zen-workspaces-button 时平滑展开的苹果风轮盘（默认收敛在侧栏宽度内）：
+     · 默认 `sidebar-arc`：侧栏内嵌弧形轮盘，全览图标+名称与底条一键卸载；
+     · 可选 `top-semicircle`：无框悬空半圆和纸玻璃花瓣，悬停扇形真实鱼眼径向放大并联动灵动胶囊栏；
+     · 通透和纸磨砂琉璃质感，随主题明暗、5 套基底调色板与 10 套矿物强调色实时联动。
+   ============================================================================= */
+
+#zenwashi-workspace-wheel-host {
+  position: fixed;
+  z-index: 2147483000;
+  pointer-events: none !important;
+  opacity: 0;
+  visibility: hidden;
+}
+
+#zenwashi-workspace-wheel-host[data-active="true"] {
+  pointer-events: none !important;
+  visibility: visible;
+}
+
+#zenwashi-workspace-wheel-host:not([data-active="true"]) #zenwashi-workspace-wheel,
+#zenwashi-workspace-wheel-host:not([data-active="true"]) #zenwashi-workspace-wheel-bridge {
+  pointer-events: none !important;
+}
+
+#zenwashi-workspace-wheel-bridge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* 主轮盘容器：sidebar-arc 为和纸磨砂卡片；top-semicircle 为透明承托架，由各花瓣与胶囊独立成面 */
+#zenwashi-workspace-wheel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: auto;
+  border-radius: 15px;
+  box-sizing: border-box;
+  user-select: none;
+  -moz-user-select: none;
+  font-family: var(--zenwashi-font-family, inherit);
+  color: var(--zenwashi-fg-primary);
+  background: light-dark(
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--zenwashi-bg-base) 52%, var(--zenwashi-bg-surface) 48%) 82%,
+      transparent
+    ),
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--zenwashi-bg-base) 44%, var(--zenwashi-bg-surface) 56%) 86%,
+      transparent
+    )
+  );
+  backdrop-filter: blur(var(--zenwashi-wheel-backdrop-blur, 22px)) saturate(145%);
+  border: 1px solid light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 13%, transparent),
+    rgba(255, 255, 255, 0.13)
+  );
+  box-shadow:
+    0 12px 28px light-dark(rgba(30, 36, 44, 0.14), rgba(0, 0, 0, 0.48)),
+    0 2px 6px light-dark(rgba(30, 36, 44, 0.06), rgba(0, 0, 0, 0.24)),
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.1));
+  will-change: transform, opacity;
+}
+
+/* 上方半圆花瓣模式：半圆扇形紧贴底栏图标即时点选，灵动胶囊悬浮在扇形正上方 */
+#zenwashi-workspace-wheel[data-style="top-semicircle"] {
+  flex-direction: column-reverse;
+  overflow: visible;
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  gap: 1px;
+}
+
+/* 上部轮盘扇区视口 */
+.zenwashi-wheel-dial {
+  position: relative;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-dial {
+  overflow: visible;
+}
+
+#zenwashi-workspace-wheel[data-style="sidebar-arc"][data-scrollable="true"] .zenwashi-wheel-nodes {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    #000 14px,
+    #000 calc(100% - 14px),
+    transparent 100%
+  );
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"][data-scrollable="true"] .zenwashi-wheel-nodes {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    #000 16px,
+    #000 calc(100% - 16px),
+    transparent 100%
+  );
+}
+
+/* SVG 弧形扇区与内环游标 */
+.zenwashi-wheel-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.zenwashi-wheel-sector {
+  fill: transparent;
+  stroke: light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 6%, transparent),
+    color-mix(in srgb, var(--zenwashi-fg-primary) 7%, transparent)
+  );
+  stroke-width: 1;
+  transition:
+    fill 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.zenwashi-wheel-sector[data-active="true"] {
+  fill: color-mix(in srgb, var(--zenwashi-accent-tint) 58%, transparent);
+}
+
+.zenwashi-wheel-sector[data-hovered="true"] {
+  fill: color-mix(in srgb, var(--zenwashi-accent-tint) 90%, transparent);
+  stroke: color-mix(in srgb, var(--zenwashi-accent) 26%, transparent);
+}
+
+/* 半圆模式下的悬空独立花瓣玻璃片 */
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-sector {
+  fill: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 76%, var(--zenwashi-bg-base) 24%),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 80%, var(--zenwashi-bg-base) 20%)
+  );
+  fill-opacity: 0.88;
+  stroke: light-dark(
+    rgba(255, 255, 255, 0.62),
+    rgba(255, 255, 255, 0.14)
+  );
+  stroke-width: 1;
+  filter: drop-shadow(
+    0 3px 7px light-dark(rgba(28, 34, 42, 0.11), rgba(0, 0, 0, 0.42))
+  );
+  transition:
+    fill 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill-opacity 150ms ease,
+    stroke 150ms ease,
+    filter 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-sector[data-active="true"] {
+  fill: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 82%, var(--zenwashi-accent-tint) 18%),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 78%, var(--zenwashi-accent-tint) 22%)
+  );
+  fill-opacity: 0.94;
+  stroke: color-mix(in srgb, var(--zenwashi-accent) 38%, transparent);
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-sector[data-hovered="true"] {
+  fill: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 92%, var(--zenwashi-accent-tint) 8%),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 84%, var(--zenwashi-fg-primary) 10%)
+  );
+  fill-opacity: 0.98;
+  stroke: color-mix(in srgb, var(--zenwashi-accent) 54%, transparent);
+  stroke-width: 1.25;
+  filter: drop-shadow(
+    0 7px 14px light-dark(rgba(24, 30, 38, 0.18), rgba(0, 0, 0, 0.56))
+  );
+}
+
+.zenwashi-wheel-active-arc {
+  fill: none;
+  stroke: var(--zenwashi-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.45;
+  transition: opacity 120ms ease;
+}
+
+.zenwashi-wheel-active-arc[data-dimmed="true"] {
+  opacity: 0.2;
+}
+
+.zenwashi-wheel-dial-arc {
+  fill: none;
+  stroke: var(--zenwashi-accent);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 110ms ease;
+}
+
+.zenwashi-wheel-dial-arc[data-visible="true"] {
+  opacity: 0.9;
+}
+
+/* 扇区工作区条目层 */
+.zenwashi-wheel-nodes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.zenwashi-wheel-node {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transform-origin: center center;
+}
+
+.zenwashi-wheel-node-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  max-width: var(--zw-wheel-node-max-w, 92px);
+  padding: 5px 8px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--zenwashi-fg-secondary);
+  cursor: pointer;
+  pointer-events: auto;
+  transform-origin: center center;
+  transition:
+    color 120ms ease,
+    transform 90ms ease-out;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-node-btn {
+  padding: 5px;
+  border-radius: 50%;
+}
+
+.zenwashi-wheel-node[data-hovered="true"] .zenwashi-wheel-node-btn,
+.zenwashi-wheel-node[data-active="true"] .zenwashi-wheel-node-btn {
+  color: var(--zenwashi-fg-primary);
+}
+
+.zenwashi-wheel-node-btn:active,
+#zenwashi-workspace-wheel[data-pressing="true"] .zenwashi-wheel-node[data-hovered="true"] .zenwashi-wheel-node-btn {
+  transform: scale(0.94);
+}
+
+.zenwashi-wheel-node-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.zenwashi-wheel-node[data-hovered="true"] .zenwashi-wheel-node-icon {
+  transform: scale(1.08);
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-node[data-hovered="true"] .zenwashi-wheel-node-icon {
+  transform: none;
+}
+
+.zenwashi-wheel-emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 15px;
+  line-height: 1;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-node-icon .zenwashi-wheel-emoji {
+  font-size: 16px;
+}
+
+.zenwashi-wheel-icon-img {
+  width: 14px;
+  height: 14px;
+  -moz-context-properties: fill, fill-opacity;
+  fill: currentColor;
+}
+
+.zenwashi-wheel-node-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.005em;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-node-name {
+  display: none;
+}
+
+.zenwashi-wheel-node[data-active="true"] .zenwashi-wheel-node-name {
+  font-weight: 600;
+}
+
+.zenwashi-wheel-node[data-loaded="false"]:not([data-active="true"]):not([data-hovered="true"]) .zenwashi-wheel-node-name {
+  color: var(--zenwashi-fg-muted);
+}
+
+/* 已加载微点 */
+.zenwashi-wheel-loaded-dot {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--zenwashi-accent);
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 140ms ease,
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-loaded-dot {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  width: 4.5px;
+  height: 4.5px;
+}
+
+.zenwashi-wheel-node[data-loaded="true"] .zenwashi-wheel-loaded-dot {
+  opacity: 0.85;
+  transform: scale(1);
+}
+
+#zenwashi-workspace-wheel[data-style="sidebar-arc"] .zenwashi-wheel-node[data-hovered="true"][data-unloadable="true"] .zenwashi-wheel-loaded-dot {
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+/* 侧栏弧形模式：悬停扇区时从微点位置浮现的单区快捷卸载按钮 */
+.zenwashi-wheel-slice-unload {
+  position: absolute;
+  top: 50%;
+  right: -2px;
+  width: 19px;
+  height: 19px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--zenwashi-border-subtle);
+  background: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 88%, transparent),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 84%, transparent)
+  );
+  color: var(--zenwashi-fg-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) scale(0.7);
+  transition:
+    opacity 120ms ease,
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 120ms ease,
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-slice-unload {
+  display: none;
+}
+
+.zenwashi-wheel-node[data-hovered="true"][data-unloadable="true"] .zenwashi-wheel-slice-unload,
+.zenwashi-wheel-slice-unload:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) scale(1);
+}
+
+.zenwashi-wheel-slice-unload:hover {
+  color: var(--zenwashi-accent);
+  border-color: var(--zenwashi-accent);
+  background: color-mix(in srgb, var(--zenwashi-bg-surface) 82%, var(--zenwashi-accent-tint));
+  transform: translateY(-50%) scale(1.08);
+}
+
+.zenwashi-wheel-slice-unload:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+/* 贴边/底心正圆轴心 */
+.zenwashi-wheel-hub {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  background: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 64%, var(--zenwashi-bg-base) 36%),
+    color-mix(in srgb, var(--zenwashi-bg-base) 74%, var(--zenwashi-bg-surface) 26%)
+  );
+  border: 1px solid light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 11%, transparent),
+    rgba(255, 255, 255, 0.11)
+  );
+  box-shadow: inset 0 1px 4px light-dark(rgba(30, 36, 44, 0.08), rgba(0, 0, 0, 0.35));
+  pointer-events: auto;
+}
+
+/* 半圆模式底心宝石点：上凸圆拱 + 极简强调色圆珠，避免图标三连重复 */
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-hub {
+  border-radius: 999px 999px 5px 5px;
+  background: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 80%, var(--zenwashi-bg-base) 20%),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 82%, var(--zenwashi-bg-base) 18%)
+  );
+  box-shadow:
+    0 2px 6px light-dark(rgba(28, 34, 42, 0.1), rgba(0, 0, 0, 0.4)),
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.12));
+  pointer-events: none;
+}
+
+.zenwashi-wheel-hub-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.zenwashi-wheel-hub-icon .zenwashi-wheel-emoji {
+  font-size: 18px;
+}
+
+.zenwashi-wheel-hub-icon .zenwashi-wheel-icon-img {
+  width: 16px;
+  height: 16px;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-hub-icon,
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-hub-meta {
+  display: none;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-hub-inner::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--zenwashi-accent);
+  opacity: 0.72;
+}
+
+.zenwashi-wheel-hub-meta {
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9.5px;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--zenwashi-fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 底部动作条 */
+.zenwashi-wheel-footer {
+  flex: 0 0 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px 5px;
+  box-sizing: border-box;
+  border-top: 1px solid light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 8%, transparent),
+    rgba(255, 255, 255, 0.08)
+  );
+  background: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-base) 26%, transparent),
+    color-mix(in srgb, var(--zenwashi-bg-base) 40%, transparent)
+  );
+}
+
+/* 半圆模式下的脱离式上方浮动灵动胶囊（不挡住下方即时点选扇形的路径） */
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-footer {
+  flex: 0 0 30px;
+  height: 30px;
+  align-self: center;
+  min-width: 106px;
+  max-width: 100%;
+  padding: 3px 5px 3px 9px;
+  gap: 4px;
+  border-radius: 999px;
+  border: 1px solid light-dark(
+    rgba(255, 255, 255, 0.62),
+    rgba(255, 255, 255, 0.14)
+  );
+  background: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 80%, var(--zenwashi-bg-base) 20%),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 84%, var(--zenwashi-bg-base) 16%)
+  );
+  backdrop-filter: blur(var(--zenwashi-wheel-backdrop-blur, 22px)) saturate(150%);
+  box-shadow:
+    0 6px 16px light-dark(rgba(26, 32, 40, 0.14), rgba(0, 0, 0, 0.48)),
+    0 1px 4px light-dark(rgba(26, 32, 40, 0.06), rgba(0, 0, 0, 0.24)),
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.1));
+}
+
+.zenwashi-wheel-footer-target {
+  display: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  padding-inline-end: 2px;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-footer-target {
+  display: inline-flex;
+}
+
+.zenwashi-wheel-footer-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.zenwashi-wheel-footer-icon .zenwashi-wheel-emoji {
+  font-size: 13px;
+}
+
+.zenwashi-wheel-footer-icon .zenwashi-wheel-icon-img {
+  width: 12.5px;
+  height: 12.5px;
+}
+
+.zenwashi-wheel-footer-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--zenwashi-fg-primary);
+  letter-spacing: -0.005em;
+}
+
+.zenwashi-wheel-footer-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid light-dark(
+    color-mix(in srgb, var(--zenwashi-fg-primary) 13%, transparent),
+    rgba(255, 255, 255, 0.13)
+  );
+  background: light-dark(
+    color-mix(in srgb, var(--zenwashi-bg-surface) 78%, transparent),
+    color-mix(in srgb, var(--zenwashi-bg-surface) 82%, transparent)
+  );
+  color: var(--zenwashi-fg-primary);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 80ms ease-out;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-footer-btn {
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 7px;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-footer-btn[data-has-count="false"] {
+  width: 22px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--zenwashi-fg-muted);
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-footer-btn[data-has-count="false"] span {
+  display: none;
+}
+
+.zenwashi-wheel-footer-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--zenwashi-accent) 60%, transparent);
+  background: color-mix(in srgb, var(--zenwashi-bg-surface) 76%, var(--zenwashi-accent-tint));
+  color: var(--zenwashi-accent);
+}
+
+.zenwashi-wheel-footer-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.zenwashi-wheel-footer-btn:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.zenwashi-wheel-footer-btn[data-secondary="true"] {
+  flex: 0.9 1 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--zenwashi-fg-secondary);
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-footer-btn[data-secondary="true"] {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-footer-btn[data-secondary="true"] span {
+  display: none;
+}
+
+#zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-footer-btn[data-secondary="true"][data-empty="true"] {
+  display: none;
+}
+
+.zenwashi-wheel-footer-btn[data-secondary="true"]:hover:not(:disabled) {
+  background: var(--zenwashi-tab-hover-bg);
+  color: var(--zenwashi-fg-primary);
+  border-color: var(--zenwashi-border-subtle);
+}
+
+/* 可访问性：减弱透明度 / 减弱动态效果 */
+@media (prefers-reduced-transparency: reduce) {
+  #zenwashi-workspace-wheel[data-style="sidebar-arc"],
+  #zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-footer {
+    background: var(--zenwashi-bg-surface);
+    backdrop-filter: none;
+  }
+
+  #zenwashi-workspace-wheel[data-style="top-semicircle"] .zenwashi-wheel-sector {
+    fill-opacity: 1;
+  }
+
+  .zenwashi-wheel-hub {
+    background: var(--zenwashi-bg-base);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #zenwashi-workspace-wheel,
+  .zenwashi-wheel-sector,
+  .zenwashi-wheel-active-arc,
+  .zenwashi-wheel-dial-arc,
+  .zenwashi-wheel-node,
+  .zenwashi-wheel-node-icon,
+  .zenwashi-wheel-loaded-dot,
+  .zenwashi-wheel-slice-unload,
+  .zenwashi-wheel-footer-btn {
+    transition-duration: 0ms !important;
+  }
+}
+
+/* 偏好开关关闭时兜底隐藏 */
+@media (-moz-pref("zenwashi.sidebar.workspace-wheel", false)) {
+  #zenwashi-workspace-wheel-host {
+    display: none !important;
+  }
+}

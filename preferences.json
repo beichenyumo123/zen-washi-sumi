@@ -799,6 +799,28 @@
   },
   {
     "type": "checkbox",
+    "property": "zenwashi.sidebar.workspace-wheel",
+    "label": "Workspace radial wheel 悬停底部工作区图标时展开苹果风轮盘（图标+名称切换与一键卸载工作区）",
+    "defaultValue": true
+  },
+  {
+    "type": "dropdown",
+    "property": "zenwashi.sidebar.workspace-wheel-style",
+    "label": "Workspace wheel style 工作区轮盘样式（侧栏内嵌弧形轮盘 / 上方半圆轮盘）",
+    "defaultValue": "sidebar-arc",
+    "options": [
+      {
+        "value": "sidebar-arc",
+        "label": "侧栏弧形轮盘（收敛在侧栏宽度内，全览图标与名称） (Default)"
+      },
+      {
+        "value": "top-semicircle",
+        "label": "上方半圆轮盘（贴底图标向上半圆展开，悬停扇形显示图标名称与卸载）"
+      }
+    ]
+  },
+  {
+    "type": "checkbox",
     "property": "zenwashi.sidebar.narrow.enabled",
     "label": "Custom narrow sidebar width 启用自定义窄侧栏宽度（突破 Zen 原生最小宽度限制；关闭后恢复原生拖动宽度）",
     "defaultValue": true

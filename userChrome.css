@@ -28,6 +28,7 @@
 @import "styles/viewport-motion.css";
 @import "styles/blended-island.css";
 @import "styles/motion-and-indicator.css";
+@import "styles/workspace-wheel.css";
 
 /* 4. 布局覆盖层（依赖前序层叠顺序） */
 @import "styles/compact-mode.css";

@@ -57,6 +57,13 @@
       "include": [
         "chrome://browser/content/browser.xhtml"
       ]
+    },
+    "js/workspace-wheel.uc.js": {
+      "name": "Washi radial workspace wheel",
+      "description": "Spring-driven radial workspace dial on hovering the bottom workspace icons, supporting icon+name switching and workspace unloading.",
+      "include": [
+        "chrome://browser/content/browser.xhtml"
+      ]
     }
   },
   "preferences": "preferences.json",
