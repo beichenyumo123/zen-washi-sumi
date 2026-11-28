@@ -289,7 +289,7 @@ border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) <r> <r> !importan
      }
      ```
 - **本次修复**：
-  - `userChrome.css §1.1` 新增 `--zenwashi-paper-shadow`（默认 medium；soft / strong / deep × 明暗各一档）；
+  - `userChrome.css §1.1` 新增 `--zenwashi-paper-shadow`（默认 medium；soft / strong / deep + 内陷 recessed / recessed-deep × 明暗各一档）与 `--zenwashi-content-inset-shadow`（内陷模式下由 `#zen-appcontent-wrapper::after` 或 `.browserContainer::after` 覆盖在 `<browser>` 之上绘制内阴影，保持 `.browserSidebarContainer` 零 `position: relative` / `::after`）；
   - `.browserSidebarContainer` 与 `#zen-appcontent-wrapper` 只引用该变量，不再各自重复 4 条 media query；
   - `colors.css` 的 `--zenwashi-tab-selected-shadow`、`--zenwashi-essentials-card-shadow` 同步改为 per-shadow 形式
     （前者已生效，选中卡片现在有 `0 2px 6px` 的纸影；后者当前未被消费）。

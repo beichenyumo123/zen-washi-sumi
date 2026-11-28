@@ -150,6 +150,14 @@
       {
         "value": "deep",
         "label": "Deep 超沉浸大投影"
+      },
+      {
+        "value": "recessed",
+        "label": "Recessed 内陷凹槽 · 温润（视口嵌入桌面）"
+      },
+      {
+        "value": "recessed-deep",
+        "label": "Recessed Deep 深邃内陷 · 画匣"
       }
     ]
   },

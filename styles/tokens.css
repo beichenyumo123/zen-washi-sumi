@@ -112,6 +112,7 @@
   --zenwashi-paper-shadow:
     0 10px 28px rgba(38, 36, 33, 0.18),
     0 3px 10px rgba(38, 36, 33, 0.10);
+  --zenwashi-content-inset-shadow: inset 0 0 0 0 transparent;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -169,5 +170,53 @@
       0 26px 68px rgba(0, 0, 0, 0.96),
       0 8px 24px rgba(0, 0, 0, 0.75),
       0 0 16px rgba(0, 0, 0, 0.50);
+  }
+}
+
+/* 内陷凹槽档位：外框退去外部漫射投影与生硬白边，仅保留克制的凹槽切边；
+   内陷深影则由 --zenwashi-content-inset-shadow 交给前景遮罩层压在 <browser> 之上绘制。 */
+@media (-moz-pref("zenwashi.content.shadow", "recessed")) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 0 0 0.75px rgba(24, 28, 34, 0.08);
+    --zenwashi-content-inset-shadow:
+      inset 0 1.5px 3px rgba(20, 24, 30, 0.16),
+      inset 0 7px 16px -4px rgba(20, 24, 30, 0.22),
+      inset 0 0 14px 1px rgba(20, 24, 30, 0.10);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "recessed")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.42),
+      0 1px 3px rgba(255, 255, 255, 0.05);
+    --zenwashi-content-inset-shadow:
+      inset 0 2px 4px rgba(0, 0, 0, 0.50),
+      inset 0 8px 18px -4px rgba(0, 0, 0, 0.54),
+      inset 0 0 14px 2px rgba(0, 0, 0, 0.30);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "recessed-deep")) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 0 0 0.75px rgba(20, 24, 30, 0.12);
+    --zenwashi-content-inset-shadow:
+      inset 0 2px 4px rgba(20, 24, 30, 0.22),
+      inset 0 10px 24px -4px rgba(20, 24, 30, 0.30),
+      inset 0 0 18px 2px rgba(20, 24, 30, 0.16);
+  }
+}
+
+@media (-moz-pref("zenwashi.content.shadow", "recessed-deep")) and (prefers-color-scheme: dark) {
+  :root {
+    --zenwashi-paper-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.56),
+      0 1px 4px rgba(255, 255, 255, 0.06);
+    --zenwashi-content-inset-shadow:
+      inset 0 3px 6px rgba(0, 0, 0, 0.68),
+      inset 0 12px 28px -4px rgba(0, 0, 0, 0.72),
+      inset 0 0 22px 4px rgba(0, 0, 0, 0.42);
   }
 }

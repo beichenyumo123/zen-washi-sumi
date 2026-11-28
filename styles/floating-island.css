@@ -167,6 +167,29 @@
   outline: none !important;
 }
 
+:root[inFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer::after,
+:root[inDOMFullscreen] #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer > .browserContainer::after {
+  content: none !important;
+  display: none !important;
+  box-shadow: none !important;
+}
+
+/* 内陷凹槽模式：由 .browserContainer::after 在 <browser> 之上绘制 inset 内影，
+   避免直接给 .browserSidebarContainer 加 position:relative/::after 引发 XUL Flex 坍缩。 */
+@media (-moz-pref("zenwashi.content.shadow", "recessed")),
+       (-moz-pref("zenwashi.content.shadow", "recessed-deep")) {
+  :root:not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer::after {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 10 !important;
+    border-radius: inherit !important;
+    corner-shape: inherit !important;
+    pointer-events: none !important;
+    box-shadow: var(--zenwashi-content-inset-shadow) !important;
+  }
+}
+
 /* 视口边框粗细档位 (zenwashi.content.border) */
 @media (-moz-pref("zenwashi.content.border", "none")) {
   :root {

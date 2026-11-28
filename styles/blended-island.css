@@ -105,8 +105,10 @@
     corner-shape: inherit !important;
     pointer-events: none !important;
     z-index: 999 !important;
-    box-shadow: inset 0 0 0 calc(var(--zenwashi-content-border-width, 1.5px) + 1px)
-      var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)) !important;
+    box-shadow:
+      inset 0 0 0 calc(var(--zenwashi-content-border-width, 1.5px) + 1px)
+        var(--zenwashi-content-border-color, var(--zenwashi-border-distinct)),
+      var(--zenwashi-content-inset-shadow, inset 0 0 0 0 transparent) !important;
   }
 
   @media (-moz-pref("zenwashi.content.border", "none")) {
@@ -228,6 +230,12 @@
     border: none !important;
     outline: none !important;
     border-radius: var(--zw-panel-tl, 0px) var(--zw-panel-tr, 0px) min(var(--zenwashi-content-radius, 18px), max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) + 1px))) min(var(--zenwashi-content-radius, 18px), max(0px, calc(var(--zenwashi-content-radius, 18px) - var(--zenwashi-content-border-width, 1.5px) + 1px))) !important;
+  }
+
+  /* 非单栏非分屏融合模式下由 #zen-appcontent-wrapper::after 统一承载内陷阴影，屏蔽内层重复伪元素 */
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #tabbrowser-tabbox #tabbrowser-tabpanels:not([zen-split-view="true"]) .browserSidebarContainer:not(.zen-glance-overlay) > .browserContainer::after {
+    content: none !important;
+    display: none !important;
   }
 
 
@@ -617,7 +625,33 @@
   }
 }
 
+@media (-moz-pref("zenwashi.content.shadow", "recessed")),
+       (-moz-pref("zenwashi.content.shadow", "recessed-deep")) {
+  :root[zen-single-toolbar="true"]:not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-tabbox-wrapper {
+    box-shadow: var(--zenwashi-paper-shadow) !important;
+  }
+}
+
+@media (-moz-pref("zenwashi.content.border", "none")) and (-moz-pref("zenwashi.content.shadow", "recessed")),
+       (-moz-pref("zenwashi.content.border", "none")) and (-moz-pref("zenwashi.content.shadow", "recessed-deep")) {
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper::after {
+    display: block !important;
+    inset: 0 !important;
+    border-radius: var(--zenwashi-content-radius, 18px) !important;
+    box-shadow: var(--zenwashi-content-inset-shadow) !important;
+  }
+}
+
 @media (-moz-pref("zenwashi.urlbar.blended", false)) {
+  :root:not([zen-single-toolbar="true"]):not([inFullscreen]):not([inDOMFullscreen]):not([macOSNativeFullscreen]):not([zen-no-padding="true"]) #zen-appcontent-wrapper::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  :root[zen-single-toolbar="true"] #zen-tabbox-wrapper {
+    box-shadow: none !important;
+  }
+
   :root:not([zen-single-toolbar="true"]):not([zen-compact-mode="true"]) #zen-appcontent-navbar-wrapper {
     border-end-start-radius: revert !important;
     border-end-end-radius: revert !important;
